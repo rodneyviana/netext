@@ -1,0 +1,29 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NetExt", "NetExt\NetExt.vcxproj", "{4E9D2B0A-24A1-4E1F-B264-C7118576D532}"
+EndProject
+Global
+	GlobalSection(TeamFoundationVersionControl) = preSolution
+		SccNumberOfProjects = 2
+		SccEnterpriseProvider = {4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}
+		SccTeamFoundationServer = https://rviana.visualstudio.com/defaultcollection
+		SccLocalPath0 = .
+		SccProjectUniqueName1 = NetExt\\NetExt.vcxproj
+		SccProjectName1 = NetExt
+		SccLocalPath1 = NetExt
+	EndGlobalSection
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{4E9D2B0A-24A1-4E1F-B264-C7118576D532}.Debug|Win32.ActiveCfg = Debug|Win32
+		{4E9D2B0A-24A1-4E1F-B264-C7118576D532}.Debug|Win32.Build.0 = Debug|Win32
+		{4E9D2B0A-24A1-4E1F-B264-C7118576D532}.Release|Win32.ActiveCfg = Release|Win32
+		{4E9D2B0A-24A1-4E1F-B264-C7118576D532}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
