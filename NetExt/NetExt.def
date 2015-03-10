@@ -1,3 +1,4 @@
+LIBRARY
 ;--------------------------------------------------------------------
 ;   Copyright (c) 2011  Microsoft Corporation
 ;
@@ -15,8 +16,37 @@ EXPORTS
     DebugExtensionUninitialize
     DebugExtensionNotify
     help
-
 ;--------------------------------------------------------------------
 ; Extension commands.
 ;--------------------------------------------------------------------
+	wver
+	wstack
+	wclrstack
 	wdo
+	wselect
+	wheap
+	windex
+	wfrom
+	weval
+	regmatch
+	regsearch
+	weval
+	wfrom
+	wdict
+	whash
+	whttp
+	wcookie
+	wconfig
+	wkeyvalue
+	wclass
+	wservice
+	whelp
+	wtoken
+	wruntime
+	wopendownloadpage
+	wupdate
+	wgchandle
+	wthreads
+	wpe
+	wdae
+	wdomain

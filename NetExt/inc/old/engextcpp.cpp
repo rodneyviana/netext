@@ -11,7 +11,7 @@
 #include <dbghelp.h>
 
 #if defined(_PREFAST_) || defined(_PREFIX_)
-#define PRE_ASSUME(_Cond) __analysis_assume(_Cond)
+#define PRE_ASSUME(_Cond) _Analysis_assume_(_Cond)
 #else
 #define PRE_ASSUME(_Cond)
 #endif
@@ -30,20 +30,20 @@ ExtCheckedPointer<ExtExtension>
 //
 //----------------------------------------------------------------------------
 
-void
-ExtException::PrintMessageVa(__in_ecount(BufferChars) PSTR Buffer,
-                             __in ULONG BufferChars,
-                             __in PCSTR Format,
-                             __in va_list Args)
+void WINAPI
+ExtException::PrintMessageVa(_In_reads_(BufferChars) PSTR Buffer,
+                             _In_ ULONG BufferChars,
+                             _In_ PCSTR Format,
+                             _In_ va_list Args)
 {
     StringCchVPrintfA(Buffer, BufferChars, Format, Args);
     m_Message = Buffer;
 }
 
 void WINAPIV
-ExtException::PrintMessage(__in_ecount(BufferChars) PSTR Buffer,
-                           __in ULONG BufferChars,
-                           __in PCSTR Format,
+ExtException::PrintMessage(_In_reads_(BufferChars) PSTR Buffer,
+                           _In_ ULONG BufferChars,
+                           _In_ PCSTR Format,
                            ...)
 {
     va_list Args;
@@ -59,7 +59,7 @@ ExtException::PrintMessage(__in_ecount(BufferChars) PSTR Buffer,
 //
 //----------------------------------------------------------------------------
 
-void
+void WINAPI
 ExtCurrentThreadHolder::Refresh(void)
 {
     HRESULT Status;
@@ -72,7 +72,7 @@ ExtCurrentThreadHolder::Refresh(void)
     }
 }
 
-void
+void WINAPI
 ExtCurrentThreadHolder::Restore(void)
 {
     if (m_ThreadId != DEBUG_ANY_ID)
@@ -87,7 +87,7 @@ ExtCurrentThreadHolder::Restore(void)
     }
 }
 
-void
+void WINAPI
 ExtCurrentProcessHolder::Refresh(void)
 {
     HRESULT Status;
@@ -100,7 +100,7 @@ ExtCurrentProcessHolder::Refresh(void)
     }
 }
 
-void
+void WINAPI
 ExtCurrentProcessHolder::Restore(void)
 {
     if (m_ProcessId != DEBUG_ANY_ID)
@@ -115,7 +115,7 @@ ExtCurrentProcessHolder::Restore(void)
     }
 }
 
-void
+void WINAPI
 ExtEffectiveProcessorTypeHolder::Refresh(void)
 {
     HRESULT Status;
@@ -129,7 +129,7 @@ ExtEffectiveProcessorTypeHolder::Refresh(void)
     }
 }
 
-void
+void WINAPI
 ExtEffectiveProcessorTypeHolder::Restore(void)
 {
     if (m_ProcType != DEBUG_ANY_ID)
@@ -144,7 +144,7 @@ ExtEffectiveProcessorTypeHolder::Restore(void)
     }
 }
 
-void
+void WINAPI
 ExtRadixHolder::Refresh(void)
 {
     HRESULT Status;
@@ -157,7 +157,7 @@ ExtRadixHolder::Refresh(void)
     }
 }
 
-void
+void WINAPI
 ExtRadixHolder::Restore(void)
 {
     if (m_Radix != DEBUG_ANY_ID)
@@ -181,10 +181,11 @@ ExtRadixHolder::Restore(void)
 ExtCommandDesc* ExtCommandDesc::s_Commands;
 ULONG ExtCommandDesc::s_LongestCommandName;
 
-ExtCommandDesc::ExtCommandDesc(__in PCSTR Name,
-                               __in ExtCommandMethod Method,
-                               __in PCSTR Desc,
-                               __in_opt PCSTR Args)
+WINAPI
+ExtCommandDesc::ExtCommandDesc(_In_ PCSTR Name,
+                               _In_ ExtCommandMethod Method,
+                               _In_ PCSTR Desc,
+                               _In_opt_ PCSTR Args)
 {
     m_Name = Name;
     m_Method = Method;
@@ -226,12 +227,13 @@ ExtCommandDesc::ExtCommandDesc(__in PCSTR Name,
     }
 }
 
+WINAPI
 ExtCommandDesc::~ExtCommandDesc(void)
 {
     DeleteArgs();
 }
 
-void
+void WINAPI
 ExtCommandDesc::ClearArgs(void)
 {
     m_ArgsInitialized = false;
@@ -245,7 +247,7 @@ ExtCommandDesc::ClearArgs(void)
     m_Args = NULL;
 }
 
-void
+void WINAPI
 ExtCommandDesc::DeleteArgs(void)
 {
     free(m_ArgStrings);
@@ -253,8 +255,8 @@ ExtCommandDesc::DeleteArgs(void)
     ClearArgs();
 }
 
-PSTR
-ExtCommandDesc::ParseDirective(__in PSTR Scan)
+PSTR WINAPI
+ExtCommandDesc::ParseDirective(_In_ PSTR Scan)
 {
     //
     // Scan to collect the directive name.
@@ -348,7 +350,7 @@ ExtCommandDesc::ParseDirective(__in PSTR Scan)
     return Scan;
 }
 
-void
+void WINAPI
 ExtCommandDesc::ParseArgDesc(void)
 {
     //
@@ -795,8 +797,8 @@ ExtCommandDesc::ParseArgDesc(void)
     m_ArgsInitialized = true;
 }
 
-void
-ExtCommandDesc::ExInitialize(__in ExtExtension* Ext)
+void WINAPI
+ExtCommandDesc::ExInitialize(_In_ ExtExtension* Ext)
 {
     m_Ext = Ext;
     
@@ -814,8 +816,8 @@ ExtCommandDesc::ExInitialize(__in ExtExtension* Ext)
     }
 }
 
-ExtCommandDesc::ArgDesc*
-ExtCommandDesc::FindArg(__in PCSTR Name)
+ExtCommandDesc::ArgDesc* WINAPI
+ExtCommandDesc::FindArg(_In_ PCSTR Name)
 {
     ArgDesc* Check = m_Args;
     for (ULONG i = 0; i < m_NumArgs; i++, Check++)
@@ -829,8 +831,8 @@ ExtCommandDesc::FindArg(__in PCSTR Name)
     return NULL;
 }
     
-ExtCommandDesc::ArgDesc*
-ExtCommandDesc::FindUnnamedArg(__in ULONG Index)
+ExtCommandDesc::ArgDesc* WINAPI
+ExtCommandDesc::FindUnnamedArg(_In_ ULONG Index)
 {
     ArgDesc* Check = m_Args;
     for (ULONG i = 0; i < m_NumArgs; i++, Check++)
@@ -844,9 +846,9 @@ ExtCommandDesc::FindUnnamedArg(__in ULONG Index)
     return NULL;
 }
 
-void
-ExtCommandDesc::Transfer(__out ExtCommandDesc** Commands,
-                         __out PULONG LongestName)
+void WINAPI
+ExtCommandDesc::Transfer(_Out_ ExtCommandDesc** Commands,
+                         _Out_ PULONG LongestName)
 {
     *Commands = s_Commands;
     s_Commands = NULL;
@@ -865,6 +867,7 @@ char ExtExtension::s_String[2000];
 char ExtExtension::s_CircleStringBuffer[2000];
 char* ExtExtension::s_CircleString = s_CircleStringBuffer;
 
+WINAPI
 ExtExtension::ExtExtension(void)
     : m_Advanced("The extension did not initialize properly."),
       m_Client("The extension did not initialize properly."),
@@ -882,6 +885,8 @@ ExtExtension::ExtExtension(void)
       m_Control2("The extension requires IDebugControl2."),
       m_Control3("The extension requires IDebugControl3."),
       m_Control4("The extension requires IDebugControl4."),
+      m_Control5("The extension requires IDebugControl5."),
+      m_Control6("The extension requires IDebugControl6."),
       m_Data2("The extension requires IDebugDataSpaces2."),
       m_Data3("The extension requires IDebugDataSpaces3."),
       m_Data4("The extension requires IDebugDataSpaces4."),
@@ -916,9 +921,10 @@ ExtExtension::ExtExtension(void)
     m_SymMatchStringA = NULL;
 }
 
-HRESULT ExtExtension::BaseInitialize(__in HMODULE ExtDllModule,
-                                     __out PULONG Version,
-                                     __out PULONG Flags)
+HRESULT WINAPI
+ExtExtension::BaseInitialize(_In_ HMODULE ExtDllModule,
+                             _Out_ PULONG Version,
+                             _Out_ PULONG Flags)
 {
     HRESULT Status;
 
@@ -962,35 +968,35 @@ ExtExtension::Uninitialize(void)
 }
 
 void
-ExtExtension::OnSessionActive(__in ULONG64 Argument)
+ExtExtension::OnSessionActive(_In_ ULONG64 Argument)
 {
     UNREFERENCED_PARAMETER(Argument);
     // Empty.
 }
 
 void
-ExtExtension::OnSessionInactive(__in ULONG64 Argument)
+ExtExtension::OnSessionInactive(_In_ ULONG64 Argument)
 {
     UNREFERENCED_PARAMETER(Argument);
     // Empty.
 }
 
 void
-ExtExtension::OnSessionAccessible(__in ULONG64 Argument)
+ExtExtension::OnSessionAccessible(_In_ ULONG64 Argument)
 {
     UNREFERENCED_PARAMETER(Argument);
     // Empty.
 }
 
 void
-ExtExtension::OnSessionInaccessible(__in ULONG64 Argument)
+ExtExtension::OnSessionInaccessible(_In_ ULONG64 Argument)
 {
     UNREFERENCED_PARAMETER(Argument);
     // Empty.
 }
 
 void WINAPIV
-ExtExtension::Out(__in PCSTR Format,
+ExtExtension::Out(_In_ PCSTR Format,
                   ...)
 {
     va_list Args;
@@ -1001,7 +1007,7 @@ ExtExtension::Out(__in PCSTR Format,
 }
 
 void WINAPIV
-ExtExtension::Warn(__in PCSTR Format,
+ExtExtension::Warn(_In_ PCSTR Format,
                    ...)
 {
     va_list Args;
@@ -1012,7 +1018,7 @@ ExtExtension::Warn(__in PCSTR Format,
 }
 
 void WINAPIV
-ExtExtension::Err(__in PCSTR Format,
+ExtExtension::Err(_In_ PCSTR Format,
                   ...)
 {
     va_list Args;
@@ -1023,7 +1029,7 @@ ExtExtension::Err(__in PCSTR Format,
 }
 
 void WINAPIV
-ExtExtension::Verb(__in PCSTR Format,
+ExtExtension::Verb(_In_ PCSTR Format,
                    ...)
 {
     va_list Args;
@@ -1034,7 +1040,7 @@ ExtExtension::Verb(__in PCSTR Format,
 }
 
 void WINAPIV
-ExtExtension::Out(__in PCWSTR Format,
+ExtExtension::Out(_In_ PCWSTR Format,
                   ...)
 {
     va_list Args;
@@ -1045,7 +1051,7 @@ ExtExtension::Out(__in PCWSTR Format,
 }
 
 void WINAPIV
-ExtExtension::Warn(__in PCWSTR Format,
+ExtExtension::Warn(_In_ PCWSTR Format,
                    ...)
 {
     va_list Args;
@@ -1056,7 +1062,7 @@ ExtExtension::Warn(__in PCWSTR Format,
 }
 
 void WINAPIV
-ExtExtension::Err(__in PCWSTR Format,
+ExtExtension::Err(_In_ PCWSTR Format,
                   ...)
 {
     va_list Args;
@@ -1067,7 +1073,7 @@ ExtExtension::Err(__in PCWSTR Format,
 }
 
 void WINAPIV
-ExtExtension::Verb(__in PCWSTR Format,
+ExtExtension::Verb(_In_ PCWSTR Format,
                    ...)
 {
     va_list Args;
@@ -1078,7 +1084,7 @@ ExtExtension::Verb(__in PCWSTR Format,
 }
 
 void WINAPIV
-ExtExtension::Dml(__in PCSTR Format,
+ExtExtension::Dml(_In_ PCSTR Format,
                   ...)
 {
     va_list Args;
@@ -1090,7 +1096,7 @@ ExtExtension::Dml(__in PCSTR Format,
 }
 
 void WINAPIV
-ExtExtension::DmlWarn(__in PCSTR Format,
+ExtExtension::DmlWarn(_In_ PCSTR Format,
                       ...)
 {
     va_list Args;
@@ -1102,7 +1108,7 @@ ExtExtension::DmlWarn(__in PCSTR Format,
 }
 
 void WINAPIV
-ExtExtension::DmlErr(__in PCSTR Format,
+ExtExtension::DmlErr(_In_ PCSTR Format,
                      ...)
 {
     va_list Args;
@@ -1114,7 +1120,7 @@ ExtExtension::DmlErr(__in PCSTR Format,
 }
 
 void WINAPIV
-ExtExtension::DmlVerb(__in PCSTR Format,
+ExtExtension::DmlVerb(_In_ PCSTR Format,
                       ...)
 {
     va_list Args;
@@ -1126,7 +1132,7 @@ ExtExtension::DmlVerb(__in PCSTR Format,
 }
 
 void WINAPIV
-ExtExtension::Dml(__in PCWSTR Format,
+ExtExtension::Dml(_In_ PCWSTR Format,
                   ...)
 {
     va_list Args;
@@ -1140,7 +1146,7 @@ ExtExtension::Dml(__in PCWSTR Format,
 }
 
 void WINAPIV
-ExtExtension::DmlWarn(__in PCWSTR Format,
+ExtExtension::DmlWarn(_In_ PCWSTR Format,
                       ...)
 {
     va_list Args;
@@ -1154,7 +1160,7 @@ ExtExtension::DmlWarn(__in PCWSTR Format,
 }
 
 void WINAPIV
-ExtExtension::DmlErr(__in PCWSTR Format,
+ExtExtension::DmlErr(_In_ PCWSTR Format,
                      ...)
 {
     va_list Args;
@@ -1168,7 +1174,7 @@ ExtExtension::DmlErr(__in PCWSTR Format,
 }
 
 void WINAPIV
-ExtExtension::DmlVerb(__in PCWSTR Format,
+ExtExtension::DmlVerb(_In_ PCWSTR Format,
                       ...)
 {
     va_list Args;
@@ -1181,7 +1187,7 @@ ExtExtension::DmlVerb(__in PCWSTR Format,
     va_end(Args);
 }
 
-void
+void WINAPI
 ExtExtension::WrapLine(void)
 {
     if (m_LeftIndent)
@@ -1195,8 +1201,8 @@ ExtExtension::WrapLine(void)
     m_CurChar = m_LeftIndent;
 }
 
-void
-ExtExtension::OutWrapStr(__in PCSTR String)
+void WINAPI
+ExtExtension::OutWrapStr(_In_ PCSTR String)
 {
     if (m_TestWrap)
     {
@@ -1259,15 +1265,15 @@ ExtExtension::OutWrapStr(__in PCSTR String)
 }
 
 void WINAPIV
-ExtExtension::OutWrapVa(__in PCSTR Format,
-                        __in va_list Args)
+ExtExtension::OutWrapVa(_In_ PCSTR Format,
+                        _In_ va_list Args)
 {
-    StringCbVPrintfA(s_String, sizeof(s_String), Format, Args);
+    StringCbVPrintf(s_String, sizeof(s_String), Format, Args);
     OutWrapStr(s_String);
 }
 
 void WINAPIV
-ExtExtension::OutWrap(__in PCSTR Format,
+ExtExtension::OutWrap(_In_ PCSTR Format,
                       ...)
 {
     va_list Args;
@@ -1277,8 +1283,8 @@ ExtExtension::OutWrap(__in PCSTR Format,
     va_end(Args);
 }
 
-PSTR
-ExtExtension::RequestCircleString(__in ULONG Chars)
+PSTR WINAPI
+ExtExtension::RequestCircleString(_In_ ULONG Chars)
 {
     if (Chars > EXT_DIMA(s_CircleStringBuffer))
     {
@@ -1297,8 +1303,8 @@ ExtExtension::RequestCircleString(__in ULONG Chars)
     return Str;
 }
 
-PSTR
-ExtExtension::CopyCircleString(__in PCSTR Str)
+PSTR WINAPI
+ExtExtension::CopyCircleString(_In_ PCSTR Str)
 {
     PSTR Buf;
     ULONG Chars;
@@ -1309,16 +1315,16 @@ ExtExtension::CopyCircleString(__in PCSTR Str)
     return Buf;
 }
 
-PSTR
-ExtExtension::PrintCircleStringVa(__in PCSTR Format,
-                                  __in va_list Args)
+PSTR WINAPI
+ExtExtension::PrintCircleStringVa(_In_ PCSTR Format,
+                                  _In_ va_list Args)
 {
-    StringCbVPrintfA(s_String, sizeof(s_String), Format, Args);
+    StringCbVPrintf(s_String, sizeof(s_String), Format, Args);
     return CopyCircleString(s_String);
 }
 
 PSTR WINAPIV
-ExtExtension::PrintCircleString(__in PCSTR Format,
+ExtExtension::PrintCircleString(_In_ PCSTR Format,
                                 ...)
 {
     PSTR Str;
@@ -1330,17 +1336,17 @@ ExtExtension::PrintCircleString(__in PCSTR Format,
     return Str;
 }
     
-void
-ExtExtension::SetAppendBuffer(__in_ecount(BufferChars) PSTR Buffer,
-                              __in ULONG BufferChars)
+void WINAPI
+ExtExtension::SetAppendBuffer(_In_reads_(BufferChars) PSTR Buffer,
+                              _In_ ULONG BufferChars)
 {
     m_AppendBuffer = Buffer;
     m_AppendBufferChars = BufferChars;
     m_AppendAt = Buffer;
 }
 
-void
-ExtExtension::AppendBufferString(__in PCSTR Str)
+void WINAPI
+ExtExtension::AppendBufferString(_In_ PCSTR Str)
 {
     ULONG Chars;
     
@@ -1358,9 +1364,9 @@ ExtExtension::AppendBufferString(__in PCSTR Str)
     m_AppendAt += Chars - 1;
 }
 
-void
-ExtExtension::AppendStringVa(__in PCSTR Format,
-                             __in va_list Args)
+void WINAPI
+ExtExtension::AppendStringVa(_In_ PCSTR Format,
+                             _In_ va_list Args)
 {
     if (m_AppendBuffer >= s_String &&
         m_AppendBuffer <= s_String + (EXT_DIMA(s_String) - 1))
@@ -1368,12 +1374,12 @@ ExtExtension::AppendStringVa(__in PCSTR Format,
         ThrowInvalidArg("Append string buffer cannot use s_String");
     }
     
-    StringCbVPrintfA(s_String, sizeof(s_String), Format, Args);
+    StringCbVPrintf(s_String, sizeof(s_String), Format, Args);
     AppendBufferString(s_String);
 }
 
 void WINAPIV
-ExtExtension::AppendString(__in PCSTR Format,
+ExtExtension::AppendString(_In_ PCSTR Format,
                            ...)
 {
     va_list Args;
@@ -1383,8 +1389,8 @@ ExtExtension::AppendString(__in PCSTR Format,
     va_end(Args);
 }
     
-void
-ExtExtension::SetCallStatus(__in HRESULT Status)
+void WINAPI
+ExtExtension::SetCallStatus(_In_ HRESULT Status)
 {
     // If an error has already been saved don't override it.
     if (!FAILED(m_CallStatus))
@@ -1393,7 +1399,7 @@ ExtExtension::SetCallStatus(__in HRESULT Status)
     }
 }
 
-ULONG
+ULONG WINAPI
 ExtExtension::GetEffectiveProcessor(void)
 {
     ULONG CurType;
@@ -1402,9 +1408,9 @@ ExtExtension::GetEffectiveProcessor(void)
     return CurType;
 }
 
-void
-ExtExtension::SetEffectiveProcessor(__in ULONG ProcType,
-                                    __inout_opt ExtEffectiveProcessorTypeHolder* Holder)
+void WINAPI
+ExtExtension::SetEffectiveProcessor(_In_ ULONG ProcType,
+                                    _Inout_opt_ ExtEffectiveProcessorTypeHolder* Holder)
 {
     if (Holder &&
         !Holder->IsHolding())
@@ -1417,10 +1423,10 @@ ExtExtension::SetEffectiveProcessor(__in ULONG ProcType,
     EXT_STATUS(QueryMachineInfo());
 }
 
-ULONG
-ExtExtension::GetCachedSymbolTypeId(__inout PULONG64 Cookie,
-                                    __in PCSTR Symbol,
-                                    __out PULONG64 ModBase)
+ULONG WINAPI
+ExtExtension::GetCachedSymbolTypeId(_Inout_ PULONG64 Cookie,
+                                    _In_ PCSTR Symbol,
+                                    _Out_ PULONG64 ModBase)
 {
     HRESULT Status;
     DEBUG_CACHED_SYMBOL_INFO Info;
@@ -1479,12 +1485,12 @@ ExtExtension::GetCachedSymbolTypeId(__inout PULONG64 Cookie,
     return Info.Id;
 }
 
-ULONG
-ExtExtension::GetCachedFieldOffset(__inout PULONG64 Cookie,
-                                   __in PCSTR Type,
-                                   __in PCSTR Field,
-                                   __out_opt PULONG64 TypeModBase,
-                                   __out_opt PULONG TypeId)
+ULONG WINAPI
+ExtExtension::GetCachedFieldOffset(_Inout_ PULONG64 Cookie,
+                                   _In_ PCSTR Type,
+                                   _In_ PCSTR Field,
+                                   _Out_opt_ PULONG64 TypeModBase,
+                                   _Out_opt_ PULONG TypeId)
 {
     HRESULT Status;
     DEBUG_CACHED_SYMBOL_INFO Info;
@@ -1566,9 +1572,9 @@ ExtExtension::GetCachedFieldOffset(__inout PULONG64 Cookie,
     return Info.Arg3;
 }
 
-bool
-ExtExtension::GetCachedSymbolInfo(__in ULONG64 Cookie,
-                                  __out PDEBUG_CACHED_SYMBOL_INFO Info)
+bool WINAPI
+ExtExtension::GetCachedSymbolInfo(_In_ ULONG64 Cookie,
+                                  _Out_ PDEBUG_CACHED_SYMBOL_INFO Info)
 {
     HRESULT Status;
     
@@ -1586,10 +1592,10 @@ ExtExtension::GetCachedSymbolInfo(__in ULONG64 Cookie,
     return false;
 }
 
-bool
-ExtExtension::AddCachedSymbolInfo(__in PDEBUG_CACHED_SYMBOL_INFO Info,
-                                  __in bool ThrowFailure,
-                                  __out PULONG64 Cookie)
+bool WINAPI
+ExtExtension::AddCachedSymbolInfo(_In_ PDEBUG_CACHED_SYMBOL_INFO Info,
+                                  _In_ bool ThrowFailure,
+                                  _Out_ PULONG64 Cookie)
 {
     HRESULT Status;
     
@@ -1612,10 +1618,10 @@ ExtExtension::AddCachedSymbolInfo(__in PDEBUG_CACHED_SYMBOL_INFO Info,
     return false;
 }
 
-void
+void WINAPI
 ExtExtension::FindSymMatchStringA(void)
 {
-    m_DbgHelp = LoadLibraryA("dbghelp.dll");
+    m_DbgHelp = LoadLibraryExA("dbghelp.dll", NULL, 0);
     if (!m_DbgHelp)
     {
         ThrowLastError("Unable to load dbghelp.dll");
@@ -1632,11 +1638,11 @@ ExtExtension::FindSymMatchStringA(void)
     }
 }
 
-bool
-ExtExtension::GetOffsetSymbol(__in ULONG64 Offs,
-                              __inout ExtBuffer<char>* Name,
-                              __out_opt PULONG64 Displacement,
-                              __in bool AddDisp) throw(...)
+bool WINAPI
+ExtExtension::GetOffsetSymbol(_In_ ULONG64 Offs,
+                              _Inout_ ExtBuffer<char>* Name,
+                              _Out_opt_ PULONG64 Displacement,
+                              _In_ bool AddDisp) throw(...)
 {
     HRESULT Status;
     ULONG Need;
@@ -1666,7 +1672,7 @@ ExtExtension::GetOffsetSymbol(__in ULONG64 Offs,
                 const ULONG DispChars = 19;
                 
                 Name->Require(Need, DispChars);
-                StringCchPrintfA(Name->GetBuffer() + (Need - 1),
+                StringCchPrintf(Name->GetBuffer() + (Need - 1),
                                 DispChars,
                                 "+0x%I64x",
                                 LocalDisp);
@@ -1686,10 +1692,10 @@ ExtExtension::GetOffsetSymbol(__in ULONG64 Offs,
     ThrowStatus(E_FAIL, "Invalid loop when resolving 0x%p");
 }
 
-ULONG
-ExtExtension::FindFirstModule(__in PCSTR Pattern,
-                              __inout_opt ExtBuffer<char>* Name,
-                              __in ULONG StartIndex) throw(...)
+ULONG WINAPI
+ExtExtension::FindFirstModule(_In_ PCSTR Pattern,
+                              _Inout_opt_ ExtBuffer<char>* Name,
+                              _In_ ULONG StartIndex) throw(...)
 {
     HRESULT Status;
     ULONG Need;
@@ -1734,9 +1740,9 @@ ExtExtension::FindFirstModule(__in PCSTR Pattern,
     }
 }
 
-void
-ExtExtension::GetModuleImagehlpInfo(__in ULONG64 ModBase,
-                                    __out struct _IMAGEHLP_MODULEW64* Info)
+void WINAPI
+ExtExtension::GetModuleImagehlpInfo(_In_ ULONG64 ModBase,
+                                    _Out_ struct _IMAGEHLP_MODULEW64* Info)
 {
     HRESULT Status;
 
@@ -1758,8 +1764,8 @@ ExtExtension::GetModuleImagehlpInfo(__in ULONG64 ModBase,
     }
 }
 
-bool
-ExtExtension::ModuleHasGlobalSymbols(__in ULONG64 ModBase)
+bool WINAPI
+ExtExtension::ModuleHasGlobalSymbols(_In_ ULONG64 ModBase)
 {
     IMAGEHLP_MODULEW64 Info;
 
@@ -1767,8 +1773,8 @@ ExtExtension::ModuleHasGlobalSymbols(__in ULONG64 ModBase)
     return Info.GlobalSymbols != FALSE;
 }
 
-bool
-ExtExtension::ModuleHasTypeInfo(__in ULONG64 ModBase)
+bool WINAPI
+ExtExtension::ModuleHasTypeInfo(_In_ ULONG64 ModBase)
 {
     IMAGEHLP_MODULEW64 Info;
     
@@ -1776,9 +1782,9 @@ ExtExtension::ModuleHasTypeInfo(__in ULONG64 ModBase)
     return Info.TypeInfo != FALSE;
 }
 
-ULONG64
-ExtExtension::CallDebuggeeBase(__in PCSTR CommandString,
-                               __in ULONG TimeoutMilliseconds)
+ULONG64 WINAPI
+ExtExtension::CallDebuggeeBase(_In_ PCSTR CommandString,
+                               _In_ ULONG TimeoutMilliseconds)
 {
     HRESULT Status;
     ExtDeclBuffer<char, 300> Cmd;
@@ -1844,9 +1850,9 @@ ExtExtension::CallDebuggeeBase(__in PCSTR CommandString,
     return RetVal;
 }
 
-ULONG
-ExtExtension::FindRegister(__in PCSTR Name,
-                           __inout_opt PULONG IndexCache)
+ULONG WINAPI
+ExtExtension::FindRegister(_In_ PCSTR Name,
+                           _Inout_opt_ PULONG IndexCache)
 {
     HRESULT Status;
     ULONG Index;
@@ -1871,9 +1877,9 @@ ExtExtension::FindRegister(__in PCSTR Name,
     return Index;
 }
 
-ULONG64
-ExtExtension::GetRegisterU64(__in PCSTR Name,
-                             __inout_opt PULONG IndexCache)
+ULONG64 WINAPI
+ExtExtension::GetRegisterU64(_In_ PCSTR Name,
+                             _Inout_opt_ PULONG IndexCache)
 {
     HRESULT Status;
     ULONG Index = FindRegister(Name, IndexCache);
@@ -1891,10 +1897,10 @@ ExtExtension::GetRegisterU64(__in PCSTR Name,
     return RegVal64.I64;
 }
 
-void
-ExtExtension::SetRegisterU64(__in PCSTR Name,
-                             __in ULONG64 Val,
-                             __inout_opt PULONG IndexCache)
+void WINAPI
+ExtExtension::SetRegisterU64(_In_ PCSTR Name,
+                             _In_ ULONG64 Val,
+                             _Inout_opt_ PULONG IndexCache)
 {
     HRESULT Status;
     ULONG Index = FindRegister(Name, IndexCache);
@@ -1909,9 +1915,9 @@ ExtExtension::SetRegisterU64(__in PCSTR Name,
     }
 }
 
-ULONG
-ExtExtension::FindPseudoRegister(__in PCSTR Name,
-                                 __inout_opt PULONG IndexCache)
+ULONG WINAPI
+ExtExtension::FindPseudoRegister(_In_ PCSTR Name,
+                                 _Inout_opt_ PULONG IndexCache)
 {
     HRESULT Status;
     ULONG Index;
@@ -1936,9 +1942,9 @@ ExtExtension::FindPseudoRegister(__in PCSTR Name,
     return Index;
 }
 
-ULONG64
-ExtExtension::GetPseudoRegisterU64(__in PCSTR Name,
-                                   __inout_opt PULONG IndexCache)
+ULONG64 WINAPI
+ExtExtension::GetPseudoRegisterU64(_In_ PCSTR Name,
+                                   _Inout_opt_ PULONG IndexCache)
 {
     HRESULT Status;
     ULONG Index = FindPseudoRegister(Name, IndexCache);
@@ -1959,10 +1965,10 @@ ExtExtension::GetPseudoRegisterU64(__in PCSTR Name,
     return RegVal64.I64;
 }
 
-void
-ExtExtension::SetPseudoRegisterU64(__in PCSTR Name,
-                                   __in ULONG64 Val,
-                                   __inout_opt PULONG IndexCache)
+void WINAPI
+ExtExtension::SetPseudoRegisterU64(_In_ PCSTR Name,
+                                   _In_ ULONG64 Val,
+                                   _Inout_opt_ PULONG IndexCache)
 {
     HRESULT Status;
     ULONG Index = FindPseudoRegister(Name, IndexCache);
@@ -1980,8 +1986,8 @@ ExtExtension::SetPseudoRegisterU64(__in PCSTR Name,
     }
 }
 
-PCSTR
-ExtExtension::GetUnnamedArgStr(__in ULONG Index)
+PCSTR WINAPI
+ExtExtension::GetUnnamedArgStr(_In_ ULONG Index)
 {
     if (Index >= m_NumUnnamedArgs)
     {
@@ -1997,8 +2003,8 @@ ExtExtension::GetUnnamedArgStr(__in ULONG Index)
     return m_Args[Index].StrVal;
 }
 
-ULONG64
-ExtExtension::GetUnnamedArgU64(__in ULONG Index)
+ULONG64 WINAPI
+ExtExtension::GetUnnamedArgU64(_In_ ULONG Index)
 {
     if (Index >= m_NumUnnamedArgs)
     {
@@ -2014,9 +2020,9 @@ ExtExtension::GetUnnamedArgU64(__in ULONG Index)
     return m_Args[Index].NumVal;
 }
 
-PCSTR
-ExtExtension::GetArgStr(__in PCSTR Name,
-                        __in bool Required)
+PCSTR WINAPI
+ExtExtension::GetArgStr(_In_ PCSTR Name,
+                        _In_ bool Required)
 {
     ArgVal* Arg = FindArg(Name, Required);
     if (!Arg)
@@ -2031,9 +2037,9 @@ ExtExtension::GetArgStr(__in PCSTR Name,
     return Arg->StrVal;
 }
 
-ULONG64
-ExtExtension::GetArgU64(__in PCSTR Name,
-                        __in bool Required)
+ULONG64 WINAPI
+ExtExtension::GetArgU64(_In_ PCSTR Name,
+                        _In_ bool Required)
 {
     ArgVal* Arg = FindArg(Name, Required);
     if (!Arg)
@@ -2048,11 +2054,11 @@ ExtExtension::GetArgU64(__in PCSTR Name,
     return Arg->NumVal;
 }
 
-bool
-ExtExtension::SetUnnamedArg(__in ULONG Index,
-                            __in_opt PCSTR StrArg,
-                            __in ULONG64 NumArg,
-                            __in bool OnlyIfUnset)
+bool WINAPI
+ExtExtension::SetUnnamedArg(_In_ ULONG Index,
+                            _In_opt_ PCSTR StrArg,
+                            _In_ ULONG64 NumArg,
+                            _In_ bool OnlyIfUnset)
 {
     ExtCommandDesc::ArgDesc* Check = m_CurCommand->FindUnnamedArg(Index);
     if (!Check)
@@ -2076,11 +2082,11 @@ ExtExtension::SetUnnamedArg(__in ULONG Index,
     return true;
 }
 
-bool
-ExtExtension::SetArg(__in PCSTR Name,
-                     __in_opt PCSTR StrArg,
-                     __in ULONG64 NumArg,
-                     __in bool OnlyIfUnset)
+bool WINAPI
+ExtExtension::SetArg(_In_ PCSTR Name,
+                     _In_opt_ PCSTR StrArg,
+                     _In_ ULONG64 NumArg,
+                     _In_ bool OnlyIfUnset)
 {
     ExtCommandDesc::ArgDesc* Check = m_CurCommand->FindArg(Name);
     if (!Check)
@@ -2102,11 +2108,11 @@ ExtExtension::SetArg(__in PCSTR Name,
     return true;
 }
 
-PCSTR
-ExtExtension::GetExpr64(__in PCSTR Str,
-                        __in bool Signed,
-                        __in ULONG64 Limit,
-                        __out PULONG64 Val)
+PCSTR WINAPI
+ExtExtension::GetExpr64(_In_ PCSTR Str,
+                        _In_ bool Signed,
+                        _In_ ULONG64 Limit,
+                        _Out_ PULONG64 Val)
 {
     HRESULT Status;
     DEBUG_VALUE FullVal;
@@ -2142,7 +2148,7 @@ ExtExtension::GetExpr64(__in PCSTR Str,
 }
 
 void WINAPIV
-ExtExtension::ThrowInvalidArg(__in PCSTR Format,
+ExtExtension::ThrowInvalidArg(_In_ PCSTR Format,
                               ...)
 {
     ExtInvalidArgumentException Ex("");
@@ -2156,8 +2162,8 @@ ExtExtension::ThrowInvalidArg(__in PCSTR Format,
 }
 
 void WINAPIV
-ExtExtension::ThrowRemote(__in HRESULT Status,
-                          __in PCSTR Format,
+ExtExtension::ThrowRemote(_In_ HRESULT Status,
+                          _In_ PCSTR Format,
                           ...)
 {
     ExtRemoteException Ex(Status, "");
@@ -2171,8 +2177,8 @@ ExtExtension::ThrowRemote(__in HRESULT Status,
 }
 
 void WINAPIV
-ExtExtension::ThrowStatus(__in HRESULT Status,
-                          __in PCSTR Format,
+ExtExtension::ThrowStatus(_In_ HRESULT Status,
+                          _In_ PCSTR Format,
                           ...)
 {
     ExtStatusException Ex(Status);
@@ -2185,7 +2191,7 @@ ExtExtension::ThrowStatus(__in HRESULT Status,
     throw Ex;
 }
 
-void
+void WINAPI
 ExtExtension::ExInitialize(void)
 {
     if (m_ExInitialized)
@@ -2204,7 +2210,7 @@ ExtExtension::ExInitialize(void)
     //
 }
 
-HRESULT
+HRESULT WINAPI
 ExtExtension::QueryMachineInfo(void)
 {
     HRESULT Status;
@@ -2253,8 +2259,8 @@ ExtExtension::QueryMachineInfo(void)
         _Member.Set(NULL); \
     }
 
-HRESULT
-ExtExtension::Query(__in PDEBUG_CLIENT Start)
+HRESULT WINAPI
+ExtExtension::Query(_In_ PDEBUG_CLIENT Start)
 {
     HRESULT Status;
 
@@ -2283,6 +2289,8 @@ ExtExtension::Query(__in PDEBUG_CLIENT Start)
     OPT_IF(IDebugControl2, m_Control2);
     OPT_IF(IDebugControl3, m_Control3);
     OPT_IF(IDebugControl4, m_Control4);
+    OPT_IF(IDebugControl5, m_Control5);
+    OPT_IF(IDebugControl6, m_Control6);
     OPT_IF(IDebugDataSpaces2, m_Data2);
     OPT_IF(IDebugDataSpaces3, m_Data3);
     OPT_IF(IDebugDataSpaces4, m_Data4);
@@ -2354,7 +2362,7 @@ ExtExtension::Query(__in PDEBUG_CLIENT Start)
     return Status;
 }
 
-void
+void WINAPI
 ExtExtension::Release(void)
 {
     EXT_RELEASE(m_Advanced);
@@ -2373,6 +2381,8 @@ ExtExtension::Release(void)
     EXT_RELEASE(m_Control2);
     EXT_RELEASE(m_Control3);
     EXT_RELEASE(m_Control4);
+    EXT_RELEASE(m_Control5);
+    EXT_RELEASE(m_Control6);
     EXT_RELEASE(m_Data2);
     EXT_RELEASE(m_Data3);
     EXT_RELEASE(m_Data4);
@@ -2388,13 +2398,13 @@ ExtExtension::Release(void)
     m_CurCommand = NULL;
 }
 
-HRESULT
-ExtExtension::CallExtCodeCEH(__in_opt ExtCommandDesc* Desc,
-                             __in_opt PCSTR Args,
-                             __in_opt ExtRawMethod RawMethod,
-                             __in_opt ExtRawFunction RawFunction,
-                             __in_opt PVOID Context,
-                             __in_opt PCSTR RawName)
+HRESULT WINAPI
+ExtExtension::CallExtCodeCEH(_In_opt_ ExtCommandDesc* Desc,
+                             _In_opt_ PCSTR Args,
+                             _In_opt_ ExtRawMethod RawMethod,
+                             _In_opt_ ExtRawFunction RawFunction,
+                             _In_opt_ PVOID Context,
+                             _In_opt_ PCSTR RawName)
 {
     HRESULT Status;
     PCSTR PreName;
@@ -2495,14 +2505,14 @@ ExtExtension::CallExtCodeCEH(__in_opt ExtCommandDesc* Desc,
     return Status;
 }
 
-HRESULT
-ExtExtension::CallExtCodeSEH(__in_opt ExtCommandDesc* Desc,
-                             __in PDEBUG_CLIENT Client,
-                             __in_opt PCSTR Args,
-                             __in_opt ExtRawMethod RawMethod,
-                             __in_opt ExtRawFunction RawFunction,
-                             __in_opt PVOID Context,
-                             __in_opt PCSTR RawName)
+HRESULT WINAPI
+ExtExtension::CallExtCodeSEH(_In_opt_ ExtCommandDesc* Desc,
+                             _In_ PDEBUG_CLIENT Client,
+                             _In_opt_ PCSTR Args,
+                             _In_opt_ ExtRawMethod RawMethod,
+                             _In_opt_ ExtRawFunction RawFunction,
+                             _In_opt_ PVOID Context,
+                             _In_opt_ PCSTR RawName)
 {
     HRESULT Status = Query(Client);
     if (Status != S_OK)
@@ -2525,12 +2535,12 @@ ExtExtension::CallExtCodeSEH(__in_opt ExtCommandDesc* Desc,
     return Status;
 }
 
-HRESULT
-ExtExtension::CallKnownStructMethod(__in ExtKnownStruct* Struct,
-                                    __in ULONG Flags,
-                                    __in ULONG64 Offset,
-                                    __out_ecount(*BufferChars) PSTR Buffer,
-                                    __inout PULONG BufferChars)
+HRESULT WINAPI
+ExtExtension::CallKnownStructMethod(_In_ ExtKnownStruct* Struct,
+                                    _In_ ULONG Flags,
+                                    _In_ ULONG64 Offset,
+                                    _Out_writes_(*BufferChars) PSTR Buffer,
+                                    _Inout_ PULONG BufferChars)
 {
     HRESULT Status;
     
@@ -2553,13 +2563,13 @@ ExtExtension::CallKnownStructMethod(__in ExtKnownStruct* Struct,
     return Status;
 }
 
-HRESULT
-ExtExtension::CallKnownStruct(__in PDEBUG_CLIENT Client,
-                              __in ExtKnownStruct* Struct,
-                              __in ULONG Flags,
-                              __in ULONG64 Offset,
-                              __out_ecount(*BufferChars) PSTR Buffer,
-                              __inout PULONG BufferChars)
+HRESULT WINAPI
+ExtExtension::CallKnownStruct(_In_ PDEBUG_CLIENT Client,
+                              _In_ ExtKnownStruct* Struct,
+                              _In_ ULONG Flags,
+                              _In_ ULONG64 Offset,
+                              _Out_writes_(*BufferChars) PSTR Buffer,
+                              _Inout_ PULONG BufferChars)
 {
     HRESULT Status = Query(Client);
     if (Status != S_OK)
@@ -2582,13 +2592,13 @@ ExtExtension::CallKnownStruct(__in PDEBUG_CLIENT Client,
     return Status;
 }
 
-HRESULT
-ExtExtension::HandleKnownStruct(__in PDEBUG_CLIENT Client,
-                                __in ULONG Flags,
-                                __in ULONG64 Offset,
-                                __in_opt PCSTR TypeName,
-                                __out_ecount_opt(*BufferChars) PSTR Buffer,
-                                __inout_opt PULONG BufferChars)
+HRESULT WINAPI
+ExtExtension::HandleKnownStruct(_In_ PDEBUG_CLIENT Client,
+                                _In_ ULONG Flags,
+                                _In_ ULONG64 Offset,
+                                _In_opt_ PCSTR TypeName,
+                                _Out_writes_opt_(*BufferChars) PSTR Buffer,
+                                _Inout_opt_ PULONG BufferChars)
 {
     HRESULT Status;
     ExtKnownStruct* Struct = m_KnownStructs;
@@ -2678,12 +2688,12 @@ ExtExtension::HandleKnownStruct(__in PDEBUG_CLIENT Client,
     return Status;
 }
 
-HRESULT
-ExtExtension::HandleQueryValueNames(__in PDEBUG_CLIENT Client,
-                                    __in ULONG Flags,
-                                    __out_ecount(BufferChars) PWSTR Buffer,
-                                    __in ULONG BufferChars,
-                                    __out PULONG BufferNeeded)
+HRESULT WINAPI
+ExtExtension::HandleQueryValueNames(_In_ PDEBUG_CLIENT Client,
+                                    _In_ ULONG Flags,
+                                    _Out_writes_(BufferChars) PWSTR Buffer,
+                                    _In_ ULONG BufferChars,
+                                    _Out_ PULONG BufferNeeded)
 {
     HRESULT Status;
 
@@ -2734,13 +2744,13 @@ ExtExtension::HandleQueryValueNames(__in PDEBUG_CLIENT Client,
     return Status;
 }
 
-HRESULT
-ExtExtension::CallProvideValueMethod(__in ExtProvidedValue* ExtVal,
-                                     __in ULONG Flags,
-                                     __out PULONG64 Value,
-                                     __out PULONG64 TypeModBase,
-                                     __out PULONG TypeId,
-                                     __out PULONG TypeFlags)
+HRESULT WINAPI
+ExtExtension::CallProvideValueMethod(_In_ ExtProvidedValue* ExtVal,
+                                     _In_ ULONG Flags,
+                                     _Out_ PULONG64 Value,
+                                     _Out_ PULONG64 TypeModBase,
+                                     _Out_ PULONG TypeId,
+                                     _Out_ PULONG TypeFlags)
 {
     HRESULT Status;
     
@@ -2763,14 +2773,14 @@ ExtExtension::CallProvideValueMethod(__in ExtProvidedValue* ExtVal,
     return Status;
 }
 
-HRESULT
-ExtExtension::HandleProvideValue(__in PDEBUG_CLIENT Client,
-                                 __in ULONG Flags,
-                                 __in PCWSTR Name,
-                                 __out PULONG64 Value,
-                                 __out PULONG64 TypeModBase,
-                                 __out PULONG TypeId,
-                                 __out PULONG TypeFlags)
+HRESULT WINAPI
+ExtExtension::HandleProvideValue(_In_ PDEBUG_CLIENT Client,
+                                 _In_ ULONG Flags,
+                                 _In_ PCWSTR Name,
+                                 _Out_ PULONG64 Value,
+                                 _Out_ PULONG64 TypeModBase,
+                                 _Out_ PULONG TypeId,
+                                 _Out_ PULONG TypeFlags)
 {
     HRESULT Status = Query(Client);
     if (Status != S_OK)
@@ -2811,9 +2821,9 @@ ExtExtension::HandleProvideValue(__in PDEBUG_CLIENT Client,
     return Status;
 }
 
-ExtExtension::ArgVal*
-ExtExtension::FindArg(__in PCSTR Name,
-                      __in bool Required)
+ExtExtension::ArgVal* WINAPI
+ExtExtension::FindArg(_In_ PCSTR Name,
+                      _In_ bool Required)
 {
     ULONG i;
 
@@ -2833,13 +2843,13 @@ ExtExtension::FindArg(__in PCSTR Name,
     return NULL;
 }
 
-PCSTR
-ExtExtension::SetRawArgVal(__in ExtCommandDesc::ArgDesc* Check,
-                           __in_opt ArgVal* Val,
-                           __in bool ExplicitVal,
-                           __in_opt PCSTR StrVal,
-                           __in bool StrWritable,
-                           __in ULONG64 NumVal)
+PCSTR WINAPI
+ExtExtension::SetRawArgVal(_In_ ExtCommandDesc::ArgDesc* Check,
+                           _In_opt_ ArgVal* Val,
+                           _In_ bool ExplicitVal,
+                           _In_opt_ PCSTR StrVal,
+                           _In_ bool StrWritable,
+                           _In_ ULONG64 NumVal)
 {
     if (!Val)
     {
@@ -2985,9 +2995,9 @@ ExtExtension::SetRawArgVal(__in ExtCommandDesc::ArgDesc* Check,
     return StrVal;
 }
 
-void
-ExtExtension::ParseArgs(__in ExtCommandDesc* Desc,
-                        __in_opt PCSTR Args)
+void WINAPI
+ExtExtension::ParseArgs(_In_ ExtCommandDesc* Desc,
+                        _In_opt_ PCSTR Args)
 {
     if (!Args)
     {
@@ -3230,9 +3240,9 @@ ExtExtension::ParseArgs(__in ExtCommandDesc* Desc,
     }
 }
 
-void
-ExtExtension::OutCommandArg(__in ExtCommandDesc::ArgDesc* Arg,
-                            __in bool Separate)
+void WINAPI
+ExtExtension::OutCommandArg(_In_ ExtCommandDesc::ArgDesc* Arg,
+                            _In_ bool Separate)
 {
     if (Arg->Name)
     {
@@ -3255,8 +3265,8 @@ ExtExtension::OutCommandArg(__in ExtCommandDesc::ArgDesc* Arg,
     }
 }
 
-void
-ExtExtension::HelpCommandArgsSummary(__in ExtCommandDesc* Desc)
+void WINAPI
+ExtExtension::HelpCommandArgsSummary(_In_ ExtCommandDesc* Desc)
 {
     ULONG i;
     ExtCommandDesc::ArgDesc* Arg;
@@ -3430,8 +3440,8 @@ ExtExtension::HelpCommandArgsSummary(__in ExtCommandDesc* Desc)
     }
 }
 
-void
-ExtExtension::OutArgDescOptions(__in ExtCommandDesc::ArgDesc* Arg)
+void WINAPI
+ExtExtension::OutArgDescOptions(_In_ ExtCommandDesc::ArgDesc* Arg)
 {
     bool First = true;
     
@@ -3513,8 +3523,8 @@ ExtExtension::OutArgDescOptions(__in ExtCommandDesc::ArgDesc* Arg)
     }
 }
 
-void
-ExtExtension::HelpCommand(__in ExtCommandDesc* Desc)
+void WINAPI
+ExtExtension::HelpCommand(_In_ ExtCommandDesc* Desc)
 {
     ULONG i;
 
@@ -3574,8 +3584,8 @@ ExtExtension::HelpCommand(__in ExtCommandDesc* Desc)
     Out("\n");
 }
 
-void
-ExtExtension::HelpCommandName(__in PCSTR Name)
+void WINAPI
+ExtExtension::HelpCommandName(_In_ PCSTR Name)
 {
     ExtCommandDesc* Desc = m_Commands;
     while (Desc)
@@ -3595,12 +3605,12 @@ ExtExtension::HelpCommandName(__in PCSTR Name)
     HelpCommand(Desc);
 }
 
-void
+void WINAPI
 ExtExtension::HelpAll(void)
 {
     char ModName[2 * MAX_PATH];
 
-    if (!GetModuleFileNameA(s_Module, ModName, EXT_DIMA(ModName)))
+    if (!GetModuleFileName(s_Module, ModName, EXT_DIMA(ModName)))
     {
         StringCbCopyA(ModName, sizeof(ModName),
                       "<Unable to get DLL name>");
@@ -3651,7 +3661,7 @@ EXT_CLASS_COMMAND(ExtExtension,
 //----------------------------------------------------------------------------
 
 void WINAPIV
-ExtOut(__in PCSTR Format, ...)
+ExtOut(_In_ PCSTR Format, ...)
 {
     g_Ext.Throw();
 
@@ -3664,7 +3674,7 @@ ExtOut(__in PCSTR Format, ...)
 }
 
 void WINAPIV
-ExtWarn(__in PCSTR Format, ...)
+ExtWarn(_In_ PCSTR Format, ...)
 {
     g_Ext.Throw();
 
@@ -3677,7 +3687,7 @@ ExtWarn(__in PCSTR Format, ...)
 }
 
 void WINAPIV
-ExtErr(__in PCSTR Format, ...)
+ExtErr(_In_ PCSTR Format, ...)
 {
     g_Ext.Throw();
 
@@ -3690,7 +3700,7 @@ ExtErr(__in PCSTR Format, ...)
 }
 
 void WINAPIV
-ExtVerb(__in PCSTR Format, ...)
+ExtVerb(_In_ PCSTR Format, ...)
 {
     g_Ext.Throw();
 
@@ -3708,8 +3718,8 @@ ExtVerb(__in PCSTR Format, ...)
 //
 //----------------------------------------------------------------------------
 
-void
-ExtRemoteData::Set(__in const DEBUG_TYPED_DATA* Typed)
+void WINAPI
+ExtRemoteData::Set(_In_ const DEBUG_TYPED_DATA* Typed)
 {
     m_Offset = Typed->Offset;
     m_ValidOffset = (Typed->Flags & DEBUG_TYPED_DATA_IS_IN_MEMORY) != 0;
@@ -3718,7 +3728,7 @@ ExtRemoteData::Set(__in const DEBUG_TYPED_DATA* Typed)
     m_ValidData = Typed->Size > 0 && Typed->Size <= sizeof(m_Data);
 }
 
-void
+void WINAPI
 ExtRemoteData::Read(void)
 {
     g_Ext->ThrowInterrupt();
@@ -3739,7 +3749,7 @@ ExtRemoteData::Read(void)
     m_ValidData = true;
 }
 
-void
+void WINAPI
 ExtRemoteData::Write(void)
 {
     g_Ext->ThrowInterrupt();
@@ -3758,8 +3768,8 @@ ExtRemoteData::Write(void)
     WriteBuffer(&m_Data, m_Bytes);
 }
 
-ULONG64
-ExtRemoteData::GetData(__in ULONG Request)
+ULONG64 WINAPI
+ExtRemoteData::GetData(_In_ ULONG Request)
 {
     g_Ext->ThrowInterrupt();
     
@@ -3777,10 +3787,10 @@ ExtRemoteData::GetData(__in ULONG Request)
     return m_Data;
 }
 
-void
-ExtRemoteData::SetData(__in ULONG64 Data,
-                       __in ULONG Request,
-                       __in bool NoWrite) throw(...)
+void WINAPI
+ExtRemoteData::SetData(_In_ ULONG64 Data,
+                       _In_ ULONG Request,
+                       _In_ bool NoWrite) throw(...)
 {
     g_Ext->ThrowInterrupt();
     
@@ -3799,10 +3809,10 @@ ExtRemoteData::SetData(__in ULONG64 Data,
     }
 }
 
-ULONG
-ExtRemoteData::ReadBuffer(__out_bcount(Bytes) PVOID Buffer,
-                          __in ULONG Bytes,
-                          __in bool MustReadAll)
+ULONG WINAPI
+ExtRemoteData::ReadBuffer(_Out_writes_bytes_(Bytes) PVOID Buffer,
+                          _In_ ULONG Bytes,
+                          _In_ bool MustReadAll)
 {
     HRESULT Status;
     ULONG Done;
@@ -3851,10 +3861,10 @@ ExtRemoteData::ReadBuffer(__out_bcount(Bytes) PVOID Buffer,
     return Done;
 }
 
-ULONG
-ExtRemoteData::WriteBuffer(__in_bcount(Bytes) PVOID Buffer,
-                           __in ULONG Bytes,
-                           __in bool MustWriteAll)
+ULONG WINAPI
+ExtRemoteData::WriteBuffer(_In_reads_bytes_(Bytes) PVOID Buffer,
+                           _In_ ULONG Bytes,
+                           _In_ bool MustWriteAll)
 {
     HRESULT Status;
     ULONG Done;
@@ -3877,12 +3887,12 @@ ExtRemoteData::WriteBuffer(__in_bcount(Bytes) PVOID Buffer,
     if (m_Physical)
     {
         Status = g_Ext->m_Data4->
-            WritePhysical2(m_Offset, m_SpaceFlags, &m_Data, Bytes, &Done);
+            WritePhysical2(m_Offset, m_SpaceFlags, Buffer, Bytes, &Done);
     }
     else
     {
         Status = g_Ext->m_Data->
-            WriteVirtual(m_Offset, &m_Data, Bytes, &Done);
+            WriteVirtual(m_Offset, Buffer, Bytes, &Done);
     }
     if (Status == S_OK && Done != Bytes && MustWriteAll)
     {
@@ -3905,12 +3915,12 @@ ExtRemoteData::WriteBuffer(__in_bcount(Bytes) PVOID Buffer,
     return Done;
 }
 
-PSTR
-ExtRemoteData::GetString(__out_ecount_opt(BufferChars) PSTR Buffer,
-                         __in ULONG BufferChars,
-                         __in ULONG MaxChars,
-                         __in bool MustFit,
-                         __out_opt PULONG NeedChars)
+PSTR WINAPI
+ExtRemoteData::GetString(_Out_writes_opt_(BufferChars) PSTR Buffer,
+                         _In_ ULONG BufferChars,
+                         _In_ ULONG MaxChars,
+                         _In_ bool MustFit,
+                         _Out_opt_ PULONG NeedChars)
 {
     HRESULT Status;
     
@@ -3951,12 +3961,12 @@ ExtRemoteData::GetString(__out_ecount_opt(BufferChars) PSTR Buffer,
     return Buffer;
 }
 
-PWSTR
-ExtRemoteData::GetString(__out_ecount_opt(BufferChars) PWSTR Buffer,
-                         __in ULONG BufferChars,
-                         __in ULONG MaxChars,
-                         __in bool MustFit,
-                         __out_opt PULONG NeedChars)
+PWSTR WINAPI
+ExtRemoteData::GetString(_Out_writes_opt_(BufferChars) PWSTR Buffer,
+                         _In_ ULONG BufferChars,
+                         _In_ ULONG MaxChars,
+                         _In_ bool MustFit,
+                         _Out_opt_ PULONG NeedChars)
 {
     HRESULT Status;
     
@@ -3998,9 +4008,9 @@ ExtRemoteData::GetString(__out_ecount_opt(BufferChars) PWSTR Buffer,
     return Buffer;
 }
 
-PSTR
-ExtRemoteData::GetString(__inout ExtBuffer<char>* Buffer,
-                         __in ULONG MaxChars)
+PSTR WINAPI
+ExtRemoteData::GetString(_Inout_ ExtBuffer<char>* Buffer,
+                         _In_ ULONG MaxChars)
 {
     ULONG Need;
 
@@ -4024,9 +4034,9 @@ ExtRemoteData::GetString(__inout ExtBuffer<char>* Buffer,
                        m_Offset);
 }
 
-PWSTR
-ExtRemoteData::GetString(__inout ExtBuffer<WCHAR>* Buffer,
-                         __in ULONG MaxChars)
+PWSTR WINAPI
+ExtRemoteData::GetString(_Inout_ ExtBuffer<WCHAR>* Buffer,
+                         _In_ ULONG MaxChars)
 {
     ULONG Need;
 
@@ -4056,15 +4066,15 @@ ExtRemoteData::GetString(__inout ExtBuffer<WCHAR>* Buffer,
 //
 //----------------------------------------------------------------------------
 
-void
-ExtRemoteTyped::Copy(__in const DEBUG_TYPED_DATA* Source)
+void WINAPI
+ExtRemoteTyped::Copy(_In_ const DEBUG_TYPED_DATA* Source)
 {
     m_Typed = *Source;
     ErtIoctl("Copy", EXT_TDOP_COPY, ErtUncheckedIn | ErtOut);
 }
 
-void
-ExtRemoteTyped::Set(__in PCSTR Expr)
+void WINAPI
+ExtRemoteTyped::Set(_In_ PCSTR Expr)
 {
     EXT_TDOP Op;
     ULONG Flags = ErtOut;
@@ -4086,9 +4096,9 @@ ExtRemoteTyped::Set(__in PCSTR Expr)
     ErtIoctl(Msg, Op, Flags, Expr);
 }
 
-void
-ExtRemoteTyped::Set(__in PCSTR Expr,
-                    __in ULONG64 Offset)
+void WINAPI
+ExtRemoteTyped::Set(_In_ PCSTR Expr,
+                    _In_ ULONG64 Offset)
 {
     m_Typed.Offset = Offset;
     PSTR Msg = g_Ext->
@@ -4097,11 +4107,11 @@ ExtRemoteTyped::Set(__in PCSTR Expr,
     ErtIoctl(Msg, EXT_TDOP_SET_FROM_U64_EXPR, ErtUncheckedIn | ErtOut, Expr);
 }
 
-void
-ExtRemoteTyped::Set(__in bool PtrTo,
-                    __in ULONG64 TypeModBase,
-                    __in ULONG TypeId,
-                    __in ULONG64 Offset)
+void WINAPI
+ExtRemoteTyped::Set(_In_ bool PtrTo,
+                    _In_ ULONG64 TypeModBase,
+                    _In_ ULONG TypeId,
+                    _In_ ULONG64 Offset)
 {
     HRESULT Status;
     EXT_TYPED_DATA ExtData;
@@ -4142,12 +4152,12 @@ ExtRemoteTyped::Set(__in bool PtrTo,
     m_Release = true;
 }
 
-void
-ExtRemoteTyped::Set(__in PCSTR Type,
-                    __in ULONG64 Offset,
-                    __in bool PtrTo,
-                    __inout_opt PULONG64 CacheCookie,
-                    __in_opt PCSTR LinkField)
+void WINAPI
+ExtRemoteTyped::Set(_In_ PCSTR Type,
+                    _In_ ULONG64 Offset,
+                    _In_ bool PtrTo,
+                    _Inout_opt_ PULONG64 CacheCookie,
+                    _In_opt_ PCSTR LinkField)
 {
     HRESULT Status;
     ULONG64 TypeModBase;
@@ -4190,7 +4200,7 @@ ExtRemoteTyped::Set(__in PCSTR Type,
 }
 
 void WINAPIV
-ExtRemoteTyped::SetPrint(__in PCSTR Format,
+ExtRemoteTyped::SetPrint(_In_ PCSTR Format,
                          ...)
 {
     HRESULT Status;
@@ -4209,8 +4219,8 @@ ExtRemoteTyped::SetPrint(__in PCSTR Format,
     Set(g_Ext->CopyCircleString(g_Ext->s_String));
 }
 
-ULONG
-ExtRemoteTyped::GetFieldOffset(__in PCSTR Field) throw(...)
+ULONG WINAPI
+ExtRemoteTyped::GetFieldOffset(_In_ PCSTR Field) throw(...)
 {
     ULONG Offset;
     PSTR Msg = g_Ext->
@@ -4221,8 +4231,8 @@ ExtRemoteTyped::GetFieldOffset(__in PCSTR Field) throw(...)
     return Offset;
 }
 
-ExtRemoteTyped
-ExtRemoteTyped::Field(__in PCSTR Field)
+ExtRemoteTyped WINAPI
+ExtRemoteTyped::Field(_In_ PCSTR Field)
 {
     ExtRemoteTyped Ret;
     
@@ -4233,8 +4243,8 @@ ExtRemoteTyped::Field(__in PCSTR Field)
     return Ret;
 }
 
-ExtRemoteTyped
-ExtRemoteTyped::ArrayElement(__in LONG64 Index)
+ExtRemoteTyped WINAPI
+ExtRemoteTyped::ArrayElement(_In_ LONG64 Index)
 {
     ExtRemoteTyped Ret;
 
@@ -4246,7 +4256,7 @@ ExtRemoteTyped::ArrayElement(__in LONG64 Index)
     return Ret;
 }
 
-ExtRemoteTyped
+ExtRemoteTyped WINAPI
 ExtRemoteTyped::Dereference(void)
 {
     ExtRemoteTyped Ret;
@@ -4256,7 +4266,7 @@ ExtRemoteTyped::Dereference(void)
     return Ret;
 }
 
-ExtRemoteTyped
+ExtRemoteTyped WINAPI
 ExtRemoteTyped::GetPointerTo(void)
 {
     ExtRemoteTyped Ret;
@@ -4266,8 +4276,8 @@ ExtRemoteTyped::GetPointerTo(void)
     return Ret;
 }
 
-ExtRemoteTyped
-ExtRemoteTyped::Eval(__in PCSTR Expr)
+ExtRemoteTyped WINAPI
+ExtRemoteTyped::Eval(_In_ PCSTR Expr)
 {
     ExtRemoteTyped Ret;
     
@@ -4278,7 +4288,7 @@ ExtRemoteTyped::Eval(__in PCSTR Expr)
     return Ret;
 }
 
-PSTR
+PSTR WINAPI
 ExtRemoteTyped::GetTypeName(void)
 {
     ErtIoctl("GetTypeName", EXT_TDOP_GET_TYPE_NAME, ErtIn, NULL, 0, NULL,
@@ -4286,7 +4296,7 @@ ExtRemoteTyped::GetTypeName(void)
     return g_Ext->CopyCircleString(g_Ext->s_String);
 }
 
-PSTR
+PSTR WINAPI
 ExtRemoteTyped::GetSimpleValue(void)
 {
     ExtCaptureOutputA Capture;
@@ -4299,9 +4309,9 @@ ExtRemoteTyped::GetSimpleValue(void)
     return g_Ext->CopyCircleString(Capture.GetTextNonNull());
 }
 
-ULONG
-ExtRemoteTyped::GetTypeFieldOffset(__in PCSTR Type,
-                                   __in PCSTR Field)
+ULONG WINAPI
+ExtRemoteTyped::GetTypeFieldOffset(_In_ PCSTR Type,
+                                   _In_ PCSTR Field)
 {
     HRESULT Status;
     DEBUG_VALUE Data;
@@ -4320,16 +4330,16 @@ ExtRemoteTyped::GetTypeFieldOffset(__in PCSTR Type,
     return (ULONG)Data.I64;
 }
 
-HRESULT
-ExtRemoteTyped::ErtIoctl(__in PCSTR Message,
-                         __in EXT_TDOP Op,
-                         __in ULONG Flags,
-                         __in_opt PCSTR InStr,
-                         __in ULONG64 In64,
-                         __out_opt ExtRemoteTyped* Ret,
-                         __out_ecount_opt(StrBufferChars) PSTR StrBuffer,
-                         __in ULONG StrBufferChars,
-                         __out_opt PULONG Out32)
+HRESULT WINAPI
+ExtRemoteTyped::ErtIoctl(_In_ PCSTR Message,
+                         _In_ EXT_TDOP Op,
+                         _In_ ULONG Flags,
+                         _In_opt_ PCSTR InStr,
+                         _In_ ULONG64 In64,
+                         _Out_opt_ ExtRemoteTyped* Ret,
+                         _Out_writes_opt_(StrBufferChars) PSTR StrBuffer,
+                         _In_ ULONG StrBufferChars,
+                         _Out_opt_ PULONG Out32)
 {
     HRESULT Status;
     ExtDeclAlignedBuffer<BYTE, sizeof(EXT_TYPED_DATA) +
@@ -4434,7 +4444,7 @@ ExtRemoteTyped::ErtIoctl(__in PCSTR Message,
     return Status;
 }
 
-void
+void WINAPI
 ExtRemoteTyped::Clear(void)
 {
     ZeroMemory(&m_Typed, sizeof(m_Typed));
@@ -4459,7 +4469,7 @@ ULONG64 ExtNtOsInformation::s_AltPebBaseInfoCookie;
 ULONG64 ExtNtOsInformation::s_OsTebBaseInfoCookie;
 ULONG64 ExtNtOsInformation::s_AltTebBaseInfoCookie;
 
-ULONG64
+ULONG64 WINAPI
 ExtNtOsInformation::GetKernelLoadedModuleListHead(void)
 {
     return GetNtDebuggerData(DEBUG_DATA_PsLoadedModuleListAddr,
@@ -4467,7 +4477,7 @@ ExtNtOsInformation::GetKernelLoadedModuleListHead(void)
                              0);
 }
 
-ExtRemoteTypedList
+ExtRemoteTypedList WINAPI
 ExtNtOsInformation::GetKernelLoadedModuleList(void)
 {
     ExtRemoteTypedList List(GetKernelLoadedModuleListHead(),
@@ -4481,8 +4491,8 @@ ExtNtOsInformation::GetKernelLoadedModuleList(void)
     return List;
 }
     
-ExtRemoteTyped
-ExtNtOsInformation::GetKernelLoadedModule(__in ULONG64 Offset)
+ExtRemoteTyped WINAPI
+ExtNtOsInformation::GetKernelLoadedModule(_In_ ULONG64 Offset)
 {
     // We are caching both type and link information
     // so provide a link field here to keep the
@@ -4494,7 +4504,7 @@ ExtNtOsInformation::GetKernelLoadedModule(__in ULONG64 Offset)
                           "InLoadOrderLinks");
 }
 
-ULONG64
+ULONG64 WINAPI
 ExtNtOsInformation::GetKernelProcessListHead(void)
 {
     return GetNtDebuggerData(DEBUG_DATA_PsActiveProcessHeadAddr,
@@ -4502,7 +4512,7 @@ ExtNtOsInformation::GetKernelProcessListHead(void)
                              0);
 }
 
-ExtRemoteTypedList
+ExtRemoteTypedList WINAPI
 ExtNtOsInformation::GetKernelProcessList(void)
 {
     ExtRemoteTypedList List(GetKernelProcessListHead(),
@@ -4516,8 +4526,8 @@ ExtNtOsInformation::GetKernelProcessList(void)
     return List;
 }
 
-ExtRemoteTyped
-ExtNtOsInformation::GetKernelProcess(__in ULONG64 Offset)
+ExtRemoteTyped WINAPI
+ExtNtOsInformation::GetKernelProcess(_In_ ULONG64 Offset)
 {
     // We are caching both type and link information
     // so provide a link field here to keep the
@@ -4529,8 +4539,8 @@ ExtNtOsInformation::GetKernelProcess(__in ULONG64 Offset)
                           "ActiveProcessLinks");
 }
 
-ULONG64
-ExtNtOsInformation::GetKernelProcessThreadListHead(__in ULONG64 Process)
+ULONG64 WINAPI
+ExtNtOsInformation::GetKernelProcessThreadListHead(_In_ ULONG64 Process)
 {
     return Process +
         g_Ext->GetCachedFieldOffset(&s_KernelProcessThreadListFieldCookie,
@@ -4538,8 +4548,8 @@ ExtNtOsInformation::GetKernelProcessThreadListHead(__in ULONG64 Process)
                                     "Pcb.ThreadListHead");
 }
 
-ExtRemoteTypedList
-ExtNtOsInformation::GetKernelProcessThreadList(__in ULONG64 Process)
+ExtRemoteTypedList WINAPI
+ExtNtOsInformation::GetKernelProcessThreadList(_In_ ULONG64 Process)
 {
     ExtRemoteTypedList List(GetKernelProcessThreadListHead(Process),
                             "nt!_ETHREAD",
@@ -4552,8 +4562,8 @@ ExtNtOsInformation::GetKernelProcessThreadList(__in ULONG64 Process)
     return List;
 }
 
-ExtRemoteTyped
-ExtNtOsInformation::GetKernelThread(__in ULONG64 Offset)
+ExtRemoteTyped WINAPI
+ExtNtOsInformation::GetKernelThread(_In_ ULONG64 Offset)
 {
     // We are caching both type and link information
     // so provide a link field here to keep the
@@ -4565,8 +4575,8 @@ ExtNtOsInformation::GetKernelThread(__in ULONG64 Offset)
                           "Tcb.ThreadListEntry");
 }
 
-ULONG64
-ExtNtOsInformation::GetUserLoadedModuleListHead(__in bool NativeOnly)
+ULONG64 WINAPI
+ExtNtOsInformation::GetUserLoadedModuleListHead(_In_ bool NativeOnly)
 {
     HRESULT Status;
 
@@ -4596,8 +4606,8 @@ ExtNtOsInformation::GetUserLoadedModuleListHead(__in bool NativeOnly)
     }
 }
 
-ExtRemoteTypedList
-ExtNtOsInformation::GetUserLoadedModuleList(__in bool NativeOnly)
+ExtRemoteTypedList WINAPI
+ExtNtOsInformation::GetUserLoadedModuleList(_In_ bool NativeOnly)
 {
     if (NativeOnly ||
         !g_Ext->Is32On64())
@@ -4626,9 +4636,9 @@ ExtNtOsInformation::GetUserLoadedModuleList(__in bool NativeOnly)
     }
 }
 
-ExtRemoteTyped
-ExtNtOsInformation::GetUserLoadedModule(__in ULONG64 Offset,
-                                        __in bool NativeOnly)
+ExtRemoteTyped WINAPI
+ExtNtOsInformation::GetUserLoadedModule(_In_ ULONG64 Offset,
+                                        _In_ bool NativeOnly)
 {
     // We are caching both type and link information
     // so provide a link field here to keep the
@@ -4652,7 +4662,7 @@ ExtNtOsInformation::GetUserLoadedModule(__in ULONG64 Offset,
     }
 }
 
-ULONG64
+ULONG64 WINAPI
 ExtNtOsInformation::GetOsPebPtr(void)
 {
     HRESULT Status;
@@ -4668,8 +4678,8 @@ ExtNtOsInformation::GetOsPebPtr(void)
     return Offset;
 }
 
-ExtRemoteTyped
-ExtNtOsInformation::GetOsPeb(__in ULONG64 Offset)
+ExtRemoteTyped WINAPI
+ExtNtOsInformation::GetOsPeb(_In_ ULONG64 Offset)
 {
     return ExtRemoteTyped("${$ntnsym}!_PEB",
                           Offset,
@@ -4677,7 +4687,7 @@ ExtNtOsInformation::GetOsPeb(__in ULONG64 Offset)
                           &s_OsPebBaseInfoCookie);
 }
 
-ULONG64
+ULONG64 WINAPI
 ExtNtOsInformation::GetOsTebPtr(void)
 {
     HRESULT Status;
@@ -4693,8 +4703,8 @@ ExtNtOsInformation::GetOsTebPtr(void)
     return Offset;
 }
 
-ExtRemoteTyped
-ExtNtOsInformation::GetOsTeb(__in ULONG64 Offset)
+ExtRemoteTyped WINAPI
+ExtNtOsInformation::GetOsTeb(_In_ ULONG64 Offset)
 {
     return ExtRemoteTyped("${$ntnsym}!_TEB",
                           Offset,
@@ -4702,15 +4712,15 @@ ExtNtOsInformation::GetOsTeb(__in ULONG64 Offset)
                           &s_OsTebBaseInfoCookie);
 }
 
-ULONG64
+ULONG64 WINAPI
 ExtNtOsInformation::GetAltPebPtr(void)
 {
     ExtRemoteTyped AltTeb = GetAltTeb();
     return AltTeb.Field("ProcessEnvironmentBlock").GetUlong();
 }
 
-ExtRemoteTyped
-ExtNtOsInformation::GetAltPeb(__in ULONG64 Offset)
+ExtRemoteTyped WINAPI
+ExtNtOsInformation::GetAltPeb(_In_ ULONG64 Offset)
 {
     return ExtRemoteTyped("${$ntwsym}!_PEB",
                           Offset,
@@ -4718,7 +4728,7 @@ ExtNtOsInformation::GetAltPeb(__in ULONG64 Offset)
                           &s_AltPebBaseInfoCookie);
 }
 
-ULONG64
+ULONG64 WINAPI
 ExtNtOsInformation::GetAltTebPtr(void)
 {
     // If this is a 32-bit machine there's no
@@ -4738,8 +4748,8 @@ ExtNtOsInformation::GetAltTebPtr(void)
     return OsTeb.GetUlong64();
 }
 
-ExtRemoteTyped
-ExtNtOsInformation::GetAltTeb(__in ULONG64 Offset)
+ExtRemoteTyped WINAPI
+ExtNtOsInformation::GetAltTeb(_In_ ULONG64 Offset)
 {
     return ExtRemoteTyped("${$ntwsym}!_TEB",
                           Offset,
@@ -4747,38 +4757,38 @@ ExtNtOsInformation::GetAltTeb(__in ULONG64 Offset)
                           &s_AltTebBaseInfoCookie);
 }
 
-ULONG64
+ULONG64 WINAPI
 ExtNtOsInformation::GetCurPebPtr(void)
 {
     return g_Ext->Is32On64() ?
         GetAltPebPtr() : GetOsPebPtr();
 }
 
-ExtRemoteTyped
-ExtNtOsInformation::GetCurPeb(__in ULONG64 Offset)
+ExtRemoteTyped WINAPI
+ExtNtOsInformation::GetCurPeb(_In_ ULONG64 Offset)
 {
     return g_Ext->Is32On64() ?
         GetAltPeb(Offset) : GetOsPeb(Offset);
 }
 
-ULONG64
+ULONG64 WINAPI
 ExtNtOsInformation::GetCurTebPtr(void)
 {
     return g_Ext->Is32On64() ?
         GetAltTebPtr() : GetOsTebPtr();
 }
 
-ExtRemoteTyped
-ExtNtOsInformation::GetCurTeb(__in ULONG64 Offset)
+ExtRemoteTyped WINAPI
+ExtNtOsInformation::GetCurTeb(_In_ ULONG64 Offset)
 {
     return g_Ext->Is32On64() ?
         GetAltTeb(Offset) : GetOsTeb(Offset);
 }
     
-ULONG64
-ExtNtOsInformation::GetNtDebuggerData(__in ULONG DataOffset,
-                                      __in PCSTR Symbol,
-                                      __in ULONG Flags)
+ULONG64 WINAPI
+ExtNtOsInformation::GetNtDebuggerData(_In_ ULONG DataOffset,
+                                      _In_ PCSTR Symbol,
+                                      _In_ ULONG Flags)
 {
     ULONG64 Data;
 
@@ -4815,8 +4825,8 @@ ExtNtOsInformation::GetNtDebuggerData(__in ULONG DataOffset,
 //
 //----------------------------------------------------------------------------
 
-ExtDefine*
-ExtDefineMap::Map(__in ULONG64 Value)
+ExtDefine* WINAPI
+ExtDefineMap::Map(_In_ ULONG64 Value)
 {
     if ((m_Flags & Bitwise) != 0)
     {
@@ -4842,9 +4852,9 @@ ExtDefineMap::Map(__in ULONG64 Value)
     return NULL;
 }
 
-PCSTR
-ExtDefineMap::MapStr(__in ULONG64 Value,
-                     __in_opt PCSTR InvalidStr)
+PCSTR WINAPI
+ExtDefineMap::MapStr(_In_ ULONG64 Value,
+                     _In_opt_ PCSTR InvalidStr)
 {
     ExtDefine* Define = Map(Value);
     if (Define)
@@ -4861,10 +4871,10 @@ ExtDefineMap::MapStr(__in ULONG64 Value,
     }
 }
 
-void
-ExtDefineMap::Out(__in ULONG64 Value,
-                  __in ULONG Flags,
-                  __in_opt PCSTR InvalidStr)
+void WINAPI
+ExtDefineMap::Out(_In_ ULONG64 Value,
+                  _In_ ULONG Flags,
+                  _In_opt_ PCSTR InvalidStr)
 {
     ULONG OldIndent = g_Ext->m_LeftIndent;
     g_Ext->m_LeftIndent = g_Ext->m_CurChar;
@@ -5000,8 +5010,8 @@ DllMain(HANDLE Instance, ULONG Reason, PVOID Reserved)
 }
 
 EXTERN_C HRESULT CALLBACK
-DebugExtensionInitialize(__out PULONG Version,
-                         __out PULONG Flags)
+DebugExtensionInitialize(_Out_ PULONG Version,
+                         _Out_ PULONG Flags)
 {
     return g_ExtInstancePtr->BaseInitialize(ExtExtension::s_Module,
                                             Version,
@@ -5020,8 +5030,8 @@ DebugExtensionUninitialize(void)
 }
 
 EXTERN_C void CALLBACK
-DebugExtensionNotify(__in ULONG Notify,
-                     __in ULONG64 Argument)
+DebugExtensionNotify(_In_ ULONG Notify,
+                     _In_ ULONG64 Argument)
 {
     if (!g_Ext.IsSet())
     {
@@ -5048,12 +5058,12 @@ DebugExtensionNotify(__in ULONG Notify,
 }
 
 EXTERN_C HRESULT CALLBACK
-KnownStructOutputEx(__in PDEBUG_CLIENT Client,
-                    __in ULONG Flags,
-                    __in ULONG64 Offset,
-                    __in_opt PCSTR TypeName,
-                    __out_ecount_opt(*BufferChars) PSTR Buffer,
-                    __inout_opt PULONG BufferChars)
+KnownStructOutputEx(_In_ PDEBUG_CLIENT Client,
+                    _In_ ULONG Flags,
+                    _In_ ULONG64 Offset,
+                    _In_opt_ PCSTR TypeName,
+                    _Out_writes_opt_(*BufferChars) PSTR Buffer,
+                    _Inout_opt_ PULONG BufferChars)
 {
     if (!g_Ext.IsSet())
     {
@@ -5065,11 +5075,11 @@ KnownStructOutputEx(__in PDEBUG_CLIENT Client,
 }
 
 EXTERN_C HRESULT CALLBACK
-DebugExtensionQueryValueNames(__in PDEBUG_CLIENT Client,
-                              __in ULONG Flags,
-                              __out_ecount(BufferChars) PWSTR Buffer,
-                              __in ULONG BufferChars,
-                              __out PULONG BufferNeeded)
+DebugExtensionQueryValueNames(_In_ PDEBUG_CLIENT Client,
+                              _In_ ULONG Flags,
+                              _Out_writes_(BufferChars) PWSTR Buffer,
+                              _In_ ULONG BufferChars,
+                              _Out_ PULONG BufferNeeded)
 {
     if (!g_Ext.IsSet())
     {
@@ -5081,13 +5091,13 @@ DebugExtensionQueryValueNames(__in PDEBUG_CLIENT Client,
 }
 
 EXTERN_C HRESULT CALLBACK
-DebugExtensionProvideValue(__in PDEBUG_CLIENT Client,
-                           __in ULONG Flags,
-                           __in PCWSTR Name,
-                           __out PULONG64 Value,
-                           __out PULONG64 TypeModBase,
-                           __out PULONG TypeId,
-                           __out PULONG TypeFlags)
+DebugExtensionProvideValue(_In_ PDEBUG_CLIENT Client,
+                           _In_ ULONG Flags,
+                           _In_ PCWSTR Name,
+                           _Out_ PULONG64 Value,
+                           _Out_ PULONG64 TypeModBase,
+                           _Out_ PULONG TypeId,
+                           _Out_ PULONG TypeFlags)
 {
     if (!g_Ext.IsSet())
     {
