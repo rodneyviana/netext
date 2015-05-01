@@ -4,7 +4,7 @@
 
   Distributed under GNU General Public License version 2 (GPLv2) (http://www.gnu.org/licenses/gpl-2.0.html)
   
-  Part of this code is based on a public proof-of-concept sample application from
+  Small portion of the code implementation in this file is based on a public proof-of-concept sample application from
     Microsoft.Diagnostics.Runtime's developer Lee Culver
 ============================================================================================================*/
 
@@ -139,30 +139,97 @@ namespace NetExt.Shim
         {
             if (callBack != null)
                 callBack(Message);
-            else
-                throw new NullReferenceException("C++ plain text callback was not set");
+            //else
+            //    throw new NullReferenceException("C++ plain text callback was not set");
         }
 
         public static void OutDml(string Message)
         {
             if (callBackDml != null)
                 callBackDml(Message);
-            else
-                throw new NullReferenceException("C++ formatted text callback was not set");
+            //else
+            //    throw new NullReferenceException("C++ formatted text callback was not set");
 
         }
 
+        private static string netExtPath = null;
+
         [DllExport(CallingConvention = CallingConvention.Cdecl)]
-        public static void CreateFromIDebugClient([MarshalAs((UnmanagedType)25)] Object iDebugClient,
+        public static void CreateFromIDebugClient([MarshalAs(UnmanagedType.LPWStr)]string DllPath, [MarshalAs((UnmanagedType)25)] Object iDebugClient,
             [Out] [MarshalAs((UnmanagedType)28)] out IMDTarget ppTarget)
         {
             string path = Path.GetDirectoryName(typeof(Exports).Module.FullyQualifiedName);
+            //
+            // Changes to enable NetExt dlls to be anywhere
+            //
+            if(String.IsNullOrEmpty(netExtPath))
+            {
+                netExtPath = DllPath[DllPath.Length - 1] != '\\' ? DllPath + "\\" : DllPath;
+                AppDomain.CurrentDomain.UnhandledException += ad_UnhandledException;
+                AppDomain.CurrentDomain.AssemblyResolve += ad_AssemblyResolve;
+            }
 #if _DEBUG
             WriteLine("Base folder = {0}\n", path);
 #endif
-            AppDomain.CurrentDomain.AppendPrivatePath(path);
-            CLRMDActivator clrMD = new CLRMDActivator();
-            clrMD.CreateFromIDebugClient(iDebugClient, out ppTarget);
+            
+
+            try
+            {
+                CLRMDActivator clrMD = new CLRMDActivator();
+                clrMD.CreateFromIDebugClient(iDebugClient, out ppTarget);
+            }
+            catch
+            {
+                WriteLine("ERROR: Unable to create type CLRMDActivator. More information below");
+                WriteLine("Base Path: {0}", path);
+                WriteLine("Private Path: {0}", DllPath);
+                ppTarget = null;
+            }
+        }
+
+        static object _lock = new object();
+
+        static System.Reflection.Assembly ad_AssemblyResolve(object sender, ResolveEventArgs args)
+        {
+            lock (_lock)
+            {
+                if (args.Name.Contains("Microsoft.Diagnostics.Runtime"))
+                {
+                    string assembly = String.Format("{0}{1}.dll", netExtPath, args.Name.Substring(0, args.Name.IndexOf(",")));
+#if DEBUG
+                    WriteLine("Trying to load: {0}", assembly);
+#endif
+                    return System.Reflection.Assembly.LoadFrom(assembly);
+                }
+#if _DEBUG
+                else
+                {
+
+                    WriteLine("Trying to load: {0}", args.Name);
+                }
+#endif
+            }
+            
+            return null;
+        }
+
+        static void ad_UnhandledException(object sender, UnhandledExceptionEventArgs e)
+        {
+            if (e.IsTerminating)
+            {
+                WriteLine("\nFatal Exception in NetExtShim");
+            }
+            if(e != null && e.ExceptionObject != null)
+            {
+                WriteLine("\nUnhandled exception in NetExtShim: {0}",e.ExceptionObject.GetType().ToString());
+
+                Exception ex = e.ExceptionObject as Exception;
+                if (ex != null)
+                {
+                    WriteLine("Message : {0}", ex.Message);
+                    WriteLine("at {0}", ex.StackTrace);
+                }
+            }
         }
 
         [DllExport(CallingConvention = CallingConvention.Cdecl)]

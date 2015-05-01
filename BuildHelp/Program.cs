@@ -18,7 +18,7 @@ namespace BuildHelp
     {
         private static int Main(string[] args)
         {
-            Console.WriteLine("Help builder for wcfwifext");
+            Console.WriteLine("Help builder for netext");
             Console.WriteLine("--------------------------");
 
             if (args.Length < 2)

@@ -1,5 +1,5 @@
 ﻿/*=========================================================================================================
-  This code is based on a public proof-of-concept sample application from
+  The code in this file is heavily based on a public proof-of-concept sample application from
     Microsoft.Diagnostics.Runtime's developer Lee Culver
 ============================================================================================================*/
 

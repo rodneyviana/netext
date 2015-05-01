@@ -327,6 +327,8 @@ public:
 
 HRESULT INIT_API()
 {
+	wasInterrupted = false;				// reset any previous interrupted-by-the-user (resolved in 2.0.1.5550)
+										//   before this fix everything after a Ctrl+Break would not work
 	EXT_CLASS::SessionThreads.Clear();
 	long isFlushed = 0;
 	if(isCLRInit && pRuntime != NULL)
@@ -376,6 +378,10 @@ HRESULT INIT_API()
 			// Heap may be null as some commands may not use heap
 			pRuntime->GetHeap(&pHeap);
 			return S_OK;
+		} else
+		{
+			hr = E_APPLICATION_ACTIVATION_EXEC_FAILURE;
+			EXITPOINTEXT("Unable to start NetExtShim.Dll. Make sure all the files are in the WinDbg root folder");
 		}
 	}
 	return E_FAIL;
@@ -385,7 +391,7 @@ void CallCSDll::GetInterface(NetExtShim::IMDTarget **iTarget)
 {
 	LoadDll();
 	if(createFromDebug)
-		createFromDebug(g_ExtInstancePtr->m_Client,iTarget); 
+		createFromDebug(CVersionInfo::GetFilePath().c_str(), g_ExtInstancePtr->m_Client,iTarget); 
 }
 void CallCSDll::LoadDll()
 {
@@ -424,8 +430,7 @@ void CallCSDll::LoadDll()
 				managedInterrupted = (pSetInterrupt)GetProcAddress(hDll, "SetStopCallBack");
 				createFromDebug = (pIMDTarget)GetProcAddress(hDll, "CreateFromIDebugClient");
 				managedInterrupted(&IsManagedInterrupt);
-				//managedInterrupted
-				//SetStopCallBack
+
 			}
 		} else
 		{

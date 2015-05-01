@@ -635,6 +635,13 @@ namespace CALC
 	void do_enumname()
 	{
 		SVAL v=st.top(); st.pop();
+		if(!v.IsValid)
+		{
+			SVAL e;
+			e.MakeInvalid();
+			st.push(e);
+			return;
+		}
 		do_stdstring(SpecialCases::GetEnumString(v.MT, v.Value.u64));
 	}
 
@@ -643,7 +650,7 @@ namespace CALC
 		SVAL v=st.top(); st.pop();
 		SVAL e;
 		e.MakeInvalid();
-		if(v.MT == 0)
+		if(v.MT == 0 || !v.IsValid)
 		{
 			st.push(e);
 			return;

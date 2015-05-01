@@ -127,7 +127,7 @@ typedef void(*pSetOutput)(pOutput,pOutput);
 typedef long(*pIsInterrupted)();
 typedef void(*pSetInterrupt)(pIsInterrupted);
 
-typedef void(*pIMDTarget)(IDebugClient *Client, NetExtShim::IMDTarget **iTarget);
+typedef void(*pIMDTarget)(const wchar_t* ProbePath, IDebugClient *Client, NetExtShim::IMDTarget **iTarget);
 extern HINSTANCE hDll;
 extern pSetOutput setOutputCallBack;
 extern pOutput echo;
