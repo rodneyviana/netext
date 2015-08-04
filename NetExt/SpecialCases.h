@@ -449,7 +449,7 @@ public:
 		case ELEMENT_TYPE_R8:
 		case ELEMENT_TYPE_BOOLEAN:
 		case ELEMENT_TYPE_PTR:
-			if((rs >= ELEMENT_TYPE_I1 && rs <= ELEMENT_TYPE_R8) || rs==ELEMENT_TYPE_BOOLEAN)
+			if((rs >= ELEMENT_TYPE_I1 && rs <= ELEMENT_TYPE_R8) || rs==ELEMENT_TYPE_BOOLEAN || rs == ELEMENT_TYPE_PTR)
 			{
 				return max(ls, rs);
 			}

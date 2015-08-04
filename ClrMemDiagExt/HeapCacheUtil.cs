@@ -72,6 +72,8 @@ namespace NetExt.HeapCacheUtil
             {
             }
         }
+
+
         public static ClrType GetTypeFromMT(ClrRuntime Runtime, ulong MethodTable)
         {
             return RunMethod(Runtime.GetHeap(), "GetGCHeapType", (ulong)MethodTable, (ulong)0, (ulong)0) as ClrType;
@@ -80,6 +82,10 @@ namespace NetExt.HeapCacheUtil
         public static string GetNameForMT(ClrRuntime Runtime, ulong MethodTable)
         {
             string name = RunMethod(Runtime, "GetNameForMT", MethodTable) as string;
+            if (!String.IsNullOrEmpty(name))
+            {
+                name.Replace('+', '_');
+            }
             return name;
         }
 
@@ -150,10 +156,19 @@ namespace NetExt.HeapCacheUtil
 
         public static string GetEnumName(ClrType type, ulong enumValue)
         {
+            if (type == null || !type.IsEnum)
+                return "#INVALIDENUMTYPE#";
             object value = enumValue;
             List<string> namesFound = new List<string>();
-            var enumType = type.GetEnumElementType();
-
+            ClrElementType enumType = ClrElementType.Unknown;
+            try
+            {
+                enumType = type.GetEnumElementType();
+            }
+            catch
+            {
+                return "#INVALIDENUMTYPE#";
+            }
             byte[] raw = BitConverter.GetBytes(enumValue);
 
             object gvalue = enumValue;
@@ -463,6 +478,21 @@ namespace NetExt.HeapCacheUtil
         public bool IsEnum { get; internal set; }
         public bool IsString { get; internal set; }
 
+        public static string GetFieldTypeName(ClrType Type)
+        {
+            if (Type == null)
+                return "System.Object";
+
+            return Type.Name.Replace('+','_');
+        }
+
+        public static string AdjustFieldName(string FieldName)
+        {
+            if (FieldName.IndexOfAny(new char[] { '<', '>', '+', '$' }) >= 0)
+                return FieldName.Replace('<', '_').Replace('>', '_').Replace('+', '_').Replace('$','_');
+            return FieldName;
+        }
+
         public string GetEnumName(ulong enumValue)
         {
             object value = enumValue;
@@ -496,8 +526,8 @@ namespace NetExt.HeapCacheUtil
             IsStatic = false;
             IsThreadStatic = false;
 
-            TypeName = Field.Type == null ? "System.Object" : Field.Type.Name;
-            Name = Field.Name;
+            TypeName = GetFieldTypeName(Field.Type);
+            Name = AdjustFieldName(Field.Name);
             MethodTable = HeapStatItem.GetMTOfType(Field.Type);
             Offset = Field.Offset;
             Token = Field.Type == null ? 0 : Field.Type.MetadataToken;
@@ -519,8 +549,8 @@ namespace NetExt.HeapCacheUtil
             IsStatic = true;
             IsThreadStatic = false;
 
-            TypeName = Field.Type == null ? "System.Object" : Field.Type.Name;
-            Name = Field.Name;
+            TypeName = GetFieldTypeName(Field.Type);
+            Name = AdjustFieldName(Field.Name);
             MethodTable = HeapStatItem.GetMTOfType(Field.Type);
             Offset = Field.Offset;
             Token = Field.Type == null ? 0 : Field.Type.MetadataToken;
@@ -543,8 +573,8 @@ namespace NetExt.HeapCacheUtil
             IsStatic = true;
             IsThreadStatic = true;
 
-            TypeName = Field.Type == null ? "System.Object" : Field.Type.Name;
-            Name = Field.Name;
+            TypeName = GetFieldTypeName(Field.Type);
+            Name = AdjustFieldName(Field.Name);
             MethodTable = HeapStatItem.GetMTOfType(Field.Type);
             Offset = Field.Offset;
             Token = Field.Type == null ? 0 : Field.Type.MetadataToken;

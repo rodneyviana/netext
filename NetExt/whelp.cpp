@@ -1,12 +1,4 @@
-/*=========================================================================================================
-  Copyright (c) 2013-2015 Rodney Viana
-  http://netext.codeplex.com/
-
-  Distributed under GNU General Public License version 2 (GPLv2) (http://www.gnu.org/licenses/gpl-2.0.html)
-============================================================================================================*/
-
-
-// Source Date: Wednesday, March 4, 2015 9:19:12 PM
+// Source Date: Monday, August 3, 2015 5:26:59 PM
 // Source File: C:\projects\NetExt\NetExt\helptxt.txt
 // This file was generated. Do not modify. Modify Source File instead
 #include "netext.h"
@@ -27,7 +19,7 @@ EXT_COMMAND(whelp,
 	{
 		Dml("<b>Show Object Detail Commands</b>\n");
 		Dml("<b>---------------------------</b>\n");
-		Dml("!<link cmd=\"!whelp wdo\">wdo</link> - Display ad-hoc objects or arrays from GAC or Stack	\n");
+		Dml("!<link cmd=\"!whelp wdo\">wdo</link> - Display ad-hoc objects or arrays from Heap or Stack	\n");
 		Dml("!<link cmd=\"!whelp wselect\">wselect</link> - Display ad-hoc fields (and level fields) for an object or for all item in an array\n");
 		Dml("!<link cmd=\"!whelp wfrom\">wfrom</link> - Perform SQL-like analysis of Heap objects enabling comparison, <link cmd=\"!whelp expression\">expression</link> evaluation and indexed filtering.\n");
 		Dml("<b>*(new)*</b> !<link cmd=\"!whelp wpe\">wpe</link> - Dump Exception Object\n");
@@ -490,7 +482,8 @@ EXT_COMMAND(whelp,
 	{
 		Dml("Dump all active Http Runtime information\n");
 		Dml("This is equivalent to this command:\n");
-		Dml("!wfrom -nospace -nofield -type System.Web.HttpRuntime where ((!_beforeFirstRequest) || _shutdownReason) \"\\n=========================================================================\\n\",\"Address         : \",$addr(),\"\\nFirst Request   : \",$tickstodatetime(_firstRequestStartTime.dateData),\"\\nApp Pool User   : \",_wpUserId,\"\\nTrust Level     : \",_trustLevel,\"\\nApp Domnain Id  : \",_appDomainId,\"\\nDebug Enabled   : \",$if(_debuggingEnabled,\"True (Not recommended in production)\",\"False\"),\"\\nActive Requests : \",_activeRequestCount,\"\\nPath            : \",_appDomainAppPath,$if(_isOnUNCShare,\" (in a share)\",\" (local disk)\"),\"\\nTemp Folder     : \",_tempDir,\"\\nCompiling Folder: \",_codegenDir,\"\\nShutdown Reason : \",$if(_shutdownReason,$enumname(_shutdownReason)+\" at \"+$tickstodatetime(_lastShutdownAttemptTime.dateData),\"Not shutting down\"),\"\\n\\n\",$if(_shutdownReason,_shutDownMessage+\"n\"+_shutDownStack,\"\")\n");
+		Dml("!wfrom -nospace -nofield -type System.Web.HttpRuntime where ((!_beforeFirstRequest) || _shutdownReason) \"\\n=========================================================================\\n\",\"Address         : \",$addr(),\"\\nFirst Request   : \",$tickstodatetime(_firstRequestStartTime.dateData),\"\\nRuning Time     : \",$tickstotimespan($now() - _firstRequestStartTime.dateData),\"\\nApp Pool User   : \",_wpUserId,\"\\nTrust Level     : \",_trustLevel,\"\\nApp Domnain Id  : \",_appDomainId,\"\\nDebug Enabled   : \",$if(_debuggingEnabled,\"True (Not recommended in production)\",\"False\"),\"\\nActive Requests : \",_activeRequestCount,\"\\nPath            : \",_appDomainAppPath,$if(_isOnUNCShare,\" (in a share)\",\" (local disk)\"),\"\\nTemp Folder     : \",_tempDir,\"\\nCompiling Folder: \",_codegenDir,\"\\nShutdown Reason : \",$if(_shutdownReason,$enumname(_shutdownReason)+\" at \"+$tickstodatetime(_lastShutdownAttemptTime.dateData),\"Not shutting down\"),\"\\n\\n\",$if(_shutdownReason,_shutDownMessage+\"n\"+_shutDownStack,\"\")\n");
+		Dml("\n");
 		Dml("\n");
 		Dml("<b>Syntax:</b>\n");
 		Dml("---------\n");
@@ -506,7 +499,8 @@ EXT_COMMAND(whelp,
 		Dml("=========================================================================\n");
 		Dml("Address         : 000000011F7244F0\n");
 		Dml("First Request   : 7/23/2014 5:13:36 PM\n");
-		Dml("App Pool User   : US\\us-go-svcedcApp\n");
+		Dml("Runing Time     : 00:03:14\n");
+		Dml("App Pool User   : CONTOSO\\serv_account\n");
 		Dml("Trust Level     : Full\n");
 		Dml("App Domnain Id  : /LM/W3SVC/8989/ROOT/Services/2013v3-1-130506092168812411\n");
 		Dml("Debug Enabled   : True (Not recommended in production)\n");
@@ -1018,7 +1012,7 @@ EXT_COMMAND(whelp,
 		Dml("\n");
 		Dml("<b>Syntax</b>\n");
 		Dml("------------\n");
-		Dml("!windex [-quiet] [-enumtypes] [-tree] [-flush] [-short] [-ignorestate]\n");
+		Dml("!windex [-quiet] [-enumtypes] [-tree] [-flush] [-short] [-ignorestate] [-top &lt;output-limit&gt;]\n");
 		Dml("        [-withpointer] [-type &lt;partial-type-name-list&gt;] [-fieldname &lt;partial-field-name&gt;]\n");
 		Dml("        [-fieldtype &lt;partial-type-name-list&gt;] [-implement &lt;partial-type-name-list&gt;] [-save &lt;string&gt;]\n");
 		Dml("        [-load &lt;string&gt;] [-mt &lt;address-list&gt;]\n");
@@ -1036,7 +1030,9 @@ EXT_COMMAND(whelp,
 		Dml("\n");
 		Dml("	Filters (choose just one of the following):\n");
 		Dml("	-------------------------------------------\n");
-		Dml("	<b>-type &lt;partial-type-name-list&gt;</b> - type;List of types to include wildcards accepted (eg. -type\n");
+		Dml("\n");
+		Dml("	<b>-top lt;output-limit&gt;</b> - Limit the number of lines returned (eg. -top 50)\n");
+		Dml("	<b>-type &lt;partial-type-name-list&gt;</b> - List of types to include wildcards accepted (eg. -type\n");
 		Dml("		*HttRequest,system.servicemodel.*)\n");
 		Dml("	<b>-fieldname &lt;partial-field-name&gt;</b> - List of field names that the type must\n");
 		Dml("		contain (eg. -fieldname *request,_wr)\n");
@@ -2155,7 +2151,7 @@ EXT_COMMAND(whelp,
 		Dml("<b>$timespantoticks(&lt;h&gt;, &lt;m&gt;, &lt;s&gt;)</b> - Return number of ticks for &lt;h&gt;, &lt;m&gt; and &lt;s&gt;\n");
 		Dml("<b>$datetoticks(&lt;year&gt;, &lt;month&gt;, &lt;day&gt;)</b> - Return number of ticks for &lt;year&gt;, &lt;month&gt; and &lt;day&gt;\n");
 		Dml("<b>$now()</b> - Current time or time the dump was captured in ticks\n");
-		Dml("\n");
+		Dml("<b>$maskticks(&lt;ticks&gt;)</b> -Normalize date-time to exclude time-zone information. Use this to perform time span operations. Mask is only good to identify the original time zone.\n");
 		Dml("<i>Example:</i>\n");
 		Dml("-------------\n");
 		Dml("\n");
@@ -2167,6 +2163,18 @@ EXT_COMMAND(whelp,
 		Dml("calculated: 00:01:29\n");
 		Dml("\n");
 		Dml("1 Object(s) listed\n");
+		Dml("\n");
+		Dml("0:010&gt; !wfrom -obj 000000d822e75188 select timestamp.dateData,$maskticks(timestamp.dateData),$tickstotimespan($now()-timestamp.dateData),$tickstotimespan($now()-$maskticks(timestamp.dateData)),$tickstodatetime($now()),$tickstodatetime(timestamp.dateData)\n");
+		Dml("timestamp.dateData: 88d27734c021047b    (Ticks with time zone mask, not good for calculation)\n");
+		Dml("calculated: 08D27734C021047B            (Time zone bits removed, good for calculation)\n");
+		Dml("calculated: 00:00:00					(Calculation failed because time zone bits were not removed)\n");
+		Dml("calculated: 05:00:02					(Calculation worked because time zone was removed)\n");
+		Dml("calculated: 6/17/2015 9:49:48 PM        (Current time)\n");
+		Dml("calculated: 6/17/2015 4:49:45 PM		(Time of the time stamp)\n");
+		Dml("\n");
+		Dml("1 Object(s) listed\n");
+		Dml("\n");
+		Dml("\n");
 		Dml("\n");
 	return;
 	}

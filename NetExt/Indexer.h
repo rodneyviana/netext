@@ -57,7 +57,7 @@ struct AddressEnum
 	}
 };
 
-bool DisplayHeapEnum(MatchingAddresses& Addresses, bool Short=false);
+bool DisplayHeapEnum(MatchingAddresses& Addresses, bool Short=false, UINT Top = 0);
 
 #pragma once
 class Indexer
@@ -84,7 +84,7 @@ public:
 	void GetWithPointers(MatchingAddresses& Addresses);
 	void AddAddress(DWORD_PTR Address, DWORD_PTR MethodTable, MD_TypeData* obj);
 	bool IsUpToDate(void);
-	void DumpTypes();
+	void DumpTypes(string* Type = NULL);
 	void DumpTypesTree(EXT_CLASS *Ext);
 	bool SaveIndex(std::string FileName);
 	bool LoadIndex(std::string FileName, bool IgnoreSignature=false);

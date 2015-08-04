@@ -231,7 +231,7 @@ void EEClass::Request(CLRDATA_ADDRESS MTOfType)
 		return;
 	}
 	MT=MTOfType;
-	if(type->GetHeader(0,&eeClassData) != S_OK)
+	if(type->GetHeader(0,&eeClassData) != S_OK || eeClassData.MethodTable == 0)
 	{
 		isValidClass = false;
 		return;
@@ -250,7 +250,7 @@ void EEClass::Request(ObjDetail &Obj)
 
 	addr=Obj.Address();
 	eeClassData = Obj.TypeData();
-	if(!pRuntime || pRuntime->GetTypeByMT(Obj.MethodTable(), &type) != S_OK)
+	if(!pRuntime || pRuntime->GetTypeByMT(Obj.MethodTable(), &type) != S_OK || eeClassData.MethodTable == 0)
 	{
 		isValidClass = false;
 		return;
@@ -1332,7 +1332,7 @@ MD_TypeData DumpHeapCache::GetObj(CLRDATA_ADDRESS Address)
 	ZeroMemory(&obj, sizeof(obj));
 	obj.MethodTable = GetPtr(Address) & ~(CLRDATA_ADDRESS)3;
 
-	obj.arrayElementMT = GetPtr(Address+g_ExtInstancePtr->m_PtrSize * 2);
+	obj.arrayElementMT = GetPtr(Address+g_ExtInstancePtr->m_PtrSize * 2) & ~(CLRDATA_ADDRESS)3;
 
 	obj.arraySize = GetPtr(Address+g_ExtInstancePtr->m_PtrSize) & ~(DWORD)0;
 	// Fix a counting bug for string in .NET 4.0 and beyond

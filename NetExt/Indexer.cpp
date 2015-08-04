@@ -100,19 +100,26 @@ bool Indexer::DoIndex(bool ShowProgress)
 	return true;
 }
 
-void Indexer::DumpTypes()
+void Indexer::DumpTypes(string* Type)
 {
 	TypeTable::const_iterator tt=typeT.begin();
 
-	UINT total=0;
+	ULONG total=0;
+	ULONG count = 0;
 	while(tt!=typeT.end())
 	{
-		g_ExtInstancePtr->Dml("<link cmd=\"!windex -mt %p\">%p</link>", tt->second, tt->second);
-		g_ExtInstancePtr->Out(" %S (%i)\n", mtT[tt->second].typeName.c_str(), mtT[tt->second].Addresses.size());
-		total+=mtT[tt->second].Addresses.size();
+		if(Type == NULL || g_ExtInstancePtr->MatchPattern(CW2A(mtT[tt->second].typeName.c_str()), Type->c_str()))
+		{
+			g_ExtInstancePtr->Dml("<link cmd=\"!windex -mt %p\">%p</link>", tt->second, tt->second);
+			g_ExtInstancePtr->Out(" %S (%i)\n", mtT[tt->second].typeName.c_str(), mtT[tt->second].Addresses.size());
+			total+=mtT[tt->second].Addresses.size();
+			count++;
+		}
 		tt++;
 	}
-	g_ExtInstancePtr->Out("Heap contains %u Objects in %u types\n", total,typeT.size());
+	g_ExtInstancePtr->Out("Heap contains %u Objects in %u types selected\n", total,count);
+	if(Type != NULL)
+		g_ExtInstancePtr->Out("%u Types skipped by the filter\n", typeT.size() - count); 
 }
 
 inline std::string toCPPFile(const std::string& FileName)
@@ -686,7 +693,7 @@ bool Indexer::WalkHeapAndCache(Indexer *idx, CLRDATA_ADDRESS Start, CLRDATA_ADDR
 	return true;
 }
 
-bool DisplayHeapEnum(MatchingAddresses& Addresses, bool Short)
+bool DisplayHeapEnum(MatchingAddresses& Addresses, bool Short, UINT Top)
 {
 	if(Addresses.size()==0)
 		return true;
@@ -694,6 +701,11 @@ bool DisplayHeapEnum(MatchingAddresses& Addresses, bool Short)
 	enumAdd.Start(Addresses);
 	CLRDATA_ADDRESS objAddr;
 	UINT32 i=0;
+	if(g_ExtInstancePtr->m_PtrSize == 4)
+		g_ExtInstancePtr->Out("MT        Address    Size Heap Gen Type Name\n");
+	else
+		g_ExtInstancePtr->Out("MT               Address             Size Heap Gen Type Name\n");
+
 	while(objAddr = enumAdd.GetNext())
 	{
 		if(IsInterrupted())
@@ -707,15 +719,24 @@ bool DisplayHeapEnum(MatchingAddresses& Addresses, bool Short)
 		ObjDetail obj(objAddr);
 		h=obj.Heap();
 		g=obj.Gen();
-
+		i++;
 		if(Short)
 		{
 			g_ExtInstancePtr->Out("%p\n", objAddr);
 		} else
 		{
-			g_ExtInstancePtr->Dml("<link cmd=\"!wdo %p\">%p</link> %p %S %8u %3i %i\n", objAddr, objAddr, obj.MethodTable(), obj.TypeName().c_str(), obj.Size(), h, g);
+			g_ExtInstancePtr->Dml("<link cmd=\"!wdo %p\">%p</link>", objAddr, objAddr);
+			g_ExtInstancePtr->Out(" %p %8u %3i %3i %S\n", obj.MethodTable(), obj.Size(), h, g, obj.TypeName().c_str());
+		}
+		// this will ignore Top = 0 which means infinite
+		if(i == Top)
+		{
+			if(!Short) g_ExtInstancePtr->Out("\n*** Top %u Objects listed. No more objects will be shown ***\n", i);
+			break;
 		}
 	}
+	if(!Short && Top == 0)
+		g_ExtInstancePtr->Out("\n%u Objects listed\n", i);
 	return true;
 }
 

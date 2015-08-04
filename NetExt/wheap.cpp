@@ -408,7 +408,7 @@ CLRDATA_ADDRESS Heap::DisplayHeapObjects(CLRDATA_ADDRESS Start, CLRDATA_ADDRESS 
 			return objAddr;
 		}
 		ObjDetail obj(objAddr);
-		CLRDATA_ADDRESS mt = ObjDetail::GetPTR(objAddr);
+		CLRDATA_ADDRESS mt = ObjDetail::GetPTR(objAddr) & ~(CLRDATA_ADDRESS)3;
 		bool printObj = Heap::IncludeType(mt);
 		if(!printObj) printObj = Heap::IncludeType(mt, obj.TypeName());
 

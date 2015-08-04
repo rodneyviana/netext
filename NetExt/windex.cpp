@@ -24,6 +24,7 @@ struct IndexFlags
 	bool fsave;
 	bool fload;
 	bool fignorestate;
+	UINT top;
 	std::string saveFileName;
 	std::string loadFileName;
 	vector<string> type;
@@ -36,6 +37,7 @@ EXT_COMMAND(windex,
 			"{enumtypes;b,o;;enumtypes;Display types with link to objects}"
 			"{tree;b,o;;tree;Show types tree on a different window (WinDBG only)}"
 			"{flush;b,o;;flush;Fush index}"
+			"{top;ed,o;;Limit to the number of objects displayed}"
 			"{short;b,o;;short;Display addresses only}"
 			"{ignorestate;b,o;;ignorestate;Ignore state when loading index}"
 			"{type;s,o;;type;List of types to include wildcards accepted (eg. -type *HttRequest,system.servicemodel.*)}"
@@ -51,6 +53,14 @@ EXT_COMMAND(windex,
 	IndexFlags flags;
 	string typeStr;
 	string mtStr;
+	if(HasArg("top"))
+	{
+		flags.top = (UINT)(GetArgU64("top") & UINT32_MAX);
+	} else
+	{
+		flags.top = 0;
+	}
+
 	flags.fenumtypes = HasArg("enumtypes");
 	flags.ftree = HasArg("tree");
 	flags.fquiet = HasArg("quiet");
@@ -138,7 +148,14 @@ EXT_COMMAND(windex,
 	}
 	if(flags.fenumtypes)
 	{
-		indc->DumpTypes();
+		if(HasArg("type")) 
+		{
+			typeStr.assign(GetArgStr("type"));
+			indc->DumpTypes(&typeStr);
+		} else
+			indc->DumpTypes();
+
+		return;
 	}
 	if(flags.ftree)
 	{
@@ -151,7 +168,7 @@ EXT_COMMAND(windex,
 		typeStr.assign(GetArgStr("type"));
 		std::wstring wtypeStr((wchar_t*)CA2W(typeStr.c_str()));
 		indc->GetByType(wtypeStr, Addresses);
-		if(!DisplayHeapEnum(Addresses, flags.fshort))
+		if(!DisplayHeapEnum(Addresses, flags.fshort, flags.top))
 		{
 			return;
 		}
@@ -160,7 +177,7 @@ EXT_COMMAND(windex,
 	{
 		typeStr.assign(GetArgStr("implement"));
 		indc->GetByDerive(typeStr, Addresses);
-		if(!DisplayHeapEnum(Addresses, flags.fshort))
+		if(!DisplayHeapEnum(Addresses, flags.fshort, flags.top))
 		{
 			return;
 		}
@@ -169,7 +186,7 @@ EXT_COMMAND(windex,
 	{
 		typeStr.assign(GetArgStr("fieldname"));
 		indc->GetByFieldName(typeStr, Addresses);
-		if(!DisplayHeapEnum(Addresses, flags.fshort))
+		if(!DisplayHeapEnum(Addresses, flags.fshort, flags.top))
 		{
 			return;
 		}
@@ -178,7 +195,7 @@ EXT_COMMAND(windex,
 	{
 		typeStr.assign(GetArgStr("fieldtype"));
 		indc->GetByFieldType(typeStr, Addresses);
-		if(!DisplayHeapEnum(Addresses, flags.fshort))
+		if(!DisplayHeapEnum(Addresses, flags.fshort, flags.top))
 		{
 			return;
 		}
@@ -186,7 +203,7 @@ EXT_COMMAND(windex,
 	if(HasArg("withpointer"))
 	{
 		indc->GetWithPointers(Addresses);
-		if(!DisplayHeapEnum(Addresses, flags.fshort))
+		if(!DisplayHeapEnum(Addresses, flags.fshort, flags.top))
 		{
 			return;
 		}
@@ -196,7 +213,7 @@ EXT_COMMAND(windex,
 	{
 		mtStr.assign(GetArgStr("mt"));
 		indc->GetByMethodName(mtStr, Addresses);
-		if(!DisplayHeapEnum(Addresses, flags.fshort))
+		if(!DisplayHeapEnum(Addresses, flags.fshort, flags.top))
 		{
 			return;
 		}

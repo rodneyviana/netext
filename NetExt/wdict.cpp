@@ -132,7 +132,7 @@ EXT_COMMAND(wruntime,
 	Out("Runtime Settings per Application Pool\n");
 	FromFlags flags;
 	ZeroMemory(&flags, sizeof(flags));
-	flags.cmd = "where ((!_beforeFirstRequest) || _shutdownReason) \"\\n=========================================================================\\n\",\"Address         : \",$addr(),\"\\nFirst Request   : \",$tickstodatetime(_firstRequestStartTime.dateData),\"\\nApp Pool User   : \",_wpUserId,\"\\nTrust Level     : \",_trustLevel,\"\\nApp Domnain Id  : \",_appDomainId,\"\\nDebug Enabled   : \",$if(_debuggingEnabled,\"True (Not recommended in production)\",\"False\"),\"\\nActive Requests : \",_activeRequestCount,\"\\nPath            : \",_appDomainAppPath,$if(_isOnUNCShare,\" (in a share)\",\" (local disk)\"),\"\\nTemp Folder     : \",_tempDir,\"\\nCompiling Folder: \",_codegenDir,\"\\nShutdown Reason : \",$if(_shutdownReason,$enumname(_shutdownReason)+\" at \"+$tickstodatetime(_lastShutdownAttemptTime.dateData),\"Not shutting down\"),\"\\n\\n\",$if(_shutdownReason,_shutDownMessage+\"n\"+_shutDownStack,\"\")";
+	flags.cmd = "where ((!_beforeFirstRequest) || _shutdownReason) \"\\n=========================================================================\\n\",\"Address         : \",$addr(),\"\\nFirst Request   : \",$tickstodatetime(_firstRequestStartTime.dateData),\"\\nRuning Time     : \",$tickstotimespan($now() - _firstRequestStartTime.dateData),\"\\nApp Pool User   : \",_wpUserId,\"\\nTrust Level     : \",_trustLevel,\"\\nApp Domnain Id  : \",_appDomainId,\"\\nDebug Enabled   : \",$if(_debuggingEnabled,\"True (Not recommended in production)\",\"False\"),\"\\nActive Requests : \",_activeRequestCount,\"\\nPath            : \",_appDomainAppPath,$if(_isOnUNCShare,\" (in a share)\",\" (local disk)\"),\"\\nTemp Folder     : \",_tempDir,\"\\nCompiling Folder: \",_codegenDir,\"\\nShutdown Reason : \",$if(_shutdownReason,$enumname(_shutdownReason)+\" at \"+$tickstodatetime(_lastShutdownAttemptTime.dateData),\"Not shutting down\"),\"\\n\\n\",$if(_shutdownReason,_shutDownMessage+\"n\"+_shutDownStack,\"\")";
 	
 	flags.ftype = true;
 	flags.nofield = true;
@@ -860,9 +860,15 @@ EXT_COMMAND(whttp,
 			FromFlags flagsQ;
 			ZeroMemory(&flagsQ, sizeof(flagsQ));
 			if(flags.forder)
-				flagsQ.cmd = "$rpad($tickstodatetime(_utcTimestamp.dateData), 0n30), $if(!_thread, \"  --\",$lpad($thread(_thread.DONT_USE_InternalThread),4)),\" \",$if((_timeoutSet==1),$tickstotimespan(_timeout._ticks), \"Not set \"), \" \", $if(_response._completed || _finishPipelineRequestCalled,\"Finished\", $tickstotimespan($now()-_utcTimestamp.dateData)), \" \", $replace($lpad(_response._statusCode,8),\"0n\",\"\"),\" \", $rpad($isnull(_request._httpMethod,\"NA\"),8), \" \", $isnull(_request._url.m_String, _request._filePath._virtualPath)";
+				if(NET2)
+					flagsQ.cmd = "$rpad($tickstodatetime(_utcTimestamp.dateData), 0n30), $if(!_thread, \"  --\",$lpad($thread(_thread.DONT_USE_InternalThread),4)),\" \",$if((_timeoutSet==1),$tickstotimespan(_timeout._ticks), \"Not set \"), \" \", $if(_response._completed || _finishPipelineRequestCalled,\"Finished\", $tickstotimespan($maskticks($now())-$maskticks(_utcTimestamp.dateData))), \" \", $replace($lpad(_response._statusCode,8),\"0n\",\"\"),\" \", $rpad($isnull(_request._httpMethod,\"NA\"),8), \" \", $isnull(_request._url.m_String, _request._filePath._virtualPath)";
+				else
+					flagsQ.cmd = "$rpad($tickstodatetime(_utcTimestamp.dateData), 0n30), $if(!_thread, \"  --\",$lpad($thread(_thread.DONT_USE_InternalThread),4)),\" \",$if((_timeoutState!=0),$tickstotimespan(_timeoutTicks), \"Not set \"), \" \", $if(_response._completed || _finishPipelineRequestCalled,\"Finished\", $tickstotimespan($maskticks($now())- $maskticks(_utcTimestamp.dateData))), \" \", $replace($lpad(_response._statusCode,8),\"0n\",\"\"),\" \", $rpad($isnull(_request._httpMethod,\"NA\"),8), \" \", $isnull(_request._url.m_String, _request._filePath._virtualPath)";
 			else
-				flagsQ.cmd = "$if(!_thread, \"  --\",$lpad($thread(_thread.DONT_USE_InternalThread),4)),\" \",$if((_timeoutSet==1),$tickstotimespan(_timeout._ticks), \"Not set \"), \" \", $if(_response._completed || _finishPipelineRequestCalled,\"Finished\", $tickstotimespan($now()-_utcTimestamp.dateData)), \" \", $replace($lpad(_response._statusCode,8),\"0n\",\"\"),\" \", $rpad($isnull(_request._httpMethod,\"NA\"),8), \" \", $isnull(_request._url.m_String, _request._filePath._virtualPath)";
+				if(NET2)
+					flagsQ.cmd = "$if(!_thread, \"  --\",$lpad($thread(_thread.DONT_USE_InternalThread),4)),\" \",$if((_timeoutSet==1),$tickstotimespan(_timeout._ticks), \"Not set \"), \" \", $if(_response._completed || _finishPipelineRequestCalled,\"Finished\", $tickstotimespan($maskticks($now())-$maskticks(_utcTimestamp.dateData))), \" \", $replace($lpad(_response._statusCode,8),\"0n\",\"\"),\" \", $rpad($isnull(_request._httpMethod,\"NA\"),8), \" \", $isnull(_request._url.m_String, _request._filePath._virtualPath)";
+				else
+					flagsQ.cmd = "$if(!_thread, \"  --\",$lpad($thread(_thread.DONT_USE_InternalThread),4)),\" \",$if((_timeoutState!=0),$tickstotimespan(_timeoutTicks), \"Not set \"), \" \", $if(_response._completed || _finishPipelineRequestCalled,\"Finished\", $tickstotimespan($maskticks($now())-$maskticks(_utcTimestamp.dateData))), \" \", $replace($lpad(_response._statusCode,8),\"0n\",\"\"),\" \", $rpad($isnull(_request._httpMethod,\"NA\"),8), \" \", $isnull(_request._url.m_String, _request._filePath._virtualPath)";
 			flagsQ.fobj = true;
 			flagsQ.nofield = true;
 			flagsQ.nospace = true;
@@ -907,11 +913,30 @@ EXT_COMMAND(whttp,
 	fields.push_back("_request._rawContent._expectedLength");
 	fields.push_back("_items");
 	fields.push_back("_utcTimestamp.dateData");
+
+
 	fields.push_back("_errors._items");  // _message[n]
-	fields.push_back("_timeoutStartTime.dateData");
-	fields.push_back("_timeout._ticks");
-	fields.push_back("_timeoutSet");
-	fields.push_back("_timeoutState");
+
+	string timeoutStartTicksFields = "_timeoutStartTime.dateData";
+	string timeoutTicksField = "_timeout._ticks";
+	string timeoutSetField = "_timeoutSet";
+
+	if(!NET2)
+	{
+		timeoutStartTicksFields = "_timeoutStartTimeUtcTicks";
+		timeoutTicksField = "_timeoutTicks";
+		timeoutSetField = "_timeoutState";
+
+	}
+
+	fields.push_back(timeoutStartTicksFields); 
+
+	fields.push_back(timeoutTicksField); 
+
+	fields.push_back(timeoutSetField); 
+
+	if(!NET2)
+		fields.push_back("_timeoutState"); // Don't repeat for .NET 4
 	fields.push_back("_finishPipelineRequestCalled");
 
 	fields.push_back("_thread.DONT_USE_InternalThread");
@@ -928,6 +953,7 @@ EXT_COMMAND(whttp,
 
 
 
+
 	varMap fieldV;
 	DumpFields(addr,fields,0,&fieldV);
 	SVAL v;
@@ -938,23 +964,18 @@ EXT_COMMAND(whttp,
 	Out("Target/Dump Time  : %S\n", tickstodatetime(SpecialCases::TicksFromTarget()).c_str());
 	Out("Request Time      : %S\n",tickstodatetime(fieldV["_utcTimestamp.dateData"].Value.u64).c_str());
 	if(!(fieldV["_response._completed"].Value.b  || fieldV["_finishPipelineRequestCalled"].Value.b))
-		Out("Running time      : %s\n",tickstotimespan(SpecialCases::TicksFromTarget() - fieldV["_utcTimestamp.dateData"].Value.u64).c_str());
+		Out("Running time      : %s\n",tickstotimespan((SpecialCases::TicksFromTarget() & TicksMask) - (fieldV["_utcTimestamp.dateData"].Value.u64 & TicksMask)).c_str());
 
 	ULONG curTime;
 	curTime = EvalExprU64("@$dbgtime");
-	if(fieldV["_timeoutSet"].Value.b)
+	if(fieldV[timeoutSetField].Value.b)
 	{
-		Out("Timeout           : %s\n", tickstotimespan(fieldV["_timeout._ticks"].Value.u64).c_str());
-		Out("Timeout Start Time: %S\n",tickstodatetime(fieldV["_timeoutStartTime.dateData"].Value.u64).c_str());
-		Out("Timeout Limit Time: %S\n",tickstodatetime(fieldV["_timeoutStartTime.dateData"].Value.u64+fieldV["_timeout._ticks"].Value.u64).c_str());
+		Out("Timeout           : %s\n", tickstotimespan(fieldV[timeoutTicksField].Value.u64).c_str());
+		Out("Timeout Start Time: %S\n",tickstodatetime(fieldV[timeoutStartTicksFields].Value.u64).c_str());
+		Out("Timeout Limit Time: %S\n",tickstodatetime(fieldV[timeoutStartTicksFields].Value.u64+fieldV[timeoutTicksField].Value.u64).c_str());
 
-		//if(fieldV["_timeoutState"].Value.i32==0)
-		//	Out("Timed Out         : False\n");
-		//else
-		//	Out("Timed Out         : True\n");
+
 	}
-	// Need Fixing
-	//Out("Time Now/Dump Time: %s\n", tickstoCTime(curTime/1000).c_str());
 	v=fieldV["_thread.DONT_USE_InternalThread"];
 	if(v.IsValid && v.Value.ptr != NULL)
 	{
@@ -1020,14 +1041,7 @@ EXT_COMMAND(whttp,
 
 	if(fieldV["_finishPipelineRequestCalled"].Value.b) //  _response._ended
 		Out("Warning: Finish request pipeline has been called\n");
-	/*
-	fields.push_back("_response._statusCode");
-	fields.push_back("_response._contentType");
-	fields.push_back("_response._customHeaders._items");   // _unknownHeader[n], _knownHeaderIndex[n]=-1 or number, _value
-	fields.push_back("_response._charSet");
-	fields.push_back("_response._writer._stream");  // still to resolve
-	fields.push_back("_response._statusDescription");
-	*/
+
 	v=fieldV["_request._serverVariables._entriesArray._items"];
 	if(v.Value.ptr != NULL)
 	{

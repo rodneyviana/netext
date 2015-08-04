@@ -68,22 +68,48 @@ CComPtr<NetExtShim::IMDHeap> pHeap;
 
 	std::string tickstotimespan(UINT64 Ticks)
 	{
-		time_t rawtime = (time_t)(Ticks/10000000);
+		// Number of 100ns ticks per time unit
+		ULONG64 TicksPerMillisecond = 10000;
+		ULONG64 TicksPerSecond = TicksPerMillisecond * 1000;
+		ULONG64 TicksPerMinute = TicksPerSecond * 60;
+		ULONG64 TicksPerHour = TicksPerMinute * 60;
+		ULONG64 TicksPerDay = TicksPerHour * 24;
+
+		ULONG64 TicksMask = 0x3FFFFFFFFFFFFFFF;
+
+		ULONG64 ticks = Ticks & TicksMask;
+		if(ticks < TicksPerSecond || Ticks > (UINT64)INT64_MAX)
+			return "00:00:00";
+		string days;
+		if(ticks > TicksPerDay)
+		{
+			char daysbuffer[80];
+			if(ticks / TicksPerDay > 0)
+			{
+				sprintf_s(daysbuffer, 80, "%u days ", ticks / TicksPerDay);
+				days.assign(daysbuffer);
+			}
+		}
+
+		time_t rawtime = (time_t)(ticks/10000000);
 		char buff[80];
 		struct tm* ti;
 		ti = gmtime(&rawtime); // this is not memory leak. The memory is allocated statically and overwritten every time
 		if(ti)
 		{
 			strftime(buff,80,"%H:%M:%S", ti);
-			return buff;
+			days.append(buff);
+			return days;
 		} else
 		{
-			return "#invalid#";
+			return days+"#invalid#";
 		}
 	}
 
 	std::string tickstoCTime(UINT64 Ticks)
 	{
+
+
 		time_t rawtime = (time_t)Ticks;
 		char buff[80];
 		struct tm* ti;
@@ -569,6 +595,9 @@ inline void Init()
 
 		DebugControl->ControlledOutput(DEBUG_OUTCTL_ALL_CLIENTS | DEBUG_OUTCTL_DML, DEBUG_OUTPUT_NORMAL, "<b>%S version %s</b> ", moduleName.c_str(), CVersionInfo::GetVersionString().c_str());
 		DebugControl->ControlledOutput(DEBUG_OUTCTL_ALL_CLIENTS | DEBUG_OUTCTL_DML, DEBUG_OUTPUT_NORMAL, "<b>" ver_date "</b>");
+#if _DEBUG
+		DebugControl->ControlledOutput(DEBUG_OUTCTL_ALL_CLIENTS | DEBUG_OUTCTL_DML, DEBUG_OUTPUT_NORMAL, " (*** Debug Build ***)");
+#endif
 		DebugControl->ControlledOutput(DEBUG_OUTCTL_ALL_CLIENTS | DEBUG_OUTCTL_DML, DEBUG_OUTPUT_NORMAL, "\n");
 		DebugControl->ControlledOutput(DEBUG_OUTCTL_ALL_CLIENTS | DEBUG_OUTCTL_DML, DEBUG_OUTPUT_NORMAL, "License and usage can be seen here: <link cmd=\"!whelp license\">!whelp license</link>\n");
 		DebugControl->ControlledOutput(DEBUG_OUTCTL_ALL_CLIENTS | DEBUG_OUTCTL_DML, DEBUG_OUTPUT_NORMAL, "Check Latest version: <link cmd=\"!wupdate\">!wupdate</link>\n");

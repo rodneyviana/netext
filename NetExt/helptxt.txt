@@ -1,7 +1,7 @@
 ##
 <b>Show Object Detail Commands</b>
 <b>---------------------------</b>
-!||wdo|| - Display ad-hoc objects or arrays from GAC or Stack	
+!||wdo|| - Display ad-hoc objects or arrays from Heap or Stack	
 !||wselect|| - Display ad-hoc fields (and level fields) for an object or for all item in an array
 !||wfrom|| - Perform SQL-like analysis of Heap objects enabling comparison, ||expression|| evaluation and indexed filtering.
 <b>*(new)*</b> !||wpe|| - Dump Exception Object
@@ -437,7 +437,8 @@ NetExt (this extension) Version: 2.0.0.2
 ##wruntime
 Dump all active Http Runtime information
 This is equivalent to this command:
-!wfrom -nospace -nofield -type System.Web.HttpRuntime where ((!_beforeFirstRequest) || _shutdownReason) "\n=========================================================================\n","Address         : ",$addr(),"\nFirst Request   : ",$tickstodatetime(_firstRequestStartTime.dateData),"\nApp Pool User   : ",_wpUserId,"\nTrust Level     : ",_trustLevel,"\nApp Domnain Id  : ",_appDomainId,"\nDebug Enabled   : ",$if(_debuggingEnabled,"True (Not recommended in production)","False"),"\nActive Requests : ",_activeRequestCount,"\nPath            : ",_appDomainAppPath,$if(_isOnUNCShare," (in a share)"," (local disk)"),"\nTemp Folder     : ",_tempDir,"\nCompiling Folder: ",_codegenDir,"\nShutdown Reason : ",$if(_shutdownReason,$enumname(_shutdownReason)+" at "+$tickstodatetime(_lastShutdownAttemptTime.dateData),"Not shutting down"),"\n\n",$if(_shutdownReason,_shutDownMessage+"n"+_shutDownStack,"")
+!wfrom -nospace -nofield -type System.Web.HttpRuntime where ((!_beforeFirstRequest) || _shutdownReason) "\n=========================================================================\n","Address         : ",$addr(),"\nFirst Request   : ",$tickstodatetime(_firstRequestStartTime.dateData),"\nRuning Time     : ",$tickstotimespan($now() - _firstRequestStartTime.dateData),"\nApp Pool User   : ",_wpUserId,"\nTrust Level     : ",_trustLevel,"\nApp Domnain Id  : ",_appDomainId,"\nDebug Enabled   : ",$if(_debuggingEnabled,"True (Not recommended in production)","False"),"\nActive Requests : ",_activeRequestCount,"\nPath            : ",_appDomainAppPath,$if(_isOnUNCShare," (in a share)"," (local disk)"),"\nTemp Folder     : ",_tempDir,"\nCompiling Folder: ",_codegenDir,"\nShutdown Reason : ",$if(_shutdownReason,$enumname(_shutdownReason)+" at "+$tickstodatetime(_lastShutdownAttemptTime.dateData),"Not shutting down"),"\n\n",$if(_shutdownReason,_shutDownMessage+"n"+_shutDownStack,"")
+
 
 <b>Syntax:</b>
 ---------
@@ -453,7 +454,8 @@ This is equivalent to this command:
 =========================================================================
 Address         : 000000011F7244F0
 First Request   : 7/23/2014 5:13:36 PM
-App Pool User   : US\us-go-svcedcApp
+Runing Time     : 00:03:14
+App Pool User   : CONTOSO\serv_account
 Trust Level     : Full
 App Domnain Id  : /LM/W3SVC/8989/ROOT/Services/2013v3-1-130506092168812411
 Debug Enabled   : True (Not recommended in production)
@@ -944,7 +946,7 @@ Index and dump managed heap types enabling tree view and to save index in disk (
 
 <b>Syntax</b>
 ------------
-!windex [-quiet] [-enumtypes] [-tree] [-flush] [-short] [-ignorestate]
+!windex [-quiet] [-enumtypes] [-tree] [-flush] [-short] [-ignorestate] [-top &lt;output-limit&gt;]
         [-withpointer] [-type &lt;partial-type-name-list&gt;] [-fieldname &lt;partial-field-name&gt;]
         [-fieldtype &lt;partial-type-name-list&gt;] [-implement &lt;partial-type-name-list&gt;] [-save &lt;string&gt;]
         [-load &lt;string&gt;] [-mt &lt;address-list&gt;]
@@ -962,7 +964,9 @@ Index and dump managed heap types enabling tree view and to save index in disk (
 
 	Filters (choose just one of the following):
 	-------------------------------------------
-	<b>-type &lt;partial-type-name-list&gt;</b> - type;List of types to include wildcards accepted (eg. -type
+
+	<b>-top lt;output-limit&gt;</b> - Limit the number of lines returned (eg. -top 50)
+	<b>-type &lt;partial-type-name-list&gt;</b> - List of types to include wildcards accepted (eg. -type
 		*HttRequest,system.servicemodel.*)
 	<b>-fieldname &lt;partial-field-name&gt;</b> - List of field names that the type must
 		contain (eg. -fieldname *request,_wr)
@@ -2051,7 +2055,7 @@ m_issuerName: NULL
 <b>$timespantoticks(&lt;h&gt;, &lt;m&gt;, &lt;s&gt;)</b> - Return number of ticks for &lt;h&gt;, &lt;m&gt; and &lt;s&gt;
 <b>$datetoticks(&lt;year&gt;, &lt;month&gt;, &lt;day&gt;)</b> - Return number of ticks for &lt;year&gt;, &lt;month&gt; and &lt;day&gt;
 <b>$now()</b> - Current time or time the dump was captured in ticks
-
+<b>$maskticks(&lt;ticks&gt;)</b> -Normalize date-time to exclude time-zone information. Use this to perform time span operations. Mask is only good to identify the original time zone.
 <i>Example:</i>
 -------------
 
@@ -2063,6 +2067,18 @@ calculated: 10/26/2011 9:18:54 PM
 calculated: 00:01:29
 
 1 Object(s) listed
+
+0:010&gt; !wfrom -obj 000000d822e75188 select timestamp.dateData,$maskticks(timestamp.dateData),$tickstotimespan($now()-timestamp.dateData),$tickstotimespan($now()-$maskticks(timestamp.dateData)),$tickstodatetime($now()),$tickstodatetime(timestamp.dateData)
+timestamp.dateData: 88d27734c021047b    (Ticks with time zone mask, not good for calculation)
+calculated: 08D27734C021047B            (Time zone bits removed, good for calculation)
+calculated: 00:00:00					(Calculation failed because time zone bits were not removed)
+calculated: 05:00:02					(Calculation worked because time zone was removed)
+calculated: 6/17/2015 9:49:48 PM        (Current time)
+calculated: 6/17/2015 4:49:45 PM		(Time of the time stamp)
+
+1 Object(s) listed
+
+
 
 ##wgchandle
 List all rooted objects (handles) in heap.

@@ -128,6 +128,7 @@ namespace CALC
 		frawfield,
 		ftoguid,
 		fnow,
+		fmaskticks,
 		farraydim,
 		frank,
 		fstrsize,
@@ -459,101 +460,51 @@ namespace CALC
 		//$tickstotimespan(0n10000000*(0n20+0n30*0n60+1*0n60*0n60))
 		SVAL i=st.top();
 		st.pop();
-		time_t rawtime;
+
+		ULONG64 ticks;
 		if(i.IsReal())
-			rawtime = (time_t)(i.DoubleValue/10000000);
-		else
-			rawtime = i.Value.i64/10000000;
-		char buff[80];
-		struct tm* ti;
-		ti = gmtime(&rawtime); // this is not memory leak. The memory is allocated statically and overwritten every time
-		if(ti)
 		{
-			strftime(buff,80,"%H:%M:%S", ti);
-			do_stdstring(buff);
+			ticks = (ULONG64)i.DoubleValue;
 		} else
 		{
-			do_stdstring("#invalid#");
+			ticks = i.Value.u64;
 		}
+
+		do_stdstring(tickstotimespan(ticks));
+
 	}
 	void do_tickstodatetime()
 	{
 		SVAL i=st.top();
 		st.pop();
-		/*
-		// Number of milliseconds per time unit
-		//int MillisPerSecond = 1000;
-		//int MillisPerMinute = MillisPerSecond * 60;
-		//int MillisPerHour = MillisPerMinute * 60;
-		//int MillisPerDay = MillisPerHour * 24;
 
-		// Number of days in a non-leap year
-		int DaysPerYear = 365;
-		// Number of days in 4 years
-		int DaysPer4Years = DaysPerYear * 4 + 1;
-		// Number of days in 100 years
-		int DaysPer100Years = DaysPer4Years * 25 - 1;
-		// Number of days in 400 years
-		int DaysPer400Years = DaysPer100Years * 4 + 1;
-
-		// Number of days from 1/1/0001 to 12/31/1600
-		int DaysTo1601 = DaysPer400Years * 4;
-		// Number of days from 1/1/0001 to 12/30/1899
-		//int DaysTo1899 = DaysPer400Years * 4 + DaysPer100Years * 3 - 367;
-		// Number of days from 1/1/0001 to 12/31/9999
-		//int DaysTo10000 = DaysPer400Years * 25 - 366;
-
-		//ULONG64 MinTicks = 0;
-		//ULONG64 MaxTicks = DaysTo10000 * TicksPerDay - 1;
-		//ULONG64 MaxMillis = (long)DaysTo10000 * MillisPerDay;
-
-		// Number of 100ns ticks per time unit
-		ULONG64 TicksPerMillisecond = 10000;
-		ULONG64 TicksPerSecond = TicksPerMillisecond * 1000;
-		ULONG64 TicksPerMinute = TicksPerSecond * 60;
-		ULONG64 TicksPerHour = TicksPerMinute * 60;
-		ULONG64 TicksPerDay = TicksPerHour * 24;
-		*/
-		ULONG64 FileTimeOffset = DaysTo1601 * TicksPerDay;
-
-		//FileTimeOffset.QuadPart = 0x701CE1722770000;
 		ULONG64 ticks = 0;
-
-		ticks = i.Value.u64 & TicksMask;
-
-		//ULONG64 kind = 0;
-		//ULONG64 FlagsMask = 0xC000000000000000;
-		//kind = value & FlagsMask;
-
-		// GetSystemFileTime() = Ticks - FileTimeOffset
-		SYSTEMTIME st;
-		FILETIME ft;
-		LARGE_INTEGER t;
-
-		// compensate for 1/1/1600 for time offset as .NET starts as 1/1/0001 0:0:0
-		t.QuadPart = ticks - FileTimeOffset;
-
-		ft.dwHighDateTime = t.HighPart;
-		ft.dwLowDateTime = t.LowPart;
-
-		char szLocalDate[255], szLocalTime[255];
-
-		//FileTimeToLocalFileTime( &ft, &ft );
-		if(FileTimeToSystemTime( &ft, &st ))
+		if(i.IsReal())
 		{
-			//st.wYear-= 1600; // starting year in .NET is 1/1/1600
-			GetDateFormatA( LOCALE_USER_DEFAULT, DATE_SHORTDATE, &st, NULL,
-							szLocalDate, 255 );
-			GetTimeFormatA( LOCALE_USER_DEFAULT, 0, &st, NULL, szLocalTime, 255 );
-			//wsprintf( L"%s %s\n", szLocalDate, szLocalTime );
-			std::string dt=szLocalDate;
-			dt.append(" ");
-			dt.append(szLocalTime);
-			do_stdstring(dt);
+			ticks = (LONG64)i.DoubleValue;
 		} else
 		{
-			do_stdstring(L"#INVALIDDATE#");
+			ticks = i.Value.u64;
 		}
+
+		do_stdstring(tickstodatetime(ticks));
+	}
+
+	void do_maskticks()
+	{
+		SVAL i=st.top();
+		st.pop();
+		ULONG64 ticks = 0;
+		if(i.IsReal())
+		{
+			ticks = (ULONG64)i.DoubleValue;
+		} else
+		{
+			ticks = i.Value.u64;
+		}
+
+		do_pointer(ticks & TicksMask);
+
 	}
 	void do_timespantoticks()
 	{
@@ -573,7 +524,7 @@ namespace CALC
 
 	void do_now()
 	{
-		do_int(SpecialCases::TicksFromTarget());
+		do_pointer(SpecialCases::TicksFromTarget());
 	}
 
 	void do_fstring()
@@ -1427,6 +1378,10 @@ namespace CALC
 				assert_param(3);
 				do_timespantoticks();
 				break;
+			case fmaskticks:
+				assert_param(1);
+				do_maskticks();
+				break;
 			case fdatetoticks:
 				assert_param(3);
 				do_datetoticks();
@@ -1611,6 +1566,7 @@ struct calculator : public grammar<calculator>
 				("$timespantoticks", ftimespantoticks)
 				("$datetoticks", fdatetoticks)
 				("$now", fnow)
+				("$maskticks", fmaskticks)
 				("$string", fstring)
 				("$chain", fchain)
 				("$containpointer", fcontainpointer)

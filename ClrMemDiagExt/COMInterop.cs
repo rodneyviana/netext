@@ -904,6 +904,8 @@ namespace NetExt.Shim
         public void GetHeader(ulong objRef, out MD_TypeData typeData)
         {
             typeData = new MD_TypeData();
+            if (m_type == null)
+                return;
             if (m_type.BaseType != null)
                 typeData.parentMT = HeapStatItem.GetMTOfType(m_type.BaseType);
             else
@@ -990,6 +992,8 @@ namespace NetExt.Shim
             typeData.module = m_type.Module.ImageBase;
             typeData.assembly = m_type.Module.AssemblyId;
             typeData.containPointers = m_type.ContainsPointers;
+            typeData.MethodTable &= ~(ulong)3;
+            typeData.parentMT &= ~(ulong)3;
  
             return;
         }
@@ -1024,7 +1028,7 @@ namespace NetExt.Shim
 
         public void GetName(out string pName)
         {
-            pName = m_type.Name;
+            pName = m_type.Name.Replace('+','_');
         }
 
         public void GetRuntimeName(ulong objRef, out string pName)
@@ -1037,7 +1041,7 @@ namespace NetExt.Shim
             ClrType runtimeType = m_type.GetRuntimeType(objRef);
             if (runtimeType != null)
             {
-                pName = runtimeType.Name;
+                pName = runtimeType.Name.Replace('+', '_');
                 return;
             }
 
@@ -2213,7 +2217,9 @@ namespace NetExt.Shim
         public int CompareVersion(int Major, int Minor, int Build, int Revision)
         {
             Version curr = new Version(Major, Minor, Build, Revision);
-
+#if DEBUG
+            Exports.WriteLine("***Debug Build***");
+#endif
             Version online = GetOnlineVersion();
             if (online > curr)
             {
