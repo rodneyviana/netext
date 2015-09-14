@@ -625,7 +625,7 @@ namespace NetExt.HeapCacheUtil
         {
             if (Type == null)
                 return 0UL;
-            object temp = AdHoc.GetMember(Type, "m_handle");
+            object temp = AdHoc.GetMember(Type, "_handle");
 
             if (temp as ulong? == null)
             {

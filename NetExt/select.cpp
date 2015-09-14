@@ -503,7 +503,7 @@ namespace CALC
 			ticks = i.Value.u64;
 		}
 
-		do_pointer(ticks & TicksMask);
+		do_int(ticks & TicksMask);
 
 	}
 	void do_timespantoticks()
@@ -524,7 +524,7 @@ namespace CALC
 
 	void do_now()
 	{
-		do_pointer(SpecialCases::TicksFromTarget());
+		do_int(SpecialCases::TicksFromTarget());
 	}
 
 	void do_fstring()
