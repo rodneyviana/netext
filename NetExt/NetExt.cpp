@@ -692,12 +692,57 @@ EXT_COMMAND(wdae,
 	pHeap->DumpAllExceptions(objEnum);
 }
 
+//
+// Adding fork from Sebastian Solnica to adjust wpe to print current thread exception if there is one and no parameter is passed
+// More on Sebastian Solnica here: https://lowleveldesign.wordpress.com/2015/07/09/netext-sos-on-steroids/
+//
 EXT_COMMAND(wpe,
 			"Dump Exception Object. Use '!whelp wpe' for detailed help",
-			"{;e,r;;Address,Exception Address}")
+		      "{;e,o;;Address,Exception Address}")  
 
-{
-	INIT_API();
-	CLRDATA_ADDRESS addr = GetUnnamedArgU64(0);
-	pHeap->DumpException(addr);
-}
+{   
+    INIT_API();   
+   
+    CLRDATA_ADDRESS addr = 0;   
+    
+    if (m_NumUnnamedArgs == 0)   
+    {   
+        // check if the current thread has an exception info attached   
+        CComPtr<IMDThreadEnum>  threadEnum;   
+    
+        HRESULT hr = pRuntime->EnumerateThreads(&threadEnum);   
+        EXITPOINT("Unable to enumerate threads");   
+    
+        ULONG threadId;   
+        ULONG sysId;   
+        g_ExtInstancePtr->m_System3->GetCurrentThreadSystemId(&sysId);   
+        g_ExtInstancePtr->m_System3->GetCurrentThreadId(&threadId);   
+        while (hr == S_OK)   
+        {   
+            CComPtr<IMDThread> thread;   
+            hr = threadEnum->Next(&thread);   
+    
+            long osId;   
+    
+            if (hr == S_OK && thread->GetOSThreadId(&osId) == S_OK)   
+            {   
+                if ((ULONG)osId == sysId)   
+                {   
+                    CComPtr<IMDException> ex;   
+                    thread->GetCurrentException(&ex);   
+                    if (!ex)   
+                    {   
+                        Out("No exception in the current thread.");   
+                        return;   
+                    }   
+                    ex->GetObjectAddress(&addr);   
+                }   
+            }   
+        }   
+    }   
+    else   
+    {   
+        addr = GetUnnamedArgU64(0);   
+    }   
+    pHeap->DumpException(addr);   
+}  

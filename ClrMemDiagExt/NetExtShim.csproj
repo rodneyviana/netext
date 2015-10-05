@@ -133,9 +133,10 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Microsoft.Diagnostics.Runtime, Version=0.8.27.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+    <Reference Include="Dia2Lib, Version=2.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\Microsoft.Diagnostics.Runtime\Microsoft.Diagnostics.Runtime.dll</HintPath>
+      <EmbedInteropTypes>True</EmbedInteropTypes>
+      <HintPath>Microsoft.Diagnostics.Runtime\Refs\Dia2Lib.dll</HintPath>
     </Reference>
     <Reference Include="RGiesecke.DllExport.Metadata">
       <HintPath>..\packages\UnmanagedExports.1.2.6\lib\net\RGiesecke.DllExport.Metadata.dll</HintPath>
@@ -158,10 +159,97 @@
     <Compile Include="COMInterfaces.cs" />
     <Compile Include="COMInterop.cs" />
     <Compile Include="HeapCacheUtil.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\dacprivate.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\datatargetimpl.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\dbgengdatatarget.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Debugger\Enums.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Debugger\IDebugAdvanced.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Debugger\IDebugAdvanced2.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Debugger\IDebugAdvanced3.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Debugger\IDebugBreakpoint.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Debugger\IDebugBreakpoint2.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Debugger\IDebugBreakpoint3.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Debugger\IDebugClient.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Debugger\IDebugClient2.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Debugger\IDebugClient3.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Debugger\IDebugClient4.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Debugger\IDebugClient5.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Debugger\IDebugControl.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Debugger\IDebugControl2.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Debugger\IDebugControl3.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Debugger\IDebugControl4.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Debugger\IDebugControl5.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Debugger\IDebugControl6.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Debugger\IDebugDataSpaces.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Debugger\IDebugDataSpaces2.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Debugger\IDebugDataSpaces3.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Debugger\IDebugDataSpaces4.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Debugger\IDebugEventCallbacks.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Debugger\IDebugEventCallbacksWide.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Debugger\IDebugInputCallbacks.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Debugger\IDebugOutputCallbacks.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Debugger\IDebugOutputCallbacks2.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Debugger\IDebugOutputCallbacksWide.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Debugger\IDebugRegisters.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Debugger\IDebugRegisters2.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Debugger\IDebugSymbolGroup.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Debugger\IDebugSymbolGroup2.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Debugger\IDebugSymbols.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Debugger\IDebugSymbols2.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Debugger\IDebugSymbols3.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Debugger\IDebugSymbols4.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Debugger\IDebugSymbols5.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Debugger\IDebugSystemObjects.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Debugger\IDebugSystemObjects2.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Debugger\IDebugSystemObjects3.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Debugger\Structs.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Desktop\com.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Desktop\domains.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Desktop\fields.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Desktop\heap.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Desktop\helpers.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Desktop\legacyruntime.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Desktop\lockinspection.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Desktop\methods.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Desktop\modules.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Desktop\runtimebase.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Desktop\threadpool.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Desktop\threads.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Desktop\types.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Desktop\v45runtime.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\dumpdatareader.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\heapbase.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\internal.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\livedatatarget.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\metadata.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Native\dacprivate.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Native\heap.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Native\module.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Native\roots.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Native\runtime.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Native\types.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\public.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\runtimebase.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\sigparser.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Utilities\command.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Utilities\DirectoryUtilities.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Utilities\DumpReader.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Utilities\FileUtilities.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Utilities\pefile.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Utilities\SymbolLocator.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Utilities\SymbolPath.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Utilities\SymbolReader.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Microsoft.Diagnostics.Runtime\Microsoft.Diagnostics.Runtime.csproj" />
+    <Content Include="Microsoft.Diagnostics.Runtime\Refs\Dia2Lib.dll" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Microsoft.Diagnostics.Runtime\Properties\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

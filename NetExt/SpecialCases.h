@@ -476,6 +476,102 @@ SVAL GetValue(CLRDATA_ADDRESS offset, CorElementType CorType, CLRDATA_ADDRESS Me
 
 void DumpNamedKeys(CLRDATA_ADDRESS Address, std::string Key = "", namedKey *Keys = NULL);
 
+class SocketData
+{
+
+public:
+	int state;
+	bool ownsHandle;
+	bool willBlock;
+	HANDLE Handle;
+	bool isFullyInitialized;
+	bool isReleased;
+	bool isListening;
+	bool isConnected;
+	bool isDisconnected;
+	int closeTimeout;
+	int cleanedUp;
+	CLRDATA_ADDRESS rightEndpoint;
+	CLRDATA_ADDRESS remoteEndpoint;
+	CLRDATA_ADDRESS innerSocket;
+	SocketData():
+		state(0),
+		ownsHandle(0),
+		Handle(0),
+		isFullyInitialized(false),
+		isReleased(false),
+		isListening(false),
+		isConnected(false),
+		isDisconnected(false),
+		willBlock(false),
+		closeTimeout(0),
+		cleanedUp(0),
+		rightEndpoint(0),
+		remoteEndpoint(0),
+		innerSocket(0)
+	{};
+
+
+
+	bool OwnsHandle()
+	{
+		return ownsHandle;
+	}
+
+
+
+	bool IsListening()
+	{
+		return isListening;
+	}
+
+	bool IsConnected()
+	{
+		return isConnected;
+	}
+
+	bool IsReleased()
+	{
+		return isReleased;
+	}
+	bool IsFullyInitialized()
+	{
+		return isFullyInitialized;
+	}
+	bool IsClosed()
+	{
+		return (state & 1) == 1;
+	};
+	bool IsDisposed()
+	{
+		return (cleanedUp != 0) || ((state & 2) == 2);
+	};
+
+	int RefCount()
+	{
+		return state >> 2;
+	}
+};
+
+class SocketDetail
+{
+public:
+	bool isServer;
+	UINT total;
+	UINT connected;
+	UINT disconnected;
+	UINT disposed;
+	std::vector<SocketData> sockets;
+	SocketDetail():
+		isServer(false),
+		total(0),
+		connected(0),
+		disconnected(0),
+		disposed(0)
+	{};
+
+};
+
 class SpecialCases
 {
 public:
@@ -501,6 +597,12 @@ public:
 	static std::string IndentedXml(std::wstring XmlDoc);
 	static std::string XmlTree(std::wstring XmlDoc);
 	static void DumpHash(CLRDATA_ADDRESS Address, std::string NameMatch, std::string ValueMatch, std::vector<varMap>* KeyPair=NULL);
+	static bool GetSocketData(CLRDATA_ADDRESS Address, SocketData* Socket);
+	static std::wstring IPV4Address(INT64 Address, int Port);
+	static std::wstring IPV6Address(WORD* SocketAddress, int Port, int ScopeId=0);
+	static std::wstring IPAddress(CLRDATA_ADDRESS IPAddress);
+	static std::wstring HtmlEncode(std::wstring HtmlString, bool EncodeSpaces=false);
+
 
 };
 

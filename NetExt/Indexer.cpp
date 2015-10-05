@@ -702,9 +702,9 @@ bool DisplayHeapEnum(MatchingAddresses& Addresses, bool Short, UINT Top)
 	CLRDATA_ADDRESS objAddr;
 	UINT32 i=0;
 	if(g_ExtInstancePtr->m_PtrSize == 4)
-		g_ExtInstancePtr->Out("MT        Address    Size Heap Gen Type Name\n");
+		g_ExtInstancePtr->Out("Address   MT         Size Heap Gen Type Name\n");
 	else
-		g_ExtInstancePtr->Out("MT               Address             Size Heap Gen Type Name\n");
+		g_ExtInstancePtr->Out("Address          MT                  Size Heap Gen Type Name\n");
 
 	while(objAddr = enumAdd.GetNext())
 	{
@@ -742,17 +742,24 @@ bool DisplayHeapEnum(MatchingAddresses& Addresses, bool Short, UINT Top)
 
 void EXT_CLASS::Uninitialize()
 {
-
+	if(indc)
+	{
+		delete indc;
+		indc=NULL;
+	}
 	pAct = NULL;
 	pRuntime = NULL;
 	pHeap = NULL;
 	pRuntimeInfo = NULL;
 	pTarget = NULL;
-	bool released = true;
+	BOOL released = true;
 	if(hDll)
 	{
 		released = FreeLibrary(hDll);
+		if(!released)
+			g_ExtInstancePtr->Out("Unable to release NetExtShim.dll\n");
+		else
+			hDll = NULL;
 	}
-	if(indc) delete indc;
 	::CoUninitialize();
 }

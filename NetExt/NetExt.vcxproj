@@ -183,7 +183,7 @@
       <EmbedManagedResourceFile>NetExt.rc</EmbedManagedResourceFile>
       <IgnoreSpecificDefaultLibraries>/NODEFAULTLIB</IgnoreSpecificDefaultLibraries>
       <AdditionalLibraryDirectories>lib\$(PlatformShortName);</AdditionalLibraryDirectories>
-      <AdditionalDependencies>Rpcrt4.lib;msdasc.lib;engextcpp.lib;corguids.lib;version.lib;uuid.lib;dbgeng.lib;</AdditionalDependencies>
+      <AdditionalDependencies>Ws2_32.lib;dbgeng.lib;engextcpp.lib;Rpcrt4.lib;msdasc.lib;corguids.lib;version.lib;uuid.lib</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>echo copy /y $(TargetDir)*.* c:\debuggers32
@@ -214,9 +214,10 @@ copy /y $(TargetDir)*.* c:\debuggers32</Command>
       <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
       <EntryPointSymbol>
       </EntryPointSymbol>
-      <AdditionalDependencies>Rpcrt4.lib;msdasc.lib;engextcpp.lib;corguids.lib;version.lib;uuid.lib;dbgeng.lib;</AdditionalDependencies>
+      <AdditionalDependencies>Ws2_32.lib;dbgeng.lib;engextcpp.lib;Rpcrt4.lib;msdasc.lib;corguids.lib;version.lib;uuid.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>lib\$(PlatformShortName);</AdditionalLibraryDirectories>
       <AdditionalOptions>/debugtype:cv,fixup</AdditionalOptions>
+      <ShowProgress>NotSet</ShowProgress>
     </Link>
     <PostBuildEvent>
       <Command>copy /y $(TargetDir)*.* c:\debuggers</Command>
@@ -242,6 +243,7 @@ copy /y $(TargetDir)*.* c:\debuggers32</Command>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <ModuleDefinitionFile>NetExt.def</ModuleDefinitionFile>
+      <AdditionalDependencies>Ws2_32.lib;dbgeng.lib;engextcpp.lib;Rpcrt4.lib;msdasc.lib;corguids.lib;version.lib;uuid.lib</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
       <Command>$(SolutionDir)BuildHelp\bin\Release\BuildHelp.exe $(MSBuildProjectDirectory)\helptxt.txt $(MSBuildProjectDirectory)\whelp.cpp</Command>
@@ -264,7 +266,7 @@ copy /y $(TargetDir)*.* c:\debuggers32</Command>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <ModuleDefinitionFile>NetExt.def</ModuleDefinitionFile>
-      <AdditionalDependencies>dbgeng.lib;engextcpp.lib;Rpcrt4.lib;msdasc.lib;corguids.lib;version.lib;uuid.lib;;</AdditionalDependencies>
+      <AdditionalDependencies>Ws2_32.lib;dbgeng.lib;engextcpp.lib;Rpcrt4.lib;msdasc.lib;corguids.lib;version.lib;uuid.lib</AdditionalDependencies>
       <OutputFile>$(SolutionDir)$(PlatformTarget)\$(ConfigurationName)\$(TargetName)$(TargetExt)</OutputFile>
     </Link>
     <PostBuildEvent>
@@ -292,6 +294,7 @@ copy /y $(TargetDir)*.* c:\debuggers32</Command>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <ModuleDefinitionFile>NetExt.def</ModuleDefinitionFile>
+      <AdditionalDependencies>Ws2_32.lib;dbgeng.lib;engextcpp.lib;Rpcrt4.lib;msdasc.lib;corguids.lib;version.lib;uuid.lib</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
       <Command>$(SolutionDir)BuildHelp\bin\Release\BuildHelp.exe $(MSBuildProjectDirectory)\helptxt.txt $(MSBuildProjectDirectory)\whelp.cpp</Command>
@@ -314,6 +317,7 @@ copy /y $(TargetDir)*.* c:\debuggers32</Command>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <ModuleDefinitionFile>NetExt.def</ModuleDefinitionFile>
+      <AdditionalDependencies>Ws2_32.lib;dbgeng.lib;engextcpp.lib;Rpcrt4.lib;msdasc.lib;corguids.lib;version.lib;uuid.lib</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
       <Command>$(SolutionDir)BuildHelp\bin\Release\BuildHelp.exe $(MSBuildProjectDirectory)\helptxt.txt $(MSBuildProjectDirectory)\whelp.cpp</Command>
@@ -336,6 +340,7 @@ copy /y $(TargetDir)*.* c:\debuggers32</Command>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <ModuleDefinitionFile>NetExt.def</ModuleDefinitionFile>
+      <AdditionalDependencies>Ws2_32.lib;dbgeng.lib;engextcpp.lib;Rpcrt4.lib;msdasc.lib;corguids.lib;version.lib;uuid.lib</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
       <Command>$(SolutionDir)BuildHelp\bin\Release\BuildHelp.exe $(MSBuildProjectDirectory)\helptxt.txt $(MSBuildProjectDirectory)\whelp.cpp</Command>
@@ -360,7 +365,7 @@ copy /y $(TargetDir)*.* c:\debuggers32</Command>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <ModuleDefinitionFile>NetExt.def</ModuleDefinitionFile>
-      <AdditionalDependencies>dbgeng.lib;engextcpp.lib;Rpcrt4.lib;msdasc.lib;corguids.lib;version.lib;uuid.lib;;</AdditionalDependencies>
+      <AdditionalDependencies>Ws2_32.lib;dbgeng.lib;engextcpp.lib;Rpcrt4.lib;msdasc.lib;corguids.lib;version.lib;uuid.lib</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>xcopy /d /y $(TargetDir)*.* c:\debuggers</Command>
@@ -404,6 +409,7 @@ copy /y $(TargetDir)*.* c:\debuggers32</Command>
     <ClCompile Include="regsearch.cpp" />
     <ClCompile Include="select.cpp" />
     <ClCompile Include="selectparser.cpp" />
+    <ClCompile Include="socket.cpp" />
     <ClCompile Include="SpecialCases.cpp" />
     <ClCompile Include="wdict.cpp" />
     <ClCompile Include="wheap.cpp" />

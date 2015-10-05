@@ -157,6 +157,14 @@ EXT_COMMAND(wdo,
 		else
 			Out("%S\n", obj.String().c_str());
 	}
+	if(header)
+	{
+		string knownCase = SpecialCases::PrettyPrint(addr, mt);
+		if(knownCase.size() > 0)
+		{
+			Out("Known Type Value: %s\n", knownCase.c_str());
+		}
+	}
 	std::vector<FieldStore> fields = obj.classObj.Fields();
 	for(int i=0;i<fields.size();i++)
 	{

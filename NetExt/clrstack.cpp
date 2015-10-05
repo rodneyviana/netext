@@ -11,6 +11,16 @@ EXT_COMMAND(wclrstack,
 	"Dump current stack trace",
 	"{;e,o,d=@$peb;peb;PEB address}")
 {
+	//
+	// To resolve a problem in live targets
+	//
+	if(pRuntime)
+	{
+		long flushed = 0;
+		pRuntime->IsFlush(&flushed);
+		if(flushed == 0)
+			pRuntime->Flush();
+	}
 	DO_INIT_API;
 	using namespace NetExtShim;
 

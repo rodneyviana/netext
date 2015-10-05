@@ -4,7 +4,7 @@
 !||wdo|| - Display ad-hoc objects or arrays from Heap or Stack	
 !||wselect|| - Display ad-hoc fields (and level fields) for an object or for all item in an array
 !||wfrom|| - Perform SQL-like analysis of Heap objects enabling comparison, ||expression|| evaluation and indexed filtering.
-<b>*(new)*</b> !||wpe|| - Dump Exception Object
+!||wpe|| - Dump Exception Object
 
 <b>Enumerate objects</b>
 <b>------------------</b>
@@ -12,15 +12,16 @@
 !||wstack|| - dump unique stack objects
 !||wheap|| - list objects without indexing and show thottled heap sampling
 !||wgchandle|| - Dump GC root handles
-<b>*(new)*</b> !||wdae|| - Dump All Exceptions
+!||wdae|| - Dump All Exceptions
+
 
 <b>Process commands</b>
 <b>----------------</b>
 !||wclrstack|| - Dump current stack trace (only managed thread)
-<b>*(new)*</b> !||wthreads|| - show all managed threads
-<b>*(new)*</b> !||wver|| - Show CLR version and extension version
-<b>*(new)*</b> !||wupdate|| - Check for update
-<b>*(new)*</b> !||wdomain|| - Dump all Application Domains
+!||wthreads|| - show all managed threads
+!||wver|| - Show CLR version and extension version
+!||wupdate|| - Check for update
+!||wdomain|| - Dump all Application Domains
 
 <b>Special</b>
 <b>-------</b>
@@ -35,7 +36,8 @@
 !||wcookie|| - Display HTTP cookies
 !||wruntime|| - Display HTTP Runtime Info including Active Requests
 !||wtoken|| - Display WIF tokens and cookies
-<b>*(new)*</b> !||wclass|| - Dump classs layout
+!||wclass|| - Dump classs layout and let you set breakpoint
+<b>*(new)*</b> !||wsocket|| - Dump socket information
 
 <b>Misc</b>
 <b>----</b>
@@ -242,18 +244,18 @@ namespace System.Web.Configuration {
 
 
 ##wpe
-Dump Details of an Exception Object
+Dump Details of an Exception Object. If no parameter is provided it lists the last exception of the current thread
 
-<b>Usage:</b> !wpe &lt;expr&gt;
+<b>Usage:</b> !wpe [&lt;expr&gt;]
 <b>Where:</b>
-	<b>&lt;expr&gt;</b> is the Exception object address (you can use an expression).
+	<b>&lt;expr&gt;</b> is the Exception object address (you can use an expression). Optional.
  
 <b>Examples:</b>
 ---------
 
-<i>Dump a particular Exception</i>
-----------------------------------
-0:00&gt; !wpe 00000001045f0c68
+<i>Dump the last exception of the thread</i>
+----------------------------------------
+0:00&gt; !wpe
 Address: 00000001045f0c68
 Exception Type: System.InvalidOperationException
 Message: Could not retrieve a valid Windows identity.
@@ -480,6 +482,59 @@ HostingEnvironment caused shutdownn   at System.Environment.GetStackTrace(Except
    at System.Threading.QueueUserWorkItemCallback.System.Threading.IThreadPoolWorkItem.ExecuteWorkItem()
    at System.Threading.ThreadPoolWorkQueue.Dispatch()
    at System.Threading._ThreadPoolWaitCallback.PerformWaitCallback()
+
+##wsocket
+Dump the summary of all sockets. If a socket address is specified it lists details of the socket
+
+<b>Usage:</b> !wsocket [&lt;expr&gt;] [-ip &lt;str-expr&gt;]
+<b>Where:</b>
+	<b>&lt;expr&gt;</b> is the Socket object address (you can use an expression). Optional. List the summary if not specified
+	<b>-ip &lt;str-expr&gt;</b> is the partial IP address filter (e.g. -ip 192.168). Optional. Do not use *, just the partial IP
+
+<b>Examples:</b>
+-------------
+
+<i>Listing socket summary for a server and client socket application</i>
+-----------------------------------------------------------------------------
+0:000&gt;  !wsocket
+Type      Total Connected Disconnected Disposed Target IP
+===================================================================================
+Server        3         2            0        0 [fe80::25c7:c7c1:c747:a13e]:4510
+Client        2         1            1        1 127.0.0.1:8000
+
+Total Sockets:          6
+Skipped      :          1 *
+Disposed     :          1
+Connected    :          3
+Disconnected :          1
+
+You may be also interested in (copy and paste command)
+======================================================
+Connected Sockets: !wfrom -type System.Net.Sockets.Socket where(m_IsConnected) $a("\n==================================\nAddress         ",$addr()),$a("IP Address      ",$ipaddress(m_RightEndPoint)),$a("Remote IP       ",$ipaddress(m_RemoteEndPoint)),$a("Is Disposed?    ",$if(m_IntCleanedUp,"Yes", "No")),$a("Is Connected?   ",$if(m_IsConnected,"Yes", "No"))
+Listening Sockets: !wfrom -type System.Net.Sockets.Socket where(isListening) $a("\n==================================\nAddress         ",$addr()),$a("IP Address      ",$ipaddress(m_RightEndPoint)),$a("Remote IP       ",$ipaddress(m_RemoteEndPoint)),$a("Is Disposed?    ",$if(m_IntCleanedUp,"Yes", "No")),$a("Is Connected?   ",$if(m_IsConnected,"Yes", "No"))
+Disconnected     : !wfrom -type System.Net.Sockets.Socket where(m_IsDisconnected) $a("\n==================================\nAddress         ",$addr()),$a("IP Address      ",$ipaddress(m_RightEndPoint)),$a("Remote IP       ",$ipaddress(m_RemoteEndPoint)),$a("Is Disposed?    ",$if(m_IntCleanedUp,"Yes", "No")),$a("Is Connected?   ",$if(m_IsConnected,"Yes", "No"))
+Disposed Sockets : !wfrom -type System.Net.Sockets.Socket where(m_IntCleanedUp) $a("\n==================================\nAddress         ",$addr()),$a("IP Address      ",$ipaddress(m_RightEndPoint)),$a("Remote IP       ",$ipaddress(m_RemoteEndPoint)),$a("Is Disposed?    ",$if(m_IntCleanedUp,"Yes", "No")),$a("Is Connected?   ",$if(m_IsConnected,"Yes", "No"))
+
+<b>NOTE:</b> * If a socket does not have a Right Address it is skipped
+
+
+<i>Listing a particular socket</i>
+-----------------------------------------
+0:000&gt;  !wsocket 000000d20ff94ea8
+Socket Details
+========================
+Address         : 000000d20ff94ea8
+IP Address      : [fe80::25c7:c7c1:c747:a13e]:4510
+Remote IP       : [fe80::25c7:c7c1:c747:a13e]:52737
+Is Disposed?    : No
+Is Listening?   : No
+Is Connected?   : Yes
+Fully Initiated?: Yes
+Owns Handle     : Yes
+Close Timeout   : Not Set
+OS Handle       : 470
+
+
 
 ##wtoken
 Dump all claims for a WIF Tokens in memory or if an HttpContext is specified it lists all claims for that request

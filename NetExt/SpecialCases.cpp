@@ -8,6 +8,157 @@
 #include "SpecialCases.h"
 #include "CLRHelper.h"
 
+//
+// Avoid hassless of including winsock2.h and having all redefined
+//
+
+
+
+
+
+
+#ifndef _WINSOCK2API_
+typedef USHORT ADDRESS_FAMILY;
+
+#define WINSOCK_API_LINKAGE DECLSPEC_IMPORT
+
+#define WSAAPI                  FAR PASCAL
+
+#define WSAPROTOCOL_LEN  255
+
+#define MAX_PROTOCOL_CHAIN 7
+
+#define BASE_PROTOCOL      1
+#define LAYERED_PROTOCOL   0
+
+#if !defined(_WINSOCK_DEPRECATED_BY)
+#if ((defined(_WINSOCK_DEPRECATED_NO_WARNINGS) || defined(BUILD_WINDOWS)) && !defined(_WINSOCK_DEPRECATE_WARNINGS)) || defined(MIDL_PASS)
+#define _WINSOCK_DEPRECATED_BY(replacement)
+#else
+#define _WINSOCK_DEPRECATED_BY(replacement) __declspec(deprecated("Use " ## replacement ## " instead or define _WINSOCK_DEPRECATED_NO_WARNINGS to disable deprecated API warnings"))
+#endif
+#endif
+
+typedef struct _WSAPROTOCOLCHAIN {
+    int ChainLen;                                 /* the length of the chain,     */
+                                                  /* length = 0 means layered protocol, */
+                                                  /* length = 1 means base protocol, */
+                                                  /* length > 1 means protocol chain */
+    DWORD ChainEntries[MAX_PROTOCOL_CHAIN];       /* a list of dwCatalogEntryIds */
+} WSAPROTOCOLCHAIN, FAR * LPWSAPROTOCOLCHAIN;
+
+typedef struct _WSAPROTOCOL_INFOW {
+    DWORD dwServiceFlags1;
+    DWORD dwServiceFlags2;
+    DWORD dwServiceFlags3;
+    DWORD dwServiceFlags4;
+    DWORD dwProviderFlags;
+    GUID ProviderId;
+    DWORD dwCatalogEntryId;
+    WSAPROTOCOLCHAIN ProtocolChain;
+    int iVersion;
+    int iAddressFamily;
+    int iMaxSockAddr;
+    int iMinSockAddr;
+    int iSocketType;
+    int iProtocol;
+    int iProtocolMaxOffset;
+    int iNetworkByteOrder;
+    int iSecurityScheme;
+    DWORD dwMessageSize;
+    DWORD dwProviderReserved;
+    WCHAR  szProtocol[WSAPROTOCOL_LEN+1];
+} WSAPROTOCOL_INFOW, FAR * LPWSAPROTOCOL_INFOW;
+
+typedef struct _WINSOCK_DEPRECATED_BY("WSAPROTOCOL_INFOW") _WSAPROTOCOL_INFOA {
+    DWORD dwServiceFlags1;
+    DWORD dwServiceFlags2;
+    DWORD dwServiceFlags3;
+    DWORD dwServiceFlags4;
+    DWORD dwProviderFlags;
+    GUID ProviderId;
+    DWORD dwCatalogEntryId;
+    WSAPROTOCOLCHAIN ProtocolChain;
+    int iVersion;
+    int iAddressFamily;
+    int iMaxSockAddr;
+    int iMinSockAddr;
+    int iSocketType;
+    int iProtocol;
+    int iProtocolMaxOffset;
+    int iNetworkByteOrder;
+    int iSecurityScheme;
+    DWORD dwMessageSize;
+    DWORD dwProviderReserved;
+    CHAR   szProtocol[WSAPROTOCOL_LEN+1];
+} WSAPROTOCOL_INFOA, FAR * LPWSAPROTOCOL_INFOA;
+
+
+
+#if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
+_WINSOCK_DEPRECATED_BY("WSAAddressToStringW()")
+WINSOCK_API_LINKAGE
+INT
+WSAAPI
+WSAAddressToStringA(
+    _In_reads_bytes_(dwAddressLength) LPSOCKADDR lpsaAddress,
+    _In_     DWORD               dwAddressLength,
+    _In_opt_ LPWSAPROTOCOL_INFOA lpProtocolInfo,
+    _Out_writes_to_(*lpdwAddressStringLength,*lpdwAddressStringLength) LPSTR lpszAddressString,
+    _Inout_  LPDWORD             lpdwAddressStringLength
+    );
+#endif /* WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP) */
+#pragma endregion
+
+WINSOCK_API_LINKAGE
+INT
+WSAAPI
+WSAAddressToStringW(
+    _In_reads_bytes_(dwAddressLength) LPSOCKADDR lpsaAddress,
+    _In_     DWORD               dwAddressLength,
+    _In_opt_ LPWSAPROTOCOL_INFOW lpProtocolInfo,
+    _Out_writes_to_(*lpdwAddressStringLength,*lpdwAddressStringLength) LPWSTR lpszAddressString,
+    _Inout_  LPDWORD             lpdwAddressStringLength
+    );
+#ifdef UNICODE
+#define WSAAddressToString  WSAAddressToStringW
+#else
+#define WSAAddressToString  WSAAddressToStringA
+#endif /* !UNICODE */
+
+
+#define AF_INET6        23              // Internetwork Version 6
+
+typedef struct in6_addr {
+    union {
+        UCHAR       Byte[16];
+        USHORT      Word[8];
+    } u;
+} IN6_ADDR, *PIN6_ADDR, FAR *LPIN6_ADDR;
+
+typedef struct {
+    union {
+        struct {
+            ULONG Zone : 28;
+            ULONG Level : 4;
+        };
+        ULONG Value;
+    };
+} SCOPE_ID, *PSCOPE_ID;
+
+typedef struct sockaddr_in6 {
+    ADDRESS_FAMILY sin6_family; // AF_INET6.
+    USHORT sin6_port;           // Transport level port number.
+    ULONG  sin6_flowinfo;       // IPv6 flow information.
+    IN6_ADDR sin6_addr;         // IPv6 address.
+    union {
+        ULONG sin6_scope_id;     // Set of interfaces for a scope.
+        SCOPE_ID sin6_scope_struct; 
+    };
+} SOCKADDR_IN6_LH, *PSOCKADDR_IN6_LH, FAR *LPSOCKADDR_IN6_LH;
+
+#endif /* Not Defined _WINSOCK2API_ */
+
 int DaysToMonth365[13] = { 0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365};
 int DaysToMonth366[13] = { 0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335, 366};
 
@@ -86,6 +237,236 @@ void SpecialCases::DumpHash(CLRDATA_ADDRESS Address, std::string NameMatch, std:
 		}
 		it++;
 	}
+}
+
+std::wstring SpecialCases::IPV4Address(INT64 Address, int Port)
+{
+	std::wstring ipstring;
+	INT64 addr = Address;
+	WCHAR buffer[16] = { 0 };
+	for (int i = 0; i < 4; i++)
+	{
+		wsprintf(buffer, L"%i", (int)(addr & 0xff));
+		addr = addr >> 8;
+		ipstring.append(buffer);
+		if (i != 3)
+			ipstring.append(L".");
+	}
+	if (Port != 0)
+	{
+		wsprintf(buffer, L":%i", Port);
+
+		ipstring.append(buffer);
+	}
+	return ipstring;
+}
+std::wstring SpecialCases::IPV6Address(WORD* SocketAddress, int Port, int ScopeId)
+{
+	std::wstring ipstring;
+	try
+	{
+
+		WORD wVersionRequested;
+		WSADATA wsaData;
+		int err = 0;
+		wVersionRequested = MAKEWORD(2, 2);
+
+		err = ::WSAStartup(wVersionRequested, &wsaData);
+		if (err != 0) {
+			return ipstring;
+		}
+
+		WCHAR addressString[256] = { 0 };
+		DWORD size = 256;
+		ULONG port = Port;
+		SOCKADDR_IN6 addr;
+		ZeroMemory(&addr, sizeof(addr));
+
+		ULONG scope_id = ScopeId;
+
+
+
+		addr.sin6_family = AF_INET6;
+		addr.sin6_port = (BYTE)(port)* 0x100 + (BYTE)(port >> 8);
+		addr.sin6_scope_id = scope_id;
+		addr.sin6_flowinfo = 0;
+		BYTE a[4] = { 0 };
+
+		a[0] = (BYTE)scope_id;
+		a[1] = (BYTE)(scope_id >> 8);
+		a[2] = (BYTE)(scope_id >> 16);
+		a[3] = (BYTE)(scope_id >> 24);
+		memcpy(&addr.sin6_scope_struct, a, 4);
+
+
+		int j = 0;
+		for (int i = 0; i < 8; i++)
+		{
+			addr.sin6_addr.u.Byte[j++] = (BYTE)(SocketAddress[i] >> 8);
+			addr.sin6_addr.u.Byte[j++] = (BYTE)(SocketAddress[i] & 0xff);
+		}
+
+		int result = WSAAddressToString(
+			(LPSOCKADDR)&addr,
+			sizeof(addr),
+			0,
+			(LPWSTR)&addressString,
+			&size
+			);
+
+		if (result == 0)
+		{
+			ipstring.assign(addressString);
+		}
+
+
+
+	}
+	catch (...)
+	{
+		ipstring = L"";
+	}
+	::WSACleanup();
+	return ipstring;
+}
+std::wstring SpecialCases::IPAddress(CLRDATA_ADDRESS IPAddress)
+{
+
+	if(IPAddress == NULL)
+		return L"";
+	ObjDetail obj(IPAddress);
+	if(!obj.IsValid() || (obj.TypeName() != L"System.Net.IPEndPoint"
+						&& obj.TypeName() != L"System.Net.IPAddress")
+		)
+		return L"";
+	CLRDATA_ADDRESS address = IPAddress;
+	int port = 0;
+
+	std::vector<std::string> fields;
+	varMap fieldV;
+
+	if(obj.TypeName() == L"System.Net.IPEndPoint")
+	{
+		fields.push_back("m_Address");
+		fields.push_back("m_Port");
+
+		DumpFields(address,fields,0,&fieldV);
+		port = fieldV["m_Port"].Value.i32;
+		address = fieldV["m_Address"].Value.ptr;
+		if(address == NULL)
+			return L"";
+	}
+
+	fields.clear();
+	fields.push_back("m_Family");
+	fields.push_back("m_Address");
+	fields.push_back("m_ScopeId");
+	fields.push_back("m_Numbers");
+
+
+
+	fieldV.clear();
+	DumpFields(address,fields,0,&fieldV);
+	if(fieldV["m_Family"].Value.i32 == 2)
+		return SpecialCases::IPV4Address(fieldV["m_Address"].Value.i64,port);
+
+	ObjDetail numbers(fieldV["m_Numbers"].Value.ptr);
+
+	if(!numbers.IsValid() || numbers.NumComponents() != 8)
+		return L"";
+
+	WORD ipbytes[8] = {0};
+	unsigned long read = 8;
+	ReadMemory(numbers.DataPtr(),&ipbytes,read *sizeof(WORD), &read);
+	return IPV6Address((WORD*)&ipbytes,port,fieldV["m_ScopeId"].Value.i32);
+}
+
+std::wstring SpecialCases::HtmlEncode(std::wstring HtmlString, bool EncodeSpaces)
+{
+		std::wstring newStr;
+		for(int i=0;i<HtmlString.size();i++)
+		{
+			switch(HtmlString[i])
+			{
+			case L'<':
+				newStr+=L"&lt;";
+				break;
+			case L'>':
+				newStr+=L"&gt;";
+				break;
+			case L'&':
+				newStr+=L"&amp;";
+				break;
+			case L'"':
+				newStr+=L"&quot;";
+				break;
+			case L'\n':
+				newStr+=L"<br />";
+				break;
+			case L' ':
+				if(EncodeSpaces && (i>0 && HtmlString[i-1] == L' '))
+				{
+					newStr += L"&nbsp;";
+				} else
+				{
+					newStr += L' ';
+				}
+				break;
+			default:
+				if(HtmlString[i] > (WCHAR)127 || HtmlString[i] < (WCHAR)32)
+				{
+					newStr+=L"&#"+boost::lexical_cast<wstring>((UINT16)HtmlString[i])+L";"; 
+				} else
+					newStr+=HtmlString[i];
+				break;
+			}
+		}
+		return newStr;
+}
+
+bool SpecialCases::GetSocketData(CLRDATA_ADDRESS Address, SocketData* Socket)
+{
+	if(Address == NULL)
+		return false;
+	ObjDetail obj(Address);
+	if(!obj.IsValid() || obj.TypeName() != L"System.Net.Sockets.Socket")
+		return false;	
+	std::vector<std::string> fields;
+	varMap fieldV;
+	fields.push_back("m_Handle.handle");
+	fields.push_back("m_Handle._state");
+	fields.push_back("m_Handle._ownsHandle");
+	fields.push_back("m_Handle._fullyInitialized");
+	fields.push_back("m_Handle.m_Released");
+	fields.push_back("m_Handle.m_InnerSocket");
+	fields.push_back("m_RightEndPoint");
+	fields.push_back("m_RemoteEndPoint");
+	fields.push_back("m_IsConnected");
+	fields.push_back("m_IsDisconnected");
+	fields.push_back("m_CloseTimeout");
+	fields.push_back("isListening");
+	fields.push_back("m_IntCleanedUp");
+	fields.push_back("willBlock");
+
+	DumpFields(Address,fields,0,&fieldV);
+
+	Socket->Handle = (HANDLE)fieldV["m_Handle.handle"].Value.ptr;
+	Socket->state = fieldV["m_Handle._state"].Value.i32;
+	Socket->ownsHandle = fieldV["m_Handle._ownsHandle"].Value.b;
+	Socket->isFullyInitialized = fieldV["m_Handle._fullyInitialized"].Value.b;
+	Socket->isReleased = fieldV["m_Handle.m_Released"].Value.b;
+	Socket->innerSocket = fieldV["m_Handle.m_InnerSocket"].Value.ptr;
+	Socket->rightEndpoint = fieldV["m_RightEndPoint"].Value.ptr;
+	Socket->remoteEndpoint = fieldV["m_RemoteEndPoint"].Value.ptr;
+	Socket->isConnected = fieldV["m_IsConnected"].Value.b;
+	Socket->isDisconnected = fieldV["m_IsDisconnected"].Value.b;
+	Socket->closeTimeout = fieldV["m_CloseTimeout"].Value.i32;
+	Socket->isListening = fieldV["isListening"].Value.b;
+	Socket->cleanedUp = fieldV["m_IntCleanedUp"].Value.i32;
+	Socket->willBlock = fieldV["willBlock"].Value.b;
+
+	return true;
+
 }
 
 bool SpecialCases::IsEnumType(CLRDATA_ADDRESS MT)
@@ -310,6 +691,11 @@ std::string SpecialCases::PrettyPrint(CLRDATA_ADDRESS Address, CLRDATA_ADDRESS M
 		DumpFields(Address,fields,0,&fieldV);
 
 		return CW2A(fieldV["m_String"].strValue.c_str());
+	}
+
+	if(methName == L"System.Net.IPEndPoint" || methName == L"System.Net.IPAddress")
+	{
+		return CW2A(SpecialCases::IPAddress(Address).c_str());
 	}
 
 	return "";

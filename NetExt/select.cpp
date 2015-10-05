@@ -883,41 +883,12 @@ namespace CALC
 			return;
 		}
 
-		ObjDetail obj(addr);
-		if(!obj.IsValid() || obj.TypeName() != L"System.Net.IPAddress")
+		wstring ipStr = SpecialCases::IPAddress(addr);
+		if(ipStr.size() > 0)
 		{
-			st.push(r);
+			do_stdstring(ipStr);
 			return;
 		}
-
-		std::vector<std::string> fields;
-		fields.push_back("m_Address");
-		fields.push_back("m_Family");
-		fields.push_back("m_Numbers");
-
-		varMap fieldV;
-		DumpFields(addr,fields,0,&fieldV);
-
-		// ipv4
-		char buff[16] = {0};
-		if(fieldV["m_Family"].Value.i32 == 2)
-		{
-			BYTE *ipv4 = (BYTE*)&(fieldV["m_Address"].Value.u32);
-			sprintf_s(buff, 16, "%i.%i.%i.%i", (int)ipv4[0], (int)ipv4[1], (int)ipv4[2], (int)ipv4[3]);
-			std::string s(buff);
-			do_stdstring(s);
-			return;
-		}
-
-		if(fieldV["m_Family"].Value.i32 == 23 && fieldV["m_Numbers"].Value.ptr != NULL)
-		{
-			string s = SpecialCases::GetHexArray(fieldV["m_Numbers"].Value.ptr,false);
-			boost::algorithm::replace_all(s, " ", ":");
-			do_stdstring(s);
-
-			return;
-		}
-
 		st.push(r);
 	}
 

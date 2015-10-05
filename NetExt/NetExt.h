@@ -7,6 +7,10 @@
 
 #pragma once
 
+#define WIN32_LEAN_AND_MEAN
+#include <winsock2.h>
+#include <ws2tcpip.h>
+
 #include <engextcpp.hpp>
 #include <stdio.h>
 #include <stdarg.h>
@@ -281,7 +285,7 @@ public:
 	EXT_COMMAND_METHOD(wdae);
 	EXT_COMMAND_METHOD(wpe);
 	EXT_COMMAND_METHOD(wdomain);
-
+	EXT_COMMAND_METHOD(wsocket);
 
 
 

@@ -69,7 +69,7 @@ EXT_COMMAND(wstack,
             "Dump stack objects. Use '!whelp wstack' for detailed help",
 			"{{custom}}")
 {
-		INIT_API();
+		DO_INIT_API;
 
 		try
 		{

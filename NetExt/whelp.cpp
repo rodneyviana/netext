@@ -1,5 +1,5 @@
-// Source Date: Monday, August 3, 2015 5:26:59 PM
-// Source File: C:\projects\NetExt\NetExt\helptxt.txt
+// Source Date: Monday, October 5, 2015 2:40:56 PM
+// Source File: C:\projects\netext\NetExt\helptxt.txt
 // This file was generated. Do not modify. Modify Source File instead
 #include "netext.h"
 
@@ -22,7 +22,7 @@ EXT_COMMAND(whelp,
 		Dml("!<link cmd=\"!whelp wdo\">wdo</link> - Display ad-hoc objects or arrays from Heap or Stack	\n");
 		Dml("!<link cmd=\"!whelp wselect\">wselect</link> - Display ad-hoc fields (and level fields) for an object or for all item in an array\n");
 		Dml("!<link cmd=\"!whelp wfrom\">wfrom</link> - Perform SQL-like analysis of Heap objects enabling comparison, <link cmd=\"!whelp expression\">expression</link> evaluation and indexed filtering.\n");
-		Dml("<b>*(new)*</b> !<link cmd=\"!whelp wpe\">wpe</link> - Dump Exception Object\n");
+		Dml("!<link cmd=\"!whelp wpe\">wpe</link> - Dump Exception Object\n");
 		Dml("\n");
 		Dml("<b>Enumerate objects</b>\n");
 		Dml("<b>------------------</b>\n");
@@ -30,15 +30,16 @@ EXT_COMMAND(whelp,
 		Dml("!<link cmd=\"!whelp wstack\">wstack</link> - dump unique stack objects\n");
 		Dml("!<link cmd=\"!whelp wheap\">wheap</link> - list objects without indexing and show thottled heap sampling\n");
 		Dml("!<link cmd=\"!whelp wgchandle\">wgchandle</link> - Dump GC root handles\n");
-		Dml("<b>*(new)*</b> !<link cmd=\"!whelp wdae\">wdae</link> - Dump All Exceptions\n");
+		Dml("!<link cmd=\"!whelp wdae\">wdae</link> - Dump All Exceptions\n");
+		Dml("\n");
 		Dml("\n");
 		Dml("<b>Process commands</b>\n");
 		Dml("<b>----------------</b>\n");
 		Dml("!<link cmd=\"!whelp wclrstack\">wclrstack</link> - Dump current stack trace (only managed thread)\n");
-		Dml("<b>*(new)*</b> !<link cmd=\"!whelp wthreads\">wthreads</link> - show all managed threads\n");
-		Dml("<b>*(new)*</b> !<link cmd=\"!whelp wver\">wver</link> - Show CLR version and extension version\n");
-		Dml("<b>*(new)*</b> !<link cmd=\"!whelp wupdate\">wupdate</link> - Check for update\n");
-		Dml("<b>*(new)*</b> !<link cmd=\"!whelp wdomain\">wdomain</link> - Dump all Application Domains\n");
+		Dml("!<link cmd=\"!whelp wthreads\">wthreads</link> - show all managed threads\n");
+		Dml("!<link cmd=\"!whelp wver\">wver</link> - Show CLR version and extension version\n");
+		Dml("!<link cmd=\"!whelp wupdate\">wupdate</link> - Check for update\n");
+		Dml("!<link cmd=\"!whelp wdomain\">wdomain</link> - Dump all Application Domains\n");
 		Dml("\n");
 		Dml("<b>Special</b>\n");
 		Dml("<b>-------</b>\n");
@@ -53,7 +54,8 @@ EXT_COMMAND(whelp,
 		Dml("!<link cmd=\"!whelp wcookie\">wcookie</link> - Display HTTP cookies\n");
 		Dml("!<link cmd=\"!whelp wruntime\">wruntime</link> - Display HTTP Runtime Info including Active Requests\n");
 		Dml("!<link cmd=\"!whelp wtoken\">wtoken</link> - Display WIF tokens and cookies\n");
-		Dml("<b>*(new)*</b> !<link cmd=\"!whelp wclass\">wclass</link> - Dump classs layout\n");
+		Dml("!<link cmd=\"!whelp wclass\">wclass</link> - Dump classs layout and let you set breakpoint\n");
+		Dml("<b>*(new)*</b> !<link cmd=\"!whelp wsocket\">wsocket</link> - Dump socket information\n");
 		Dml("\n");
 		Dml("<b>Misc</b>\n");
 		Dml("<b>----</b>\n");
@@ -275,18 +277,18 @@ EXT_COMMAND(whelp,
 	}
 	if(keyword=="wpe")
 	{
-		Dml("Dump Details of an Exception Object\n");
+		Dml("Dump Details of an Exception Object. If no parameter is provided it lists the last exception of the current thread\n");
 		Dml("\n");
-		Dml("<b>Usage:</b> !wpe &lt;expr&gt;\n");
+		Dml("<b>Usage:</b> !wpe [&lt;expr&gt;]\n");
 		Dml("<b>Where:</b>\n");
-		Dml("	<b>&lt;expr&gt;</b> is the Exception object address (you can use an expression).\n");
+		Dml("	<b>&lt;expr&gt;</b> is the Exception object address (you can use an expression). Optional.\n");
 		Dml(" \n");
 		Dml("<b>Examples:</b>\n");
 		Dml("---------\n");
 		Dml("\n");
-		Dml("<i>Dump a particular Exception</i>\n");
-		Dml("----------------------------------\n");
-		Dml("0:00&gt; !wpe 00000001045f0c68\n");
+		Dml("<i>Dump the last exception of the thread</i>\n");
+		Dml("----------------------------------------\n");
+		Dml("0:00&gt; !wpe\n");
 		Dml("Address: 00000001045f0c68\n");
 		Dml("Exception Type: System.InvalidOperationException\n");
 		Dml("Message: Could not retrieve a valid Windows identity.\n");
@@ -525,6 +527,62 @@ EXT_COMMAND(whelp,
 		Dml("   at System.Threading.QueueUserWorkItemCallback.System.Threading.IThreadPoolWorkItem.ExecuteWorkItem()\n");
 		Dml("   at System.Threading.ThreadPoolWorkQueue.Dispatch()\n");
 		Dml("   at System.Threading._ThreadPoolWaitCallback.PerformWaitCallback()\n");
+		Dml("\n");
+	return;
+	}
+	if(keyword=="wsocket")
+	{
+		Dml("Dump the summary of all sockets. If a socket address is specified it lists details of the socket\n");
+		Dml("\n");
+		Dml("<b>Usage:</b> !wsocket [&lt;expr&gt;] [-ip &lt;str-expr&gt;]\n");
+		Dml("<b>Where:</b>\n");
+		Dml("	<b>&lt;expr&gt;</b> is the Socket object address (you can use an expression). Optional. List the summary if not specified\n");
+		Dml("	<b>-ip &lt;str-expr&gt;</b> is the partial IP address filter (e.g. -ip 192.168). Optional. Do not use *, just the partial IP\n");
+		Dml("\n");
+		Dml("<b>Examples:</b>\n");
+		Dml("-------------\n");
+		Dml("\n");
+		Dml("<i>Listing socket summary for a server and client socket application</i>\n");
+		Dml("-----------------------------------------------------------------------------\n");
+		Dml("0:000&gt;  !wsocket\n");
+		Dml("Type      Total Connected Disconnected Disposed Target IP\n");
+		Dml("===================================================================================\n");
+		Dml("Server        3         2            0        0 [fe80::25c7:c7c1:c747:a13e]:4510\n");
+		Dml("Client        2         1            1        1 127.0.0.1:8000\n");
+		Dml("\n");
+		Dml("Total Sockets:          6\n");
+		Dml("Skipped      :          1 *\n");
+		Dml("Disposed     :          1\n");
+		Dml("Connected    :          3\n");
+		Dml("Disconnected :          1\n");
+		Dml("\n");
+		Dml("You may be also interested in (copy and paste command)\n");
+		Dml("======================================================\n");
+		Dml("Connected Sockets: !wfrom -type System.Net.Sockets.Socket where(m_IsConnected) $a(\"\\n==================================\\nAddress         \",$addr()),$a(\"IP Address      \",$ipaddress(m_RightEndPoint)),$a(\"Remote IP       \",$ipaddress(m_RemoteEndPoint)),$a(\"Is Disposed?    \",$if(m_IntCleanedUp,\"Yes\", \"No\")),$a(\"Is Connected?   \",$if(m_IsConnected,\"Yes\", \"No\"))\n");
+		Dml("Listening Sockets: !wfrom -type System.Net.Sockets.Socket where(isListening) $a(\"\\n==================================\\nAddress         \",$addr()),$a(\"IP Address      \",$ipaddress(m_RightEndPoint)),$a(\"Remote IP       \",$ipaddress(m_RemoteEndPoint)),$a(\"Is Disposed?    \",$if(m_IntCleanedUp,\"Yes\", \"No\")),$a(\"Is Connected?   \",$if(m_IsConnected,\"Yes\", \"No\"))\n");
+		Dml("Disconnected     : !wfrom -type System.Net.Sockets.Socket where(m_IsDisconnected) $a(\"\\n==================================\\nAddress         \",$addr()),$a(\"IP Address      \",$ipaddress(m_RightEndPoint)),$a(\"Remote IP       \",$ipaddress(m_RemoteEndPoint)),$a(\"Is Disposed?    \",$if(m_IntCleanedUp,\"Yes\", \"No\")),$a(\"Is Connected?   \",$if(m_IsConnected,\"Yes\", \"No\"))\n");
+		Dml("Disposed Sockets : !wfrom -type System.Net.Sockets.Socket where(m_IntCleanedUp) $a(\"\\n==================================\\nAddress         \",$addr()),$a(\"IP Address      \",$ipaddress(m_RightEndPoint)),$a(\"Remote IP       \",$ipaddress(m_RemoteEndPoint)),$a(\"Is Disposed?    \",$if(m_IntCleanedUp,\"Yes\", \"No\")),$a(\"Is Connected?   \",$if(m_IsConnected,\"Yes\", \"No\"))\n");
+		Dml("\n");
+		Dml("<b>NOTE:</b> * If a socket does not have a Right Address it is skipped\n");
+		Dml("\n");
+		Dml("\n");
+		Dml("<i>Listing a particular socket</i>\n");
+		Dml("-----------------------------------------\n");
+		Dml("0:000&gt;  !wsocket 000000d20ff94ea8\n");
+		Dml("Socket Details\n");
+		Dml("========================\n");
+		Dml("Address         : 000000d20ff94ea8\n");
+		Dml("IP Address      : [fe80::25c7:c7c1:c747:a13e]:4510\n");
+		Dml("Remote IP       : [fe80::25c7:c7c1:c747:a13e]:52737\n");
+		Dml("Is Disposed?    : No\n");
+		Dml("Is Listening?   : No\n");
+		Dml("Is Connected?   : Yes\n");
+		Dml("Fully Initiated?: Yes\n");
+		Dml("Owns Handle     : Yes\n");
+		Dml("Close Timeout   : Not Set\n");
+		Dml("OS Handle       : 470\n");
+		Dml("\n");
+		Dml("\n");
 		Dml("\n");
 	return;
 	}
