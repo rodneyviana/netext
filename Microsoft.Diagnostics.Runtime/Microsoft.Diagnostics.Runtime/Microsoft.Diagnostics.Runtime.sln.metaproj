@@ -1,0 +1,155 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" InitialTargets="ValidateSolutionConfiguration;ValidateToolsVersions;ValidateProjects" DefaultTargets="Build">
+  <PropertyGroup>
+    <SDK35ToolsPath />
+    <MSBuildToolsPath32>C:\Windows\Microsoft.NET\Framework\v4.0.30319\</MSBuildToolsPath32>
+    <MSBuildToolsRoot>C:\Windows\Microsoft.NET\Framework\</MSBuildToolsRoot>
+    <FrameworkSDKRoot />
+    <MSBuildRuntimeVersion>4.0.30319</MSBuildRuntimeVersion>
+    <SDK40ToolsPath />
+    <AspNetConfiguration>Debug</AspNetConfiguration>
+    <SolutionDir>C:\Users\leculver\Documents\GitHub\dotnet-tools\Diagnostics\Microsoft.Diagnostics.Runtime\</SolutionDir>
+    <SolutionExt>.sln</SolutionExt>
+    <SolutionFileName>Microsoft.Diagnostics.Runtime.sln</SolutionFileName>
+    <SolutionName>Microsoft.Diagnostics.Runtime</SolutionName>
+    <SolutionPath>C:\Users\leculver\Documents\GitHub\dotnet-tools\Diagnostics\Microsoft.Diagnostics.Runtime\Microsoft.Diagnostics.Runtime.sln</SolutionPath>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <CurrentSolutionConfigurationContents>
+      <SolutionConfiguration xmlns="">
+  <ProjectConfiguration Project="{A82126CA-23AA-41F1-8586-A5938D44D0A7}" AbsolutePath="C:\Users\leculver\Documents\GitHub\dotnet-tools\Diagnostics\Microsoft.Diagnostics.Runtime\Microsoft.Diagnostics.Runtime.csproj" BuildProjectInSolution="True">Debug|AnyCPU</ProjectConfiguration>
+</SolutionConfiguration>
+    </CurrentSolutionConfigurationContents>
+  </PropertyGroup>
+  <ItemDefinitionGroup />
+  <ItemGroup>
+    <SolutionConfiguration Include="Debug|Any CPU">
+      <Configuration>Debug</Configuration>
+      <Platform>Any CPU</Platform>
+      <Content>
+        <SolutionConfiguration xmlns="">
+  <ProjectConfiguration Project="{A82126CA-23AA-41F1-8586-A5938D44D0A7}" AbsolutePath="C:\Users\leculver\Documents\GitHub\dotnet-tools\Diagnostics\Microsoft.Diagnostics.Runtime\Microsoft.Diagnostics.Runtime.csproj" BuildProjectInSolution="True">Debug|AnyCPU</ProjectConfiguration>
+</SolutionConfiguration>
+      </Content>
+    </SolutionConfiguration>
+    <SolutionConfiguration Include="Debug|Mixed Platforms">
+      <Configuration>Debug</Configuration>
+      <Platform>Mixed Platforms</Platform>
+      <Content>
+        <SolutionConfiguration xmlns="">
+  <ProjectConfiguration Project="{A82126CA-23AA-41F1-8586-A5938D44D0A7}" AbsolutePath="C:\Users\leculver\Documents\GitHub\dotnet-tools\Diagnostics\Microsoft.Diagnostics.Runtime\Microsoft.Diagnostics.Runtime.csproj" BuildProjectInSolution="True">Debug|AnyCPU</ProjectConfiguration>
+</SolutionConfiguration>
+      </Content>
+    </SolutionConfiguration>
+    <SolutionConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+      <Content>
+        <SolutionConfiguration xmlns="">
+  <ProjectConfiguration Project="{A82126CA-23AA-41F1-8586-A5938D44D0A7}" AbsolutePath="C:\Users\leculver\Documents\GitHub\dotnet-tools\Diagnostics\Microsoft.Diagnostics.Runtime\Microsoft.Diagnostics.Runtime.csproj" BuildProjectInSolution="False">Debug|AnyCPU</ProjectConfiguration>
+</SolutionConfiguration>
+      </Content>
+    </SolutionConfiguration>
+    <SolutionConfiguration Include="Debug|x86">
+      <Configuration>Debug</Configuration>
+      <Platform>x86</Platform>
+      <Content>
+        <SolutionConfiguration xmlns="">
+  <ProjectConfiguration Project="{A82126CA-23AA-41F1-8586-A5938D44D0A7}" AbsolutePath="C:\Users\leculver\Documents\GitHub\dotnet-tools\Diagnostics\Microsoft.Diagnostics.Runtime\Microsoft.Diagnostics.Runtime.csproj" BuildProjectInSolution="False">Debug|AnyCPU</ProjectConfiguration>
+</SolutionConfiguration>
+      </Content>
+    </SolutionConfiguration>
+    <SolutionConfiguration Include="Release|Any CPU">
+      <Configuration>Release</Configuration>
+      <Platform>Any CPU</Platform>
+      <Content>
+        <SolutionConfiguration xmlns="">
+  <ProjectConfiguration Project="{A82126CA-23AA-41F1-8586-A5938D44D0A7}" AbsolutePath="C:\Users\leculver\Documents\GitHub\dotnet-tools\Diagnostics\Microsoft.Diagnostics.Runtime\Microsoft.Diagnostics.Runtime.csproj" BuildProjectInSolution="True">Release|AnyCPU</ProjectConfiguration>
+</SolutionConfiguration>
+      </Content>
+    </SolutionConfiguration>
+    <SolutionConfiguration Include="Release|Mixed Platforms">
+      <Configuration>Release</Configuration>
+      <Platform>Mixed Platforms</Platform>
+      <Content>
+        <SolutionConfiguration xmlns="">
+  <ProjectConfiguration Project="{A82126CA-23AA-41F1-8586-A5938D44D0A7}" AbsolutePath="C:\Users\leculver\Documents\GitHub\dotnet-tools\Diagnostics\Microsoft.Diagnostics.Runtime\Microsoft.Diagnostics.Runtime.csproj" BuildProjectInSolution="True">Release|AnyCPU</ProjectConfiguration>
+</SolutionConfiguration>
+      </Content>
+    </SolutionConfiguration>
+    <SolutionConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+      <Content>
+        <SolutionConfiguration xmlns="">
+  <ProjectConfiguration Project="{A82126CA-23AA-41F1-8586-A5938D44D0A7}" AbsolutePath="C:\Users\leculver\Documents\GitHub\dotnet-tools\Diagnostics\Microsoft.Diagnostics.Runtime\Microsoft.Diagnostics.Runtime.csproj" BuildProjectInSolution="False">Release|AnyCPU</ProjectConfiguration>
+</SolutionConfiguration>
+      </Content>
+    </SolutionConfiguration>
+    <SolutionConfiguration Include="Release|x86">
+      <Configuration>Release</Configuration>
+      <Platform>x86</Platform>
+      <Content>
+        <SolutionConfiguration xmlns="">
+  <ProjectConfiguration Project="{A82126CA-23AA-41F1-8586-A5938D44D0A7}" AbsolutePath="C:\Users\leculver\Documents\GitHub\dotnet-tools\Diagnostics\Microsoft.Diagnostics.Runtime\Microsoft.Diagnostics.Runtime.csproj" BuildProjectInSolution="False">Release|AnyCPU</ProjectConfiguration>
+</SolutionConfiguration>
+      </Content>
+    </SolutionConfiguration>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="C:\Users\leculver\Documents\GitHub\dotnet-tools\Diagnostics\Microsoft.Diagnostics.Runtime\Microsoft.Diagnostics.Runtime.csproj">
+      <ToolsVersion>
+      </ToolsVersion>
+      <SkipNonexistentProjects>False</SkipNonexistentProjects>
+      <AdditionalProperties>Configuration=Debug; Platform=AnyCPU</AdditionalProperties>
+      <Configuration>Debug</Configuration>
+      <Platform>AnyCPU</Platform>
+    </ProjectReference>
+  </ItemGroup>
+  <Target Name="ValidateSolutionConfiguration">
+    <Error Condition="('$(CurrentSolutionConfigurationContents)' == '') and ('$(SkipInvalidConfigurations)' != 'true')" Text="The specified solution configuration &quot;$(Configuration)|$(Platform)&quot; is invalid. Please specify a valid solution configuration using the Configuration and Platform properties (e.g. MSBuild.exe Solution.sln /p:Configuration=Debug /p:Platform=&quot;Any CPU&quot;) or leave those properties blank to use the default solution configuration." Code="MSB4126" HelpKeyword="MSBuild.SolutionInvalidSolutionConfiguration" />
+    <Warning Condition="('$(CurrentSolutionConfigurationContents)' == '') and ('$(SkipInvalidConfigurations)' == 'true')" Text="The specified solution configuration &quot;$(Configuration)|$(Platform)&quot; is invalid. Please specify a valid solution configuration using the Configuration and Platform properties (e.g. MSBuild.exe Solution.sln /p:Configuration=Debug /p:Platform=&quot;Any CPU&quot;) or leave those properties blank to use the default solution configuration." Code="MSB4126" HelpKeyword="MSBuild.SolutionInvalidSolutionConfiguration" />
+    <Message Condition="'$(CurrentSolutionConfigurationContents)' != ''" Text="Building solution configuration &quot;$(Configuration)|$(Platform)&quot;." />
+  </Target>
+  <Target Name="ValidateToolsVersions">
+    <Error Condition="'$(MSBuildToolsVersion)' == '2.0' and ('$(ProjectToolsVersion)' != '2.0' and '$(ProjectToolsVersion)' != '')" Text="The tools version &quot;$(MSBuildToolsVersion)&quot; of the solution does not support building projects with a different tools version." Code="MSB4149" HelpKeyword="MSBuild.SolutionToolsVersionDoesNotSupportProjectToolsVersion" />
+  </Target>
+  <Target Name="ValidateProjects">
+    <Message Condition=" ('$(Configuration)' == 'Debug') and ('$(Platform)' == 'Win32') " Text="The project &quot;Microsoft.Diagnostics.Runtime&quot; is not selected for building in solution configuration &quot;Debug|Win32&quot;." />
+    <Message Condition=" ('$(Configuration)' == 'Debug') and ('$(Platform)' == 'x86') " Text="The project &quot;Microsoft.Diagnostics.Runtime&quot; is not selected for building in solution configuration &quot;Debug|x86&quot;." />
+    <Message Condition=" ('$(Configuration)' == 'Release') and ('$(Platform)' == 'Win32') " Text="The project &quot;Microsoft.Diagnostics.Runtime&quot; is not selected for building in solution configuration &quot;Release|Win32&quot;." />
+    <Message Condition=" ('$(Configuration)' == 'Release') and ('$(Platform)' == 'x86') " Text="The project &quot;Microsoft.Diagnostics.Runtime&quot; is not selected for building in solution configuration &quot;Release|x86&quot;." />
+  </Target>
+  <Target Name="GetSolutionConfigurationContents" Outputs="$(SolutionConfigurationContents)" />
+  <Target Name="Build" Outputs="@(CollectedBuildOutput)">
+    <MSBuild Projects="@(ProjectReference)" BuildInParallel="True" Properties="BuildingSolutionFile=true; CurrentSolutionConfigurationContents=$(CurrentSolutionConfigurationContents); SolutionDir=$(SolutionDir); SolutionExt=$(SolutionExt); SolutionFileName=$(SolutionFileName); SolutionName=$(SolutionName); SolutionPath=$(SolutionPath)" SkipNonexistentProjects="%(ProjectReference.SkipNonexistentProjects)">
+      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput" />
+    </MSBuild>
+  </Target>
+  <Target Name="Clean">
+    <MSBuild Projects="@(ProjectReference-&gt;Reverse())" Targets="Clean" BuildInParallel="True" Properties="BuildingSolutionFile=true; CurrentSolutionConfigurationContents=$(CurrentSolutionConfigurationContents); SolutionDir=$(SolutionDir); SolutionExt=$(SolutionExt); SolutionFileName=$(SolutionFileName); SolutionName=$(SolutionName); SolutionPath=$(SolutionPath)" SkipNonexistentProjects="%(ProjectReference.SkipNonexistentProjects)" />
+  </Target>
+  <Target Name="Rebuild" Outputs="@(CollectedBuildOutput)">
+    <MSBuild Projects="@(ProjectReference)" Targets="Rebuild" BuildInParallel="True" Properties="BuildingSolutionFile=true; CurrentSolutionConfigurationContents=$(CurrentSolutionConfigurationContents); SolutionDir=$(SolutionDir); SolutionExt=$(SolutionExt); SolutionFileName=$(SolutionFileName); SolutionName=$(SolutionName); SolutionPath=$(SolutionPath)" SkipNonexistentProjects="%(ProjectReference.SkipNonexistentProjects)">
+      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput" />
+    </MSBuild>
+  </Target>
+  <Target Name="Publish">
+    <MSBuild Projects="@(ProjectReference)" Targets="Publish" BuildInParallel="True" Properties="BuildingSolutionFile=true; CurrentSolutionConfigurationContents=$(CurrentSolutionConfigurationContents); SolutionDir=$(SolutionDir); SolutionExt=$(SolutionExt); SolutionFileName=$(SolutionFileName); SolutionName=$(SolutionName); SolutionPath=$(SolutionPath)" SkipNonexistentProjects="%(ProjectReference.SkipNonexistentProjects)" />
+  </Target>
+  <Target Name="Microsoft_Diagnostics_Runtime" Outputs="@(Microsoft_Diagnostics_RuntimeBuildOutput)">
+    <MSBuild Condition="'%(ProjectReference.Identity)' == 'C:\Users\leculver\Documents\GitHub\dotnet-tools\Diagnostics\Microsoft.Diagnostics.Runtime\Microsoft.Diagnostics.Runtime.csproj'" Projects="@(ProjectReference)" BuildInParallel="True" ToolsVersion="$(ProjectToolsVersion)" Properties="Configuration=Debug; Platform=AnyCPU;BuildingSolutionFile=true; CurrentSolutionConfigurationContents=$(CurrentSolutionConfigurationContents); SolutionDir=$(SolutionDir); SolutionExt=$(SolutionExt); SolutionFileName=$(SolutionFileName); SolutionName=$(SolutionName); SolutionPath=$(SolutionPath)">
+      <Output TaskParameter="TargetOutputs" ItemName="Microsoft_Diagnostics_RuntimeBuildOutput" />
+    </MSBuild>
+  </Target>
+  <Target Name="Microsoft_Diagnostics_Runtime:Clean">
+    <MSBuild Condition="'%(ProjectReference.Identity)' == 'C:\Users\leculver\Documents\GitHub\dotnet-tools\Diagnostics\Microsoft.Diagnostics.Runtime\Microsoft.Diagnostics.Runtime.csproj'" Projects="@(ProjectReference)" Targets="Clean" BuildInParallel="True" ToolsVersion="$(ProjectToolsVersion)" Properties="Configuration=Debug; Platform=AnyCPU;BuildingSolutionFile=true; CurrentSolutionConfigurationContents=$(CurrentSolutionConfigurationContents); SolutionDir=$(SolutionDir); SolutionExt=$(SolutionExt); SolutionFileName=$(SolutionFileName); SolutionName=$(SolutionName); SolutionPath=$(SolutionPath)" />
+  </Target>
+  <Target Name="Microsoft_Diagnostics_Runtime:Rebuild" Outputs="@(Microsoft_Diagnostics_RuntimeBuildOutput)">
+    <MSBuild Condition="'%(ProjectReference.Identity)' == 'C:\Users\leculver\Documents\GitHub\dotnet-tools\Diagnostics\Microsoft.Diagnostics.Runtime\Microsoft.Diagnostics.Runtime.csproj'" Projects="@(ProjectReference)" Targets="Rebuild" BuildInParallel="True" ToolsVersion="$(ProjectToolsVersion)" Properties="Configuration=Debug; Platform=AnyCPU;BuildingSolutionFile=true; CurrentSolutionConfigurationContents=$(CurrentSolutionConfigurationContents); SolutionDir=$(SolutionDir); SolutionExt=$(SolutionExt); SolutionFileName=$(SolutionFileName); SolutionName=$(SolutionName); SolutionPath=$(SolutionPath)">
+      <Output TaskParameter="TargetOutputs" ItemName="Microsoft_Diagnostics_RuntimeBuildOutput" />
+    </MSBuild>
+  </Target>
+  <Target Name="Microsoft_Diagnostics_Runtime:Publish">
+    <MSBuild Condition="'%(ProjectReference.Identity)' == 'C:\Users\leculver\Documents\GitHub\dotnet-tools\Diagnostics\Microsoft.Diagnostics.Runtime\Microsoft.Diagnostics.Runtime.csproj'" Projects="@(ProjectReference)" Targets="Publish" BuildInParallel="True" ToolsVersion="$(ProjectToolsVersion)" Properties="Configuration=Debug; Platform=AnyCPU;BuildingSolutionFile=true; CurrentSolutionConfigurationContents=$(CurrentSolutionConfigurationContents); SolutionDir=$(SolutionDir); SolutionExt=$(SolutionExt); SolutionFileName=$(SolutionFileName); SolutionName=$(SolutionName); SolutionPath=$(SolutionPath)" />
+  </Target>
+</Project>
