@@ -21,6 +21,7 @@ using System.Net;
 using System.Text.RegularExpressions;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Reflection;
 
 
 namespace ProofOfConcept
@@ -56,7 +57,7 @@ namespace ProofOfConcept
             }
         }
 
-        private static string pFormat = String.Format(":x{0}", Marshal.SizeOf(IntPtr.Zero)*2);
+        private static string pFormat = String.Format(":x{0}", Marshal.SizeOf(IntPtr.Zero) * 2);
         private static string pointerFormat(string Message)
         {
 
@@ -98,7 +99,7 @@ namespace ProofOfConcept
                     WriteLine("{0} Objects counted", count);
                 }
                 System.Threading.Thread.Sleep(1);
-                
+
                 currObj = heapObjs.Current;
                 currType = m_heap.GetObjectType(currObj);
                 textBox4.Text = String.Format("{0:x16}", currObj);
@@ -124,7 +125,7 @@ namespace ProofOfConcept
                 return;
             }
 
-            
+
 
         }
 
@@ -145,14 +146,14 @@ namespace ProofOfConcept
 
             for (int i = 0; i < domains.Length; i++)
             {
-                if(IsInterrupted())
+                if (IsInterrupted())
                     return;
-                
+
                 Write("{0:%p} ", domains[i].Address);
                 Write("{0, -60} ", i == 0 ? "System" : i == 1 ? "Shared" : domains[i].Name);
                 Write("{0,6:#,#} ", domains[i].Modules.Count);
-                if(!String.IsNullOrEmpty(domains[i].ApplicationBase)) Write("Base Path: {0} ", domains[i].ApplicationBase);
-                if(!String.IsNullOrEmpty(domains[i].ConfigurationFile)) Write("Config: {0} ", domains[i].ConfigurationFile);
+                if (!String.IsNullOrEmpty(domains[i].ApplicationBase)) Write("Base Path: {0} ", domains[i].ApplicationBase);
+                if (!String.IsNullOrEmpty(domains[i].ConfigurationFile)) Write("Config: {0} ", domains[i].ConfigurationFile);
                 WriteLine("");
             }
 
@@ -163,10 +164,10 @@ namespace ProofOfConcept
         {
             DataTarget dataTarget = DataTarget.LoadCrashDump(Target);
             ClrInfo latest = null;
-            foreach(var version in dataTarget.ClrVersions)
+            foreach (var version in dataTarget.ClrVersions)
             {
                 WriteLine("Version: {0}.{1}.{2}.{3} from {4}", version.Version.Major, version.Version.Minor, version.Version.Patch, version.Version.Revision, version.DacInfo.FileName);
-                latest  = version;
+                latest = version;
             }
             m_runtime = dataTarget.CreateRuntime(latest.TryDownloadDac());
             ulong strMT, arrMT, freeMT = 0;
@@ -198,7 +199,7 @@ namespace ProofOfConcept
             //    WriteLine("{0:x16} {1}", appDomain.Address, appDomain.Name);
             //    WriteLine("  {0}{1}", appDomain.ApplicationBase, appDomain.ConfigurationFile);
             //    WriteLine("  Modules: {0}", appDomain.Modules.Count);
-                
+
             //}
 
             WriteLine("==================");
@@ -207,7 +208,7 @@ namespace ProofOfConcept
             heapObjs = m_heap.EnumerateObjects().GetEnumerator();
             count = 0;
 
-            
+
 
         }
 
@@ -230,7 +231,7 @@ namespace ProofOfConcept
                 }
 
             }
-            
+
             return 0;
         }
 
@@ -254,19 +255,19 @@ namespace ProofOfConcept
                 cache = new HeapCache(m_runtime, ShowProgress);
             MDType tp = new MDType(obj);
             MD_TypeData data;
-            tp.GetHeader(Address,out data);
+            tp.GetHeader(Address, out data);
             int count = 0;
             tp.GetAllFieldsDataRawCount(out count);
-            int temp=0;
+            int temp = 0;
             MD_FieldData[] fields = new MD_FieldData[count];
 
             tp.GetAllFieldsDataRaw(data.isValueType ? 1 : 0, count, fields, out temp);
 
-            for (int i=0;i<count;i++)
+            for (int i = 0; i < count; i++)
             {
                 string typeName;
                 string Name;
-                tp.GetRawFieldTypeAndName(i,out typeName, out Name);
+                tp.GetRawFieldTypeAndName(i, out typeName, out Name);
                 MD_TypeData fd;
                 ClrType ftp = AdHoc.GetTypeFromMT(m_runtime, fields[i].MethodTable);
                 MDType ft = new MDType(ftp);
@@ -279,55 +280,56 @@ namespace ProofOfConcept
                     ft.GetHeader(ReadPointer(pointer), out fd);
                 Write("{0:x16} {1:x4} {5:x16} {6} +{2:x4} {3,30} {4,30} {7} ", fd.module,
                     fd.token, fields[i].offset, TrimRight(typeName, 30), Name,
-                    data.MethodTable,fields[i].isThreadStatic ? " thread " : fields[i].isStatic ? " Static " : "        ",
-                    fields[i].isEnum  ?
-                    AdHoc.GetEnumName(ftp, 
+                    data.MethodTable, fields[i].isThreadStatic ? " thread " : fields[i].isStatic ? " Static " : "        ",
+                    fields[i].isEnum ?
+                    AdHoc.GetEnumName(ftp,
                     ReadPointer(pointer) & (fd.size == 4 ?
                     0x0000FFFF : ulong.MaxValue))
                     : ""/*cache.GetFieldValue(Address, Name, obj)*/);
-                 ulong effAddress=pointer;
-                 if(fd.isValueType)
-                 {
-                     if (fields[i].isEnum)
-                     {
-                         WriteLine("");
-                         continue;
-                     }
-                     
-                     try
-                     {
-                         WriteLine("{0}", ftp.GetValue(pointer));
-                     }
-                     catch
-                     {
-                         WriteLine("{0}", ReadPointer(pointer) & (fd.size == 4 ? 0xFFFFFFFF :
-                               fd.size == 8 ? 0x00000000FFFFFFFF : ulong.MaxValue));
-                     }
-                     continue;
-                 } else
-                 {
-                     
-                     if (pointer != 0)
-                         effAddress = ReadPointer(pointer);
+                ulong effAddress = pointer;
+                if (fd.isValueType)
+                {
+                    if (fields[i].isEnum)
+                    {
+                        WriteLine("");
+                        continue;
+                    }
 
-                     Write("({0:x16}) ",effAddress);
-                     if (effAddress == 0)
-                     {
-                         WriteLine("");
-                         continue;
-                     }
-                     if(fd.isString)
-                     {
+                    try
+                    {
+                        WriteLine("{0}", ftp.GetValue(pointer));
+                    }
+                    catch
+                    {
+                        WriteLine("{0}", ReadPointer(pointer) & (fd.size == 4 ? 0xFFFFFFFF :
+                              fd.size == 8 ? 0x00000000FFFFFFFF : ulong.MaxValue));
+                    }
+                    continue;
+                }
+                else
+                {
+
+                    if (pointer != 0)
+                        effAddress = ReadPointer(pointer);
+
+                    Write("({0:x16}) ", effAddress);
+                    if (effAddress == 0)
+                    {
+                        WriteLine("");
+                        continue;
+                    }
+                    if (fd.isString)
+                    {
                         string str;
 
-                         tp.GetString(effAddress, out str);
-                         Write("{0}",str);
-                     }
-                     WriteLine("");
-                     
-                 }
-                        
-               
+                        tp.GetString(effAddress, out str);
+                        Write("{0}", str);
+                    }
+                    WriteLine("");
+
+                }
+
+
 
             }
             /*
@@ -394,7 +396,7 @@ namespace ProofOfConcept
                 return;
             }
             WriteLine("===================================================");
-            WriteLine("000>!wdo {0:x16}",currObj);
+            WriteLine("000>!wdo {0:x16}", currObj);
             WriteLine("Address: {0:x16}", currObj);
             WriteLine("EE Class: {0:x16}", GetEEClass(ReadPointer(currObj)));
             WriteLine("Method Table: {0:x16}", ReadPointer(currObj));
@@ -404,7 +406,7 @@ namespace ProofOfConcept
             WriteLine("Static Fields: {0}", type.StaticFields.Count);
             WriteLine("Total Fields: {0}", type.Fields.Count + type.StaticFields.Count);
             var seg = m_heap.GetSegmentByAddress(currObj);
-            
+
             WriteLine("Heap/Generation: {0}/{1}", seg.ProcessorAffinity, m_heap.GetGeneration(currObj));
 
             WriteLine("Module: {0:x16}", type.Module.ImageBase);
@@ -413,7 +415,7 @@ namespace ProofOfConcept
             WriteLine("File Name: {0}", type.Module.FileName);
 
 
-            WriteLine("Domain: {0:x16}",AdHoc.GetDomainFromMT(m_runtime, ReadPointer(currObj)));
+            WriteLine("Domain: {0:x16}", AdHoc.GetDomainFromMT(m_runtime, ReadPointer(currObj)));
 
             /*
             foreach(var domainAddr in Hacks.GetDomainFromMT(runtime, ReadPointer(currObj))
@@ -427,7 +429,7 @@ namespace ProofOfConcept
             DumpFields(currObj);
         }
 
-        public static string DumpStack(IList<ClrStackFrame> Stack, int WordSize, bool SkipAddress=false)
+        public static string DumpStack(IList<ClrStackFrame> Stack, int WordSize, bool SkipAddress = false)
         {
             if (Stack == null || Stack.Count == 0)
             {
@@ -435,19 +437,19 @@ namespace ProofOfConcept
             }
             StringBuilder sb = new StringBuilder();
             if (WordSize == 8)
-                if(!SkipAddress)
+                if (!SkipAddress)
                     sb.Append("SP               IP               Function\n");
                 else
                     sb.Append("IP               Function\n");
 
             else
-                if(SkipAddress)
+                if (SkipAddress)
                     sb.Append("IP       Function\n");
                 else
                     sb.Append("SP       IP       Function\n");
             foreach (var frame in Stack)
             {
-                if(!SkipAddress)
+                if (!SkipAddress)
                     sb.AppendFormat(pointerFormat("{0:%p} "), frame.StackPointer);
                 sb.AppendFormat(pointerFormat("{0:%p} "), frame.InstructionPointer);
                 sb.Append(frame.DisplayString);
@@ -474,9 +476,9 @@ namespace ProofOfConcept
                 WriteLine("(none)");
             else
                 WriteLine("<link cmd=\"!wpe {0:%p}\">{0:%p}</link> {1} {2}</link>", exception.Inner.Address,
-                    exception.Inner.Type.Name.Replace("<","&lt;").Replace(">","&gt;"),exception.Inner.Message);
+                    exception.Inner.Type.Name.Replace("<", "&lt;").Replace(">", "&gt;"), exception.Inner.Message);
             WriteLine("Stack:");
-            WriteLine("{0}",DumpStack(exception.StackTrace, m_runtime.PointerSize));
+            WriteLine("{0}", DumpStack(exception.StackTrace, m_runtime.PointerSize));
             WriteLine("HResult: {0:x4}", exception.HResult);
             WriteLine("");
         }
@@ -489,7 +491,7 @@ namespace ProofOfConcept
 
         public void DumpAllExceptions(IMDObjectEnum Exceptions)
         {
-            Dictionary<string, List<ulong>> allExceptions = new Dictionary<string, List<ulong>>(); 
+            Dictionary<string, List<ulong>> allExceptions = new Dictionary<string, List<ulong>>();
             foreach (var obj in ((MDObjectEnum)Exceptions).List)
             {
                 ClrException ex = m_heap.GetExceptionObject(obj);
@@ -497,7 +499,7 @@ namespace ProofOfConcept
                 {
                     if (IsInterrupted())
                         return;
-                    string key = String.Format("{0}\0{1}\0{2}", ex.Type.Name, ex.Message, DumpStack(ex.StackTrace, m_heap.GetRuntime().PointerSize,true));
+                    string key = String.Format("{0}\0{1}\0{2}", ex.Type.Name, ex.Message, DumpStack(ex.StackTrace, m_heap.GetRuntime().PointerSize, true));
                     if (!allExceptions.ContainsKey(key))
                     {
                         allExceptions[key] = new List<ulong>();
@@ -512,8 +514,8 @@ namespace ProofOfConcept
             {
                 typeCount++;
                 exCount += allExceptions[key].Count;
-                Write("{0,8:#,#} of Type: {1}",allExceptions[key].Count, key.Split('\0')[0]);
-                for(int i=0;i<Math.Min(3,allExceptions[key].Count);i++)
+                Write("{0,8:#,#} of Type: {1}", allExceptions[key].Count, key.Split('\0')[0]);
+                for (int i = 0; i < Math.Min(3, allExceptions[key].Count); i++)
                 {
                     Write(" <link cmd=\"!wpe {0:%p}\">{0:%p}</link>", (allExceptions[key])[i]);
                 }
@@ -526,7 +528,7 @@ namespace ProofOfConcept
                 WriteLine("");
 
             }
-            WriteLine("{0:#,#} Exceptions in {1:#,#} unique type/stack combinations (duplicate types in similar stacks may be rethrows)",exCount,typeCount);
+            WriteLine("{0:#,#} Exceptions in {1:#,#} unique type/stack combinations (duplicate types in similar stacks may be rethrows)", exCount, typeCount);
             WriteLine("");
         }
 
@@ -555,7 +557,7 @@ namespace ProofOfConcept
             WriteLine("// Module Address: {0:%p}", type.Module == null ? 0 : type.Module.ImageBase);
             WriteLine("// Debugging Mode: {0}", type.Module == null ? "(NA in Dynamic Module)" : type.Module.DebuggingMode.ToString());
             WriteLine("// Filename: {0}", fileName);
-            WriteLine("namespace {0} {1}",type.Name.Substring(0,type.Name.LastIndexOf(".")), "{");
+            WriteLine("namespace {0} {1}", type.Name.Substring(0, type.Name.LastIndexOf(".")), "{");
 
             WriteLine("");
             Write(" ");
@@ -636,10 +638,11 @@ namespace ProofOfConcept
                         WriteLine("\t{0}", "}"); // close previous
                     }
                     Write("\t");
-                    if(met.Name.StartsWith("set_"))
+                    if (met.Name.StartsWith("set_"))
                     {
                         Write("{0} ", met.GetFullSignature().Split('(')[1].Split(')')[0]);
-                    } else
+                    }
+                    else
                     {
                         Write("/* property * / ");
                     }
@@ -660,11 +663,11 @@ namespace ProofOfConcept
                 }
                 Write("\t\t{0}", met.IsInternal ? "internal " : met.IsProtected ? "protected " : met.IsPrivate ? "private " : met.IsPublic ? "public " : "");
 
-                WriteLine("{0} {1}", met.Name.Substring(0,3), " { } ");
+                WriteLine("{0} {1}", met.Name.Substring(0, 3), " { } ");
                 propCount++;
 
             }
-            if(propCount > 0)
+            if (propCount > 0)
                 WriteLine("\t{0}", "}"); // close previous
             WriteLine("");
             WriteLine("\t//");
@@ -702,9 +705,9 @@ namespace ProofOfConcept
 
 
 
-                       
-            
-             
+
+
+
         }
 
         private void button4_Click(object sender, EventArgs e)
@@ -715,8 +718,8 @@ namespace ProofOfConcept
 
         public bool ShowProgress(uint Total)
         {
-           WriteLine("{0}", Total);
-           return true;
+            WriteLine("{0}", Total);
+            return true;
         }
 
         public void CreateCache()
@@ -740,7 +743,7 @@ namespace ProofOfConcept
                 enumType = "*.HttpContext";
             else
                 enumType = textBox2.Text.Contains('*') ? textBox2.Text : "*" + textBox2.Text + "*";
-            
+
             foreach (var obj in cache.EnumerateObjectsOfType(enumType))
             {
                 WriteLine("{0:x16} {1}", obj, m_heap.GetObjectType(obj).Name);
@@ -753,7 +756,7 @@ namespace ProofOfConcept
             StartRuntime();
             ulong mt = Convert.ToUInt64(textBox5.Text, 16);
             ClrType myType = AdHoc.GetTypeFromMT(m_runtime, mt);
-            WriteLine("MT: {1:x16} Type: {0}", myType == null ? "*Invalid*" : myType.Name,mt);
+            WriteLine("MT: {1:x16} Type: {0}", myType == null ? "*Invalid*" : myType.Name, mt);
         }
 
         private void button7_Click(object sender, EventArgs e)
@@ -767,7 +770,7 @@ namespace ProofOfConcept
         private void button8_Click(object sender, EventArgs e)
         {
             StartRuntime();
-            
+
             foreach (var memSeg in m_heap.Segments)
             {
 
@@ -780,11 +783,11 @@ namespace ProofOfConcept
                 else
                 {
                     WriteLine("");
-                    if(memSeg.Gen0Length > 0)
+                    if (memSeg.Gen0Length > 0)
                         WriteLine("Gen 0 - Start: {0:x16} End: {1:x16} Size: {2:#,#}",
                         memSeg.Gen0Start, memSeg.Gen0Start + memSeg.Gen0Length,
                         memSeg.Gen0Length);
-                    if(memSeg.Gen1Length > 0)
+                    if (memSeg.Gen1Length > 0)
                         WriteLine("Gen 1 - Start: {0:x16} End: {1:x16} Size: {2:#,#}",
                         memSeg.Gen1Start, memSeg.Gen1Start + memSeg.Gen1Length,
                         memSeg.Gen1Length);
@@ -809,22 +812,23 @@ namespace ProofOfConcept
             Match match = reg.Match(text);
 
             Version now = new Version(2, 0, 0, 2);
-            Version codeplex = new Version(0,0,0,0);;
+            Version codeplex = new Version(0, 0, 0, 0); ;
             if (match.Groups.Count == 5)
             {
                 try
                 {
-                codeplex = new Version(Int32.Parse(match.Groups[1].Value),
-                    Int32.Parse(match.Groups[2].Value),
-                    Int32.Parse(match.Groups[3].Value),
-                    Int32.Parse(match.Groups[4].Value));
-                } catch
+                    codeplex = new Version(Int32.Parse(match.Groups[1].Value),
+                        Int32.Parse(match.Groups[2].Value),
+                        Int32.Parse(match.Groups[3].Value),
+                        Int32.Parse(match.Groups[4].Value));
+                }
+                catch
                 {
-                    codeplex = new Version(0,0,0,0);
+                    codeplex = new Version(0, 0, 0, 0);
                 }
             }
 
-            if(codeplex > now)
+            if (codeplex > now)
                 WriteLine("There is a new version ({0}) at http://netext.codeplex.com",
                     codeplex.ToString());
 
@@ -836,7 +840,7 @@ namespace ProofOfConcept
             string filterByType = null,
             string filterByObjType = null)
         {
-            Dictionary<string, int> categories = new Dictionary<string,int>();
+            Dictionary<string, int> categories = new Dictionary<string, int>();
             if (m_runtime.PointerSize == 8)
             {
                 WriteLine("Handle           Object           Refs Type            Object Type");
@@ -877,13 +881,13 @@ namespace ProofOfConcept
             }
             WriteLine("");
             WriteLine("{0,8:#,#} Objects Listed or met the criteria", c);
-            if(c != i)
-                WriteLine("{0,8:#,#} Objects Skipped by the filter(s)", i-c);
+            if (c != i)
+                WriteLine("{0,8:#,#} Objects Skipped by the filter(s)", i - c);
             WriteLine("");
             WriteLine("{0,8:#,#} Handle(s) found in {1} categories", i, categories.Keys.Count);
             foreach (var cat in categories.Keys)
             {
-                Write("{0,8:#,#} ",categories[cat]);
+                Write("{0,8:#,#} ", categories[cat]);
                 Write("<link cmd=\"!wcghandle -handletype {0}\">{0}</link>", cat);
                 WriteLine(" found");
             }
@@ -899,18 +903,18 @@ namespace ProofOfConcept
         public static void AddIfTrue(ref StringBuilder Sb, bool IsTrue, string StrToAdd)
         {
             if (!IsTrue) return;
-            if(Sb.Length > 0) Sb.Append('|');
+            if (Sb.Length > 0) Sb.Append('|');
             Sb.Append(StrToAdd);
-                
+
         }
 
         public void DumpThreads()
         {
 
-            if(m_runtime.PointerSize == 8)
+            if (m_runtime.PointerSize == 8)
                 WriteLine("   Id OSId Address          Domain           Allocation Start:End              COM  GC Type  Locks Type / Status             Last Exception");
             else
-                WriteLine("   Id OSId Address  Domain   Alloc Start:End   COM  GC Type  Locks Type / Status             Last Exception");              
+                WriteLine("   Id OSId Address  Domain   Alloc Start:End   COM  GC Type  Locks Type / Status             Last Exception");
 
             foreach (var thread in m_runtime.Threads)
             {
@@ -953,7 +957,7 @@ namespace ProofOfConcept
                 }
 
 
-                if(thread.IsAbortRequested) sb.Append("Aborting");
+                if (thread.IsAbortRequested) sb.Append("Aborting");
                 if (thread.IsBackground)
                 {
                     if (sb.Length > 0) sb.Append("|");
@@ -976,18 +980,165 @@ namespace ProofOfConcept
             IMDObjectEnum objEnum = new MDObjectEnum();
             foreach (var exc in cache.GetExceptions())
             {
-                foreach(var excAddr in exc.Addresses)
+                foreach (var excAddr in exc.Addresses)
                 {
                     objEnum.AddAddress(excAddr);
                 }
             }
             DumpAllExceptions(objEnum);
         }
+        public static string StringSafeEncode(string RawString)
+        {
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < RawString.Length; i++)
+            {
+                if (RawString[i] >= ' ' && RawString[i] <= '~')
+                {
+                    sb.Append(RawString[i]);
+                }
+                else
+                {
+                    sb.AppendFormat("#{0};", (int)RawString[i]);
+                }
+            }
+
+            return sb.ToString();
+        }
+        private void ListStrings(IEnumerable<ulong> Strings)
+        {
+            ulong stringMT = 0;
+            ulong none1 = 0;
+            ulong none2 = 0;
+            AdHoc.GetCommonMT(m_runtime, out stringMT, out none1, out none2);
+
+            ClrType type = AdHoc.GetTypeFromMT(m_runtime, stringMT);
+            if (type == null || !type.IsString)
+                return; // something went really wrong here
+
+            var strGroups = from o in Strings
+                            group o by (type.GetValue(o) as String)
+                                into g
+                                select new
+                                {
+                                    StrValue = g.Key,
+                                    Count = g.Count(),
+                                    TotalSize = g.Count() * g.Key.Length
+                                } into countGroup
+                                orderby countGroup.TotalSize descending
+                                select countGroup;
+
+
+            Application.EnableVisualStyles();
+            Form gridForm = new Form();
+            gridForm.Width = this.Width;
+            gridForm.Height = this.Height;
+            DataGridView view = new DataGridView();
+            view.Dock = DockStyle.Fill;
+            view.AutoGenerateColumns = true;
+            view.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
+
+            gridForm.Controls.Add(view);
+            Write("Creating list....");
+            view.DataSource = LINQToDataTable(strGroups);
+            WriteLine("");
+            WriteLine("Grid Created! {0} rows", view.RowCount);
+            view.Columns[1].DefaultCellStyle.Format = "###,###,###,###";
+            view.Columns[1].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight;
+            view.Columns[2].DefaultCellStyle.Format = "###,###,###,###";
+            view.Columns[2].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight;
+
+            view.Columns[0].FillWeight = 100;
+            view.Columns[1].FillWeight = 15;
+            view.Columns[1].FillWeight = 15;
+
+            view.Columns[0].SortMode = DataGridViewColumnSortMode.Automatic;
+            view.Columns[1].SortMode = DataGridViewColumnSortMode.Automatic;
+            view.Columns[2].SortMode = DataGridViewColumnSortMode.Automatic;
+
+
+            gridForm.ShowDialog(this);
+
+            string fileName = Path.Combine(Path.GetTempPath(), String.Format("StringSize_{0}.txt", Guid.NewGuid().ToString()));
+            WriteLine("Writing to file {0}...", fileName);
+            var writer = File.AppendText(fileName);
+            int i = 0;
+            for (i = 0; i < view.Rows.Count; i++)
+            {
+                if (i % 5000 == 0)
+                    WriteLine("{0}", i);
+                if (view.Rows[i].Cells[0].Value != null)
+                {
+                    writer.WriteLine("{0}\t{1}\t{2}",
+                         view.Rows[i].Cells[1].Value,
+                         view.Rows[i].Cells[2].Value,
+                         StringSafeEncode(view.Rows[i].Cells[0].Value.ToString())
+                         );
+                }
+            }
+            writer.Close();
+            WriteLine("{0}", i);
+
+            WriteLine("File {0} created!", fileName);
+            //foreach(var str in ((MDObjectEnum)Strings).List)
+
+        }
+
+        // From http://www.c-sharpcorner.com/uploadfile/VIMAL.LAKHERA/convert-a-linq-query-resultset-to-a-datatable/
+        public DataTable LINQToDataTable<T>(IEnumerable<T> varlist)
+        {
+            DataTable dtReturn = new DataTable();
+
+            // column names 
+            PropertyInfo[] oProps = null;
+
+            if (varlist == null) return dtReturn;
+
+            foreach (T rec in varlist)
+            {
+                // Use reflection to get property names, to create table, Only first time, others 
+                if (oProps == null)
+                {
+                    oProps = ((Type)rec.GetType()).GetProperties();
+                    foreach (PropertyInfo pi in oProps)
+                    {
+                        Type colType = pi.PropertyType;
+
+                        if ((colType.IsGenericType) && (colType.GetGenericTypeDefinition()
+                        == typeof(Nullable<>)))
+                        {
+                            colType = colType.GetGenericArguments()[0];
+                        }
+
+                        dtReturn.Columns.Add(new DataColumn(pi.Name, colType));
+                    }
+                }
+
+                DataRow dr = dtReturn.NewRow();
+
+                foreach (PropertyInfo pi in oProps)
+                {
+                    dr[pi.Name] = pi.GetValue(rec, null) == null ? DBNull.Value : pi.GetValue
+                    (rec, null);
+                }
+
+                dtReturn.Rows.Add(dr);
+            }
+            return dtReturn;
+        }
+
+
 
         private void button13_Click(object sender, EventArgs e)
         {
-            if(currObj > 0)
+            if (currObj > 0)
                 DumpClass(ReadPointer(currObj));
+        }
+
+        private void button14_Click(object sender, EventArgs e)
+        {
+            CreateCache();
+
+            ListStrings(cache.EnumerateObjectsOfType("System.String"));
         }
     }
 }

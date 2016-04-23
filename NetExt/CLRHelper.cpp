@@ -28,7 +28,7 @@ size_t AlignLarge(size_t nbytes)
 
 std::wstring GetMethodName(CLRDATA_ADDRESS MethodTable)
 {
-	if(pRuntime)
+	if(pRuntime && (MethodTable != NULL))
 	{
 		CComPtr<IMDType> type;
 
@@ -46,7 +46,7 @@ std::wstring GetMethodName(CLRDATA_ADDRESS MethodTable)
 };
 std::wstring GetMethodDesc(CLRDATA_ADDRESS MethodDesc)
 {
-	if(pRuntime)
+	if(pRuntime && (MethodDesc != NULL))
 	{
 		CComBSTR methodName;;
 		if(pRuntime->GetMethodNameByMD(MethodDesc, &methodName) == S_OK)
@@ -702,7 +702,7 @@ BOOL IsInterrupted()
 {
 	if(wasInterrupted)
 		return true;
-	if(CheckControlC() !=0 ||  (g_ExtInstancePtr->m_Control->GetInterrupt() == S_OK))
+	if((g_ExtInstancePtr->m_Control->GetInterrupt() == S_OK) || CheckControlC() == TRUE)
 	{
 		wasInterrupted = true;
 		g_ExtInstancePtr->Out("\nInterrupted by user\n");

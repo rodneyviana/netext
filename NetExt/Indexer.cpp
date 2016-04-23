@@ -701,11 +701,13 @@ bool DisplayHeapEnum(MatchingAddresses& Addresses, bool Short, UINT Top)
 	enumAdd.Start(Addresses);
 	CLRDATA_ADDRESS objAddr;
 	UINT32 i=0;
-	if(g_ExtInstancePtr->m_PtrSize == 4)
-		g_ExtInstancePtr->Out("Address   MT         Size Heap Gen Type Name\n");
-	else
-		g_ExtInstancePtr->Out("Address          MT                  Size Heap Gen Type Name\n");
-
+	if(!Short)
+	{
+		if(g_ExtInstancePtr->m_PtrSize == 4)
+			g_ExtInstancePtr->Out("Address   MT         Size Heap Gen Type Name\n");
+		else
+			g_ExtInstancePtr->Out("Address          MT                  Size Heap Gen Type Name\n");
+	}
 	while(objAddr = enumAdd.GetNext())
 	{
 		if(IsInterrupted())

@@ -861,14 +861,14 @@ EXT_COMMAND(whttp,
 			ZeroMemory(&flagsQ, sizeof(flagsQ));
 			if(flags.forder)
 				if(NET2)
-					flagsQ.cmd = "$rpad($tickstodatetime(_utcTimestamp.dateData), 0n30), $if(!_thread, \"  --\",$lpad($thread(_thread.DONT_USE_InternalThread),4)),\" \",$if((_timeoutSet==1),$tickstotimespan(_timeout._ticks), \"Not set \"), \" \", $if(_response._completed || _finishPipelineRequestCalled,\"Finished\", $tickstotimespan($maskticks($now())-$maskticks(_utcTimestamp.dateData))), \" \", $replace($lpad(_response._statusCode,8),\"0n\",\"\"),\" \", $rpad($isnull(_request._httpMethod,\"NA\"),8), \" \", $isnull(_request._url.m_String, _request._filePath._virtualPath)";
+					flagsQ.cmd = "$rpad($tickstodatetime(_utcTimestamp.dateData), 0n30), $if(!_thread, \"  --\",$lpad($thread(_thread.DONT_USE_InternalThread),4)),\" \",$if((_timeoutSet==1),$tickstotimespan(_timeout._ticks), \"Not set \"), \" \", $if($isnull(_response._completed,0) || _finishPipelineRequestCalled,\"Finished\", $tickstotimespan($maskticks($now())-$maskticks(_utcTimestamp.dateData))), \" \", $replace($lpad(_response._statusCode,8),\"0n\",\"\"),\" \", $rpad($isnull(_request._httpMethod,\"NA\"),8), \" \", $isnull(_request._url.m_String, _request._filePath._virtualPath)";
 				else
-					flagsQ.cmd = "$rpad($tickstodatetime(_utcTimestamp.dateData), 0n30), $if(!_thread, \"  --\",$lpad($thread(_thread.DONT_USE_InternalThread),4)),\" \",$if((_timeoutState!=0),$tickstotimespan(_timeoutTicks), \"Not set \"), \" \", $if(_response._completed || _finishPipelineRequestCalled,\"Finished\", $tickstotimespan($maskticks($now())- $maskticks(_utcTimestamp.dateData))), \" \", $replace($lpad(_response._statusCode,8),\"0n\",\"\"),\" \", $rpad($isnull(_request._httpMethod,\"NA\"),8), \" \", $isnull(_request._url.m_String, _request._filePath._virtualPath)";
+					flagsQ.cmd = "$rpad($tickstodatetime(_utcTimestamp.dateData), 0n30), $if(!_thread, \"  --\",$lpad($thread(_thread.DONT_USE_InternalThread),4)),\" \",$if($isnull(_timeoutSet,_threadAbortOnTimeout),$tickstotimespan($isnull(_timeoutTicks,_timeout._ticks)), \"Not set \"), \" \", $if($isnull(_response._completed,0) || _finishPipelineRequestCalled,\"Finished\", $tickstotimespan($maskticks($now())- $maskticks(_utcTimestamp.dateData))), \" \", $replace($lpad(_response._statusCode,8),\"0n\",\"\"),\" \", $rpad($isnull(_request._httpMethod,\"NA\"),8), \" \", $isnull(_request._url.m_String, _request._filePath._virtualPath)";
 			else
 				if(NET2)
-					flagsQ.cmd = "$if(!_thread, \"  --\",$lpad($thread(_thread.DONT_USE_InternalThread),4)),\" \",$if((_timeoutSet==1),$tickstotimespan(_timeout._ticks), \"Not set \"), \" \", $if(_response._completed || _finishPipelineRequestCalled,\"Finished\", $tickstotimespan($maskticks($now())-$maskticks(_utcTimestamp.dateData))), \" \", $replace($lpad(_response._statusCode,8),\"0n\",\"\"),\" \", $rpad($isnull(_request._httpMethod,\"NA\"),8), \" \", $isnull(_request._url.m_String, _request._filePath._virtualPath)";
+					flagsQ.cmd = "$if(!_thread, \"  --\",$lpad($thread(_thread.DONT_USE_InternalThread),4)),\" \",$if((_timeoutSet==1),$tickstotimespan(_timeout._ticks), \"Not set \"), \" \", $if($isnull(_response._completed,0) || _finishPipelineRequestCalled,\"Finished\", $tickstotimespan($maskticks($now())-$maskticks(_utcTimestamp.dateData))), \" \", $replace($lpad(_response._statusCode,8),\"0n\",\"\"),\" \", $rpad($isnull(_request._httpMethod,\"NA\"),8), \" \", $isnull(_request._url.m_String, _request._filePath._virtualPath)";
 				else
-					flagsQ.cmd = "$if(!_thread, \"  --\",$lpad($thread(_thread.DONT_USE_InternalThread),4)),\" \",$if((_timeoutState!=0),$tickstotimespan(_timeoutTicks), \"Not set \"), \" \", $if(_response._completed || _finishPipelineRequestCalled,\"Finished\", $tickstotimespan($maskticks($now())-$maskticks(_utcTimestamp.dateData))), \" \", $replace($lpad(_response._statusCode,8),\"0n\",\"\"),\" \", $rpad($isnull(_request._httpMethod,\"NA\"),8), \" \", $isnull(_request._url.m_String, _request._filePath._virtualPath)";
+					flagsQ.cmd = "$if(!_thread, \"  --\",$lpad($thread(_thread.DONT_USE_InternalThread),4)),\" \",$if($isnull(_timeoutSet,_threadAbortOnTimeout),$tickstotimespan($isnull(_timeoutTicks,_timeout._ticks)), \"Not set \"), \" \", $if($isnull(_response._completed,0) || _finishPipelineRequestCalled,\"Finished\", $tickstotimespan($maskticks($now())-$maskticks(_utcTimestamp.dateData))), \" \", $replace($lpad(_response._statusCode,8),\"0n\",\"\"),\" \", $rpad($isnull(_request._httpMethod,\"NA\"),8), \" \", $isnull(_request._url.m_String, _request._filePath._virtualPath)";
 			flagsQ.fobj = true;
 			flagsQ.nofield = true;
 			flagsQ.nospace = true;
@@ -921,24 +921,28 @@ EXT_COMMAND(whttp,
 	string timeoutTicksField = "_timeout._ticks";
 	string timeoutSetField = "_timeoutSet";
 
+	// For .NET 4.0 that is not 4.5+
+	fields.push_back(timeoutStartTicksFields); 
+	fields.push_back(timeoutTicksField);
+	fields.push_back(timeoutSetField);
+
+	//
+
+
 	if(!NET2)
 	{
 		timeoutStartTicksFields = "_timeoutStartTimeUtcTicks";
 		timeoutTicksField = "_timeoutTicks";
-		timeoutSetField = "_timeoutState";
+
+		fields.push_back(timeoutStartTicksFields); 
+		fields.push_back(timeoutTicksField);
+
 
 	}
 
-	fields.push_back(timeoutStartTicksFields); 
 
-	fields.push_back(timeoutTicksField); 
-
-	fields.push_back(timeoutSetField); 
-
-	if(!NET2)
-		fields.push_back("_timeoutState"); // Don't repeat for .NET 4
 	fields.push_back("_finishPipelineRequestCalled");
-
+	fields.push_back("_threadAbortOnTimeout"); // for .NET 4.5+
 	fields.push_back("_thread.DONT_USE_InternalThread");
 	fields.push_back("_thread.m_ManagedThreadId");
 	fields.push_back("_response._completed");
@@ -968,6 +972,18 @@ EXT_COMMAND(whttp,
 
 	ULONG curTime;
 	curTime = EvalExprU64("@$dbgtime");
+	if(fieldV.find("_threadAbortOnTimeout") != fieldV.end())
+	{
+		timeoutSetField = "_threadAbortOnTimeout";
+
+	}
+
+	if(fieldV.find("_timeout._ticks") != fieldV.end())
+	{
+		timeoutStartTicksFields = "_timeoutStartTime.dateData";
+	    timeoutTicksField = "_timeout._ticks";
+	}
+
 	if(fieldV[timeoutSetField].Value.b)
 	{
 		Out("Timeout           : %s\n", tickstotimespan(fieldV[timeoutTicksField].Value.u64).c_str());
@@ -1169,7 +1185,7 @@ EXT_COMMAND(wservice,
 		}
 		MatchingAddresses addresses;
 		addresses.clear();
-		indc->GetByDerive("System.ServiceModel.ServiceHost", addresses);
+		indc->GetByDerive("System.ServiceModel.ServiceHostBase", addresses);
 		AddressEnum adenum;
 		if(addresses.size()==0) return;
 		adenum.Start(addresses);
@@ -1185,7 +1201,7 @@ EXT_COMMAND(wservice,
 			Dml("<link cmd=\"!wservice %p\">%p</link>\t",curr, curr);
 			FromFlags flags;
 			ZeroMemory(&flags, sizeof(flags));
-			flags.cmd = "$enumname(state), \"\\t\\t\", description.endpoints.items._size, \"\\t\\t\",baseAddresses.items._size, \"\\t\\t\", description.behaviors.dict.count-description.behaviors.dict.freeCount, \"\\t\", $if(serviceThrottle.isActive!=0,\"True  \",\"False\"),\"\\t\", serviceThrottle.calls.count,\"/\", serviceThrottle.calls.capacity,\"\\t\",serviceThrottle.sessions.count, \"/\",serviceThrottle.sessions.capacity,\"\\t\\\"\",description.configurationName,\"\\\",\",$typefrommt(description.serviceType.m_handle.m_ptr)";
+			flags.cmd = "$enumname(state), \"\\t\\t\", description.endpoints.items._size, \"\\t\\t\",baseAddresses.items._size, \"\\t\\t\", description.behaviors.dict.count-description.behaviors.dict.freeCount, \"\\t\", $if(serviceThrottle.isActive!=0,\"True  \",\"False\"),\"\\t\", serviceThrottle.calls.count,\"/\", serviceThrottle.calls.capacity,\"\\t\",serviceThrottle.sessions.count, \"/\",serviceThrottle.sessions.capacity,\"\\t\\\"\",description.configurationName,\"\\\",\",$isnull($typefrommt(description.serviceType.m_handle.m_ptr),\"Type Not Loaded\")";
 			flags.fobj = true;
 			flags.nofield = true;
 			flags.nospace = true;
@@ -1197,9 +1213,9 @@ EXT_COMMAND(wservice,
 	}
 	CLRDATA_ADDRESS addr = GetUnnamedArgU64(0);
 	ObjDetail obj(addr);
-	if(!obj.IsValid() || !obj.classObj.Implement(L"System.ServiceModel.ServiceHost"))
+	if(!obj.IsValid() || !obj.classObj.Implement(L"System.ServiceModel.ServiceHostBase"))
 	{
-		Out("Object at %p is invalid or not of type [System.ServiceModel.ServiceHost]\n", addr);
+		Out("Object at %p is invalid or not of type [System.ServiceModel.ServiceHostBase]\n", addr);
 		return;
 	}
 	std::vector<std::string> fields;

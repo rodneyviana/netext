@@ -401,7 +401,17 @@ namespace CALC
 	void do_isobj() {  do_int(currObj->IsObject()); }
 	void do_isvalue() { do_int(currObj->IsValueType()); }
 	void do_poi() { SVAL p=st.top(); st.pop(); do_pointer(ObjDetail::GetPTR(p.Value.u64)); }
-	void do_isnull() { SVAL in=st.top(); st.pop(); SVAL v=st.top(); st.pop(); if(!v.IsValid || (v.Value.u64==0)) st.push(in); else st.push(v); }
+	void do_isnull()
+	{ 
+		SVAL in=st.top();
+		st.pop();
+		SVAL v=st.top();
+		st.pop();
+		if(!v.IsValid || ((v.IsInt() || v.IsUnsigned()) && v.Value.u64==0) || (v.IsReal() && v.DoubleValue==0) || (v.IsString() && v.strValue == L"(null)")) 
+			st.push(in);
+		else
+			st.push(v);
+	}
 	void do_fieldat() { SVAL i=st.top(); st.pop(); SVAL v; do_varinternal(currObj->GetFieldsByName("*").at(i.DoubleValue).FieldName); }
 	void do_wildcardmacth()
 	{
@@ -452,9 +462,9 @@ namespace CALC
 	void do_tostring() { SVAL v=st.top(); st.pop(); do_stdstring(v.strValue.size() == 0 ? v.prettyPrint : v.strValue );}
 	void do_tonumberstring() { SVAL v=st.top(); st.pop(); do_stdstring(v.strValue.size() == 0 ? v.prettyPrint : v.strValue);}
 	void do_toformatednumberstring() {  SVAL v=st.top(); st.pop(); do_stdstring(formatnumber(v.DoubleValue)); }
-	void do_tohexstring() {  SVAL v=st.top(); st.pop(); do_stdstring(formathex(v.Value.u64));}
-	void do_typefrommt() {  SVAL v=st.top(); st.pop(); do_stdstring(GetMethodName(v.Value.u64));}
-	void do_methodfrommd() {  SVAL v=st.top(); st.pop(); do_stdstring(GetMethodDesc(v.Value.u64));}
+	void do_tohexstring() {  SVAL v=st.top(); if(!v.IsValid) return; st.pop(); do_stdstring(formathex(v.Value.u64));}
+	void do_typefrommt() {  SVAL v=st.top(); if(!v.IsValid) return; st.pop(); do_stdstring(GetMethodName(v.Value.u64));}
+	void do_methodfrommd() {  SVAL v=st.top(); if(!v.IsValid) return; st.pop(); do_stdstring(GetMethodDesc(v.Value.u64));}
 	void do_tickstotimespan()
 	{
 		//$tickstotimespan(0n10000000*(0n20+0n30*0n60+1*0n60*0n60))
@@ -1882,6 +1892,7 @@ void EXT_CLASS::wfrom_internal(FromFlags flags)
 			{
 				shown++;
 				string next = info.stop;
+				boost::trim_right(next);
 				info = parse(next.c_str(), calc % ',', space_p);
 				while(CALC::st.size()>0)
 				{
