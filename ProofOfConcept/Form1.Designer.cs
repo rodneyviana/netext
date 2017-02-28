@@ -56,6 +56,8 @@
             this.button12 = new System.Windows.Forms.Button();
             this.button13 = new System.Windows.Forms.Button();
             this.button14 = new System.Windows.Forms.Button();
+            this.textBox9 = new System.Windows.Forms.TextBox();
+            this.button17 = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // label1
@@ -73,7 +75,7 @@
             this.textBox1.Name = "textBox1";
             this.textBox1.Size = new System.Drawing.Size(542, 22);
             this.textBox1.TabIndex = 1;
-            this.textBox1.Text = "C:\\dumps\\TR16\\LabDumps\\leakstack.dmp";
+            this.textBox1.Text = "C:\\TR22\\w3wp.exe_service.dmp";
             // 
             // button1
             // 
@@ -135,6 +137,7 @@
             this.textBox3.ScrollBars = System.Windows.Forms.ScrollBars.Both;
             this.textBox3.Size = new System.Drawing.Size(1911, 570);
             this.textBox3.TabIndex = 7;
+            this.textBox3.WordWrap = false;
             // 
             // button4
             // 
@@ -301,7 +304,7 @@
             // 
             // button14
             // 
-            this.button14.Location = new System.Drawing.Point(1296, 74);
+            this.button14.Location = new System.Drawing.Point(1132, 18);
             this.button14.Name = "button14";
             this.button14.Size = new System.Drawing.Size(165, 27);
             this.button14.TabIndex = 26;
@@ -309,11 +312,32 @@
             this.button14.UseVisualStyleBackColor = true;
             this.button14.Click += new System.EventHandler(this.button14_Click);
             // 
+            // textBox9
+            // 
+            this.textBox9.Location = new System.Drawing.Point(1438, 78);
+            this.textBox9.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
+            this.textBox9.Name = "textBox9";
+            this.textBox9.Size = new System.Drawing.Size(180, 22);
+            this.textBox9.TabIndex = 27;
+            // 
+            // button17
+            // 
+            this.button17.Location = new System.Drawing.Point(1276, 75);
+            this.button17.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
+            this.button17.Name = "button17";
+            this.button17.Size = new System.Drawing.Size(150, 33);
+            this.button17.TabIndex = 30;
+            this.button17.Text = "Xml Doc";
+            this.button17.UseVisualStyleBackColor = true;
+            this.button17.Click += new System.EventHandler(this.button17_Click);
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1914, 834);
+            this.Controls.Add(this.button17);
+            this.Controls.Add(this.textBox9);
             this.Controls.Add(this.button14);
             this.Controls.Add(this.button13);
             this.Controls.Add(this.button12);
@@ -378,6 +402,8 @@
         private System.Windows.Forms.Button button12;
         private System.Windows.Forms.Button button13;
         private System.Windows.Forms.Button button14;
+        private System.Windows.Forms.TextBox textBox9;
+        private System.Windows.Forms.Button button17;
     }
 }
 

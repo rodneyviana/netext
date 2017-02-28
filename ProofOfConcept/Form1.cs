@@ -176,7 +176,7 @@ namespace ProofOfConcept
             WriteLine("Free MT: {0:x16}, String MT: {1:x16}, Array MT: {2:x16}", freeMT, strMT, arrMT);
 
             WriteLine("== App Domains ===");
-            int i = 0;
+
             DumpDomains();
             //foreach (var appDomain in AdHoc.GetDomains(m_runtime))
             //{
@@ -1139,6 +1139,201 @@ namespace ProofOfConcept
             CreateCache();
 
             ListStrings(cache.EnumerateObjectsOfType("System.String"));
+        }
+
+        private StringBuilder PrintAttribute(ulong Address)
+        {
+            StringBuilder sb = new StringBuilder(100);
+            if (Address == 0)
+                return sb;
+            sb.Append(" ");
+            dynamic attr = cache.GetDinamicFromAddress(Address);
+            sb.Append(String.IsNullOrEmpty((string)(attr.name.prefix)) ? "" : (string)(attr.name.prefix) + ":");
+            sb.Append(String.IsNullOrEmpty((string)(attr.name.localName)) ? "" : (string)(attr.name.localName));
+            //sb.Append(String.IsNullOrEmpty((string)(attr.name.ns)) ? "" : "=\"" + (string)(attr.name.ns) + "\"");
+            sb.Append(String.IsNullOrEmpty((string)(attr.lastChild.data)) ? "" : "=\"" + System.Security.SecurityElement.Escape((string)(attr.lastChild.data)) + "\"");
+            return sb;
+        }
+
+        private StringBuilder PrintXmlNode(ulong Address, int Level)
+        {
+            StringBuilder sb = new StringBuilder(100);
+            if (Address == 0)
+                return sb;
+            ClrType node = m_heap.GetObjectType(Address);
+
+            var nodeObj = cache.GetDinamicFromAddress(Address);
+            if(nodeObj == null)
+                return sb;
+            sb.Append(' ', Level);
+            if (node.Name == "System.Xml.XmlDeclaration")
+            {
+                sb.Append("<?xml version=\"");
+                sb.Append((string)(nodeObj.version));
+                sb.Append("\" encoding=\"");
+                sb.Append((string)(nodeObj.encoding));
+                sb.Append("\" ?>");
+                return sb;
+            }
+            if (node.Name == "System.Xml.XmlComment")
+            {
+                sb.Append("<!-- ");
+                sb.Append((string)(nodeObj.data));
+                sb.Append(" -->");
+                return sb;
+            }
+            if (node.Name == "System.Xml.XmlText")
+            {
+
+                sb.Append((string)(nodeObj.data));
+                return sb;
+            }
+
+            bool prefix = !String.IsNullOrEmpty((string)(nodeObj.name.prefix));
+
+            sb.Append("<");
+            if (prefix) sb.Append((string)(nodeObj.name.prefix) + ":");
+            sb.Append((string)(nodeObj.name.localName));
+            ulong attributes = nodeObj.attributes;
+            if (attributes > 0)
+            {
+                ClrType fieldType = nodeObj.attributes.nodes.field;
+
+                if (fieldType.Name == "System.Collections.ArrayList")
+                {
+                    ulong items = nodeObj.attributes.nodes.field._items;
+
+                    ClrType arrAttr = m_heap.GetObjectType(items);
+                    int len = nodeObj.attributes.nodes.field._size;
+
+
+                    for (int i = 0; i < len; i++)
+                    {
+
+                        ulong addr = (ulong)arrAttr.GetArrayElementValue(items, i);
+
+                        dynamic attr = cache.GetDinamicFromAddress(addr);
+                        sb.Append(PrintAttribute(addr));
+
+                    }
+                }
+                else
+                {
+                    sb.Append(PrintAttribute((ulong)(nodeObj.attributes.nodes.field)));
+                }
+
+            }
+            if ((ulong)(nodeObj.lastChild) == 0 || (ulong)(nodeObj.lastChild) == Address)
+                sb.Append(" />");
+            else
+                sb.Append(">");
+            return sb;
+        }
+
+        private string DumpXmlNodes(ulong Address, int Indentention = 0, StringBuilder sb = null)
+        {
+            if(sb == null)
+                sb = new StringBuilder(100);
+            if (Address == 0)
+                return sb.ToString();
+            Stack<ulong> nodes = new Stack<ulong>();
+            ulong next = Address;
+            while (next != 0)
+            {
+                nodes.Push(next);
+                ClrType node = m_heap.GetObjectType(next);
+                if (node.Name == "System.Xml.XmlDeclaration")
+                {
+                    break;
+                }
+                if (cache.IsDerivedOf(next, "System.Xml.XmlNode"))
+                {
+
+                    ClrInstanceField fNext = node.GetFieldByName("next");
+                    next = (ulong)fNext.GetValue(next);
+                    ulong i = nodes.FirstOrDefault(m => m == next);
+                    if (i != 0)
+                    {
+                        next = 0; // We went here
+                    }
+                }
+                else
+                {
+                    sb.AppendLine("Something bad happened");
+                    next = 0;
+                }
+            }
+            // Now let's navigate in the right order
+
+            foreach(ulong node in nodes)
+            {
+                sb.AppendFormat("{0}\n",PrintXmlNode(node, Indentention));
+                ClrType nodeObj = m_heap.GetObjectType(node);
+                string lastName = String.Empty;
+                if (nodeObj.Name != "System.Xml.XmlDeclaration")
+                {
+                    ClrInstanceField fLastChild = nodeObj.GetFieldByName("lastChild");
+                    if (fLastChild != null && (ulong)fLastChild.GetValue(node) != node)
+                    {
+                        dynamic nodeDyn = cache.GetDinamicFromAddress(node);
+
+                        ulong child = (ulong)fLastChild.GetValue(node);
+                        DumpXmlNodes(child, Indentention + 2, sb);
+                        string str = new string(' ', Indentention);
+                        if (nodeObj.Name != "System.Xml.XmlText")
+                            sb.AppendFormat("{0}</{1}>\n", str, (string)(nodeDyn.name.localName));
+                    }
+                }
+
+            }
+
+            return sb.ToString();
+        }
+
+        private static int nsId;
+
+        private static Dictionary<string, string> nsToSchema;
+        private static Dictionary<string, string> schemaToNs;
+
+
+        private void DumpXmlDoc(ulong Address)
+        {
+            nsId = 0;
+            nsToSchema = new Dictionary<string, string>();
+            schemaToNs = new Dictionary<string, string>();
+            ClrType xmlDoc = m_heap.GetObjectType(Address);
+            if (xmlDoc == null || !cache.IsDerivedOf(Address, "System.Xml.XmlNode"))
+            {
+                WriteLine("Not type System.Xml.XmlDocument");
+                return;
+            }
+            
+            ClrInstanceField fLastChild = xmlDoc.GetFieldByName("lastChild");
+            ulong next = (ulong)fLastChild.GetValue(Address);
+            if (xmlDoc.Name != "System.Xml.XmlDocument")
+            {
+                next = Address;
+                ClrInstanceField fParent = xmlDoc.GetFieldByName("parentNode");
+                ulong parent = next;
+                while (parent != 0)
+                {
+                    next = parent;
+                    parent = (ulong)fParent.GetValue(next);
+                }
+
+            }
+            WriteLine("[{0:%p}] {1}", Address, xmlDoc.Name);
+            WriteLine("[{0:%p}] {1}", next, xmlDoc.Name);
+            WriteLine("{0}", DumpXmlNodes(next));
+            
+        }
+
+        private void button17_Click(object sender, EventArgs e)
+        {
+            StartRuntime();
+            CreateCache();
+            ulong xmlDocAddr = Convert.ToUInt64(textBox9.Text, 16);
+            DumpXmlDoc(xmlDocAddr);
         }
     }
 }
