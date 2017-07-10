@@ -75,7 +75,7 @@
             this.textBox1.Name = "textBox1";
             this.textBox1.Size = new System.Drawing.Size(542, 22);
             this.textBox1.TabIndex = 1;
-            this.textBox1.Text = "C:\\TR22\\w3wp.exe_service.dmp";
+            this.textBox1.Text = "C:\\temp\\XMLandObjects.DMP";
             // 
             // button1
             // 

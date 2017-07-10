@@ -40,15 +40,15 @@
 
 #if _DEBUG
 #if _WIN64
-#import  "C:\projects\NetExt\ClrMemDiagExt\bin\x64\Debug\NetExtShim.tlb" auto_rename
+#import  "..\ClrMemDiagExt\bin\x64\Debug\NetExtShim.tlb" auto_rename
 #else
-#import  "C:\projects\NetExt\ClrMemDiagExt\bin\x86\Debug\NetExtShim.tlb" auto_rename
+#import  "..\ClrMemDiagExt\bin\x86\Debug\NetExtShim.tlb" auto_rename
 #endif
 #else
 #if _WIN64
-#import  "C:\projects\NetExt\ClrMemDiagExt\bin\x64\Release64\NetExtShim.tlb" auto_rename
+#import  "..\ClrMemDiagExt\bin\x64\Release64\NetExtShim.tlb" auto_rename
 #else
-#import  "c:\projects\netext\ClrMemDiagExt\bin\x86\Release32\NetExtShim.tlb" auto_rename
+#import  "..\ClrMemDiagExt\bin\x86\Release32\NetExtShim.tlb" auto_rename
 #endif
 #endif
 
@@ -286,7 +286,7 @@ public:
 	EXT_COMMAND_METHOD(wpe);
 	EXT_COMMAND_METHOD(wdomain);
 	EXT_COMMAND_METHOD(wsocket);
-
+	EXT_COMMAND_METHOD(wxml);
 
 
 	regex_constants::syntax_option_type GetFlavor(const string& flavor);

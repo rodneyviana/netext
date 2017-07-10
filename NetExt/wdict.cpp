@@ -1323,5 +1323,24 @@ EXT_COMMAND(wservice,
 		}
 	}
 
-//!wfrom -nofield -nospace -array 000000015ff4a858 select \"Address            : \",$addr(),\"\\nListener URI       : \",listener.uri.m_String, \"\\nBinding Name    \r\n\r\n  : \",bindingName, \"\\nActive or Aborted  : \",$if(aborted==0,\"Active\",\"Aborted\"),\"\\nState              : \",$enumname(state),\"\\nTransaction Type   : \",$if\r\n\r\n(transactionIsolationLevelSet!=0,$enumname(transactionIsolationLevel),\"No transaction\"),$if(transactionIsolationLevelSet!=0,\", Timeout: \"+$tickstotimespan\r\n\r\n(transactionTimeout._ticks),\"\"),\"\\n\",\"Listener State     : \",$enumname(listener.state),\"\\nTimeout settings   : \", \"Open [\",$tickstotimespan\r\n\r\n(listener.closeTimeout._ticks),\"] Close [\",$tickstotimespan(listener.openTimeout._ticks),\"] Receive: [\",$tickstotimespan(listener.receiveTimeout._ticks),\"] \r\n\r\nSend: [\"+$tickstotimespan(listener.sendTimeout._ticks),\"]\",\"\\nServer Capabilities: SupportsServerAuth \",$if\r\n\r\n(listener.securityCapabilities.supportsServerAuth==0,\"[No ]\",\"[Yes]\"),\" SupportsClientAuth \",$if(listener.securityCapabilities.supportsClientAuth==0,\"[No \r\n\r\n]\",\"[Yes]\"),\" SupportsClientWinIdent \", $if(listener.securityCapabilities.supportsClientWindowsIdentity==0,\"[No ]\",\"[Yes]\"),\"\\nRequest Prot Level : \",\r\n\r\n$enumname(listener.securityCapabilities.requestProtectionLevel),\"\\nResponse Prot Level: \",$enumname\r\n\r\n(listener.securityCapabilities.responseProtectionLevel),\"\\nEvents Raised      : \",$if(raisedClosed + raisedClosing + raisedFaulted, $if\r\n\r\n(raisedClosed,\"ClosedEvent \",\"\")+$if(raisedClosing,\"ClosingEvent \",\"\")+$if(raisedFaulted,\"FaltedEvent \",\"\"),\"No Event raised\"),\"\\nHandles Called     : \",\r\n\r\n$if(closeCalled + onClosingCalled + onClosedCalled + onOpeningCalled + onOpenedCalled, $if(closeCalled,\"ClosedCalled \",\"\")+$if\r\n\r\n(onClosingCalled,\"OnClosingHandle \",\"\")+$if(onClosedCalled,\"OnClosedHandle \",\"\")+$if(onOpeningCalled,\"OnOpeningHandle \",\"\")+$if\r\n\r\n(onOpenedCalled,\"OnOpenedHandle \",\"\"),\"No handle called\"),\"\\nSession Mode       : \", $if(sessionMode,\"True\",\"False\"),\"\\n\"
+
+
 }
+	EXT_COMMAND(wxml,
+				"Dump XML Document or XML Node. Use '!whelp wkeyvalue' for detailed help",
+				"{;e,r;;Address,Address of the XML Element}"
+				)
+	{
+		INIT_API();
+		CLRDATA_ADDRESS addr = GetUnnamedArgU64(0);
+		ObjDetail Obj(addr);
+		HRESULT hr = E_FAIL;
+		if(Obj.IsValid() && Obj.classObj.Implement(L"System.Xml.XmlNode"))
+		{
+			hr = pHeap->DumpXml(addr);
+		}
+		if(hr != S_OK)
+		{
+			Out("There is no valid XML object at %p\n", addr);
+		}
+	}

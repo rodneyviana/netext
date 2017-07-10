@@ -645,7 +645,7 @@ Thread::const_iterator Thread::GetThreadByAddress(CLRDATA_ADDRESS Address)
 {
 	for(const_iterator it = threads.begin();it!=threads.end(); it++)
 	{
-		if(Address == it->address)
+		if(Address == it->Address)
 		{
 			return it;
 		}

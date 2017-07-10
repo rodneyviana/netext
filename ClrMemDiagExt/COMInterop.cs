@@ -137,18 +137,41 @@ namespace NetExt.Shim
         }
         public static void Out(string Message)
         {
-            if (callBack != null)
+            if (callBack == null)
+                return;
+            if (Message.Length < 16000)
                 callBack(Message);
-            //else
-            //    throw new NullReferenceException("C++ plain text callback was not set");
+            else
+            {
+                int start = 0;
+                while (start + 16000 < Message.Length)
+                {
+                    callBack(Message.Substring(start, 16000));
+                    start += 16000;
+                }
+                if (start < Message.Length)
+                    callBack(Message.Substring(start));
+            }
         }
 
         public static void OutDml(string Message)
         {
-            if (callBackDml != null)
+            if (callBackDml == null)
+                return;
+            if (Message.Length < 16000)
                 callBackDml(Message);
-            //else
-            //    throw new NullReferenceException("C++ formatted text callback was not set");
+            else
+            {
+                int start = 0;
+                while (start + 16000 < Message.Length)
+                {
+                    callBack(Message.Substring(start, 16000));
+                    start += 16000;
+                }
+                if (start < Message.Length)
+                    callBackDml(Message.Substring(start));
+            }
+  
 
         }
 
@@ -176,7 +199,8 @@ namespace NetExt.Shim
             try
             {
                 CLRMDActivator clrMD = new CLRMDActivator();
-                clrMD.CreateFromIDebugClient(iDebugClient, out ppTarget);
+                if (clrMD.CreateFromIDebugClient(iDebugClient, out ppTarget) != HRESULTS.S_OK)
+                    throw new Exception("Unable to create activator");
             }
             catch
             {
@@ -248,14 +272,32 @@ namespace NetExt.Shim
     [ComDefaultInterface(typeof(IMDActivator))]
     public class CLRMDActivator : IMDActivator
     {
-        public void CreateFromCrashDump(string crashdump, out IMDTarget ppTarget)
+        public int CreateFromCrashDump(string crashdump, out IMDTarget ppTarget)
         {
-            ppTarget = new MDTarget(crashdump);
+            try
+            {
+                ppTarget = new MDTarget(crashdump);
+            }
+            catch
+            {
+                ppTarget = null;
+                return HRESULTS.E_FAIL;
+            }
+            return HRESULTS.S_OK;
         }
 
-        public void CreateFromIDebugClient(object iDebugClient, out IMDTarget ppTarget)
+        public int CreateFromIDebugClient(object iDebugClient, out IMDTarget ppTarget)
         {
-            ppTarget = new MDTarget(iDebugClient);
+            try
+            {
+                ppTarget = new MDTarget(iDebugClient);
+            }
+            catch
+            {
+                ppTarget = null;
+                return HRESULTS.E_FAIL;
+            }
+            return HRESULTS.S_OK;
         }
     }
 
@@ -271,17 +313,27 @@ namespace NetExt.Shim
             m_heapint = heapint;
         }
 
-        public void GetName(out string pName)
+        public int GetName(out string pName)
         {
+            if (m_heapint == null)
+            {
+                pName = null;
+                return HRESULTS.E_FAIL;
+            }
             pName = m_heapint.Name;
+            return HRESULTS.S_OK;
         }
 
-        public void GetBaseInterface(out IMDInterface ppBase)
+        public int GetBaseInterface(out IMDInterface ppBase)
         {
-            if (m_heapint.BaseInterface != null)
+            if (m_heapint != null && m_heapint.BaseInterface != null)
                 ppBase = new MDInterface(m_heapint.BaseInterface);
             else
+            {
                 ppBase = null;
+                return HRESULTS.E_FAIL;
+            }
+            return HRESULTS.S_OK;
         }
     }
 
@@ -297,34 +349,64 @@ namespace NetExt.Shim
             m_handle = handle;
         }
 
-        public void GetHandleData(out ulong pAddr, out ulong pObjRef, out MDHandleTypes pType)
+        public int GetHandleData(out ulong pAddr, out ulong pObjRef, out MDHandleTypes pType)
         {
+            if (m_handle == null)
+            {
+                pAddr = 0;
+                pObjRef = 0;
+                pType = new MDHandleTypes();
+                return HRESULTS.E_FAIL;
+            }
             pAddr = m_handle.Address;
             pObjRef = m_handle.Object;
             pType = (MDHandleTypes)m_handle.HandleType;
+            return HRESULTS.S_OK;
         }
 
-        public void IsStrong(out int pStrong)
+        public int IsStrong(out int pStrong)
         {
+            if (m_handle == null)
+            {
+                pStrong = 0;
+                return HRESULTS.E_FAIL;
+            }
             pStrong = m_handle.IsStrong ? 1 : 0;
+            return HRESULTS.S_OK;
         }
 
-        public void GetRefCount(out int pRefCount)
+        public int GetRefCount(out int pRefCount)
         {
+            if (m_handle == null)
+            {
+                pRefCount = 0;
+                return HRESULTS.E_FAIL;
+            }
             pRefCount = (int)m_handle.RefCount;
+            return HRESULTS.S_OK;
         }
 
-        public void GetDependentTarget(out ulong pTarget)
+        public int GetDependentTarget(out ulong pTarget)
         {
+            if (m_handle == null)
+            {
+                pTarget = 0;
+                return HRESULTS.E_FAIL;
+            }
             pTarget = m_handle.DependentTarget;
+            return HRESULTS.S_OK;
         }
 
-        public void GetAppDomain(out IMDAppDomain ppDomain)
+        public int GetAppDomain(out IMDAppDomain ppDomain)
         {
-            if (m_handle.AppDomain != null)
+            if (m_handle != null && m_handle.AppDomain != null)
                 ppDomain = new MDAppDomain(m_handle.AppDomain);
             else
+            {
                 ppDomain = null;
+                return HRESULTS.E_FAIL;
+            }
+            return HRESULTS.S_OK;
         }
     }
 
@@ -340,29 +422,48 @@ namespace NetExt.Shim
             m_root = root;
         }
 
-        public void GetRootInfo(out ulong pAddress, out ulong pObjRef, out MDRootType pType)
+        public int GetRootInfo(out ulong pAddress, out ulong pObjRef, out MDRootType pType)
         {
+            if (m_root == null)
+            {
+                pAddress = 0;
+                pObjRef = 0;
+                pType = MDRootType.MDRoot_AsyncPinning;
+                return HRESULTS.E_FAIL;
+            }
             pAddress = m_root.Address;
             pObjRef = m_root.Object;
             pType = (MDRootType)m_root.Kind;
+            return HRESULTS.S_OK;
         }
 
-        public void GetType(out IMDType ppType)
+        public int GetType(out IMDType ppType)
         {
             ppType = null;
+            return HRESULTS.S_FALSE;
         }
 
-        public void GetName(out string ppName)
+        public int GetName(out string ppName)
         {
+            if (m_root == null)
+            {
+                ppName = null;
+                return HRESULTS.E_FAIL;
+            }
             ppName = m_root.Name;
+            return HRESULTS.S_OK;
         }
 
-        public void GetAppDomain(out IMDAppDomain ppDomain)
+        public int GetAppDomain(out IMDAppDomain ppDomain)
         {
-            if (m_root.AppDomain != null)
+            if (m_root != null && m_root.AppDomain != null)
                 ppDomain = new MDAppDomain(m_root.AppDomain);
             else
+            {
                 ppDomain = null;
+                return HRESULTS.E_FAIL;
+            }
+            return HRESULTS.S_OK;
         }
     }
 
@@ -378,19 +479,37 @@ namespace NetExt.Shim
             m_appDomain = ad;
         }
 
-        public void GetName(out string pName)
+        public int GetName(out string pName)
         {
+            if (m_appDomain == null)
+            {
+                pName = null;
+                return HRESULTS.E_FAIL;
+            }
             pName = m_appDomain.Name;
+            return HRESULTS.S_OK;
         }
 
-        public void GetID(out int pID)
+        public int GetID(out int pID)
         {
+            if (m_appDomain == null)
+            {
+                pID = -1;
+                return HRESULTS.E_FAIL;
+            }
             pID = m_appDomain.Id;
+            return HRESULTS.S_OK;
         }
 
-        public void GetAddress(out ulong pAddress)
+        public int GetAddress(out ulong pAddress)
         {
+            if (m_appDomain == null)
+            {
+                pAddress = 0;
+                return HRESULTS.E_FAIL;
+            }
             pAddress = m_appDomain.Address;
+            return HRESULTS.S_OK;
         }
     }
 
@@ -406,8 +525,13 @@ namespace NetExt.Shim
             m_seg = seg;
         }
 
-        public void GetSegData(out MD_SegData SegData)
+        public int GetSegData(out MD_SegData SegData)
         {
+            if (m_seg == null)
+            {
+                SegData = new MD_SegData();
+                return HRESULTS.E_FAIL;
+            }
             SegData.CommittedEnd = m_seg.CommittedEnd;
             SegData.End = m_seg.End;
             SegData.FirstObject = m_seg.FirstObject;
@@ -423,73 +547,149 @@ namespace NetExt.Shim
             SegData.ProcessorAffinity = m_seg.ProcessorAffinity;
             SegData.ReservedEnd = m_seg.ReservedEnd;
             SegData.Start = m_seg.Start;
+            return HRESULTS.S_OK;
         }
 
-        public void GetStart(out ulong pAddress)
+        public int GetStart(out ulong pAddress)
         {
+            if(m_seg == null)
+            {
+                pAddress = 0;
+                return HRESULTS.E_FAIL;
+            }
             pAddress = m_seg.Start;
+            return HRESULTS.S_OK;
         }
 
-        public void GetEnd(out ulong pAddress)
+        public int GetEnd(out ulong pAddress)
         {
+            if (m_seg == null)
+            {
+                pAddress = 0;
+                return HRESULTS.E_FAIL;
+            }
             pAddress = m_seg.End;
+            return HRESULTS.S_OK;
         }
 
-        public void GetReserveLimit(out ulong pAddress)
+        public int GetReserveLimit(out ulong pAddress)
         {
+            if (m_seg == null)
+            {
+                pAddress = 0;
+                return HRESULTS.E_FAIL;
+            }
             pAddress = m_seg.ReservedEnd;
+            return HRESULTS.S_OK;
         }
 
-        public void GetCommitLimit(out ulong pAddress)
+        public int GetCommitLimit(out ulong pAddress)
         {
+            if (m_seg == null)
+            {
+                pAddress = 0;
+                return HRESULTS.E_FAIL;
+            }
             pAddress = m_seg.CommittedEnd;
+            return HRESULTS.S_OK;
         }
 
-        public void GetLength(out ulong pLength)
+        public int GetLength(out ulong pLength)
         {
+            if (m_seg == null)
+            {
+                pLength = 0;
+                return HRESULTS.E_FAIL;
+            }
             pLength = m_seg.Length;
+            return HRESULTS.S_OK;
         }
 
-        public void GetProcessorAffinity(out int pProcessor)
+        public int GetProcessorAffinity(out int pProcessor)
         {
+            if (m_seg == null)
+            {
+                pProcessor = 0;
+                return HRESULTS.E_FAIL;
+            }
             pProcessor = m_seg.ProcessorAffinity;
+            return HRESULTS.S_OK;
         }
 
-        public void IsLarge(out int pLarge)
+        public int IsLarge(out int pLarge)
         {
+            if (m_seg == null)
+            {
+                pLarge = 0;
+                return HRESULTS.E_FAIL;
+            }
             pLarge = m_seg.IsLarge ? 1 : 0;
+            return HRESULTS.S_OK;
         }
 
-        public void IsEphemeral(out int pEphemeral)
+        public int IsEphemeral(out int pEphemeral)
         {
+            if (m_seg == null)
+            {
+                pEphemeral = 0;
+                return HRESULTS.E_FAIL;
+            }
             pEphemeral = m_seg.IsEphemeral ? 1 : 0;
+            return HRESULTS.S_OK;
         }
 
-        public void GetGen0Info(out ulong pStart, out ulong pLen)
+        public int GetGen0Info(out ulong pStart, out ulong pLen)
         {
+            if (m_seg == null)
+            {
+                pStart = 0;
+                pLen = 0;
+                return HRESULTS.E_FAIL;
+            }
             pStart = m_seg.Gen0Start;
             pLen = m_seg.Gen0Length;
+            return HRESULTS.S_OK;
         }
 
-        public void GetGen1Info(out ulong pStart, out ulong pLen)
+        public int GetGen1Info(out ulong pStart, out ulong pLen)
         {
+            if (m_seg == null)
+            {
+                pStart = 0;
+                pLen = 0;
+                return HRESULTS.E_FAIL;
+            }
             pStart = m_seg.Gen1Start;
             pLen = m_seg.Gen1Length;
+            return HRESULTS.S_OK;
         }
 
-        public void GetGen2Info(out ulong pStart, out ulong pLen)
+        public int GetGen2Info(out ulong pStart, out ulong pLen)
         {
+            if (m_seg == null)
+            {
+                pStart = 0;
+                pLen = 0;
+                return HRESULTS.E_FAIL;
+            }
             pStart = m_seg.Gen2Start;
             pLen = m_seg.Gen2Length;
+            return HRESULTS.S_OK;
         }
 
-        public void EnumerateObjects(out IMDObjectEnum ppEnum)
+        public int EnumerateObjects(out IMDObjectEnum ppEnum)
         {
             List<ulong> refs = new List<ulong>();
+            if (m_seg == null)
+            {
+                ppEnum = new MDObjectEnum(refs);
+                return HRESULTS.E_FAIL;
+            }
             for (ulong obj = m_seg.FirstObject; obj != 0; obj = m_seg.NextObject(obj))
                 refs.Add(obj);
 
             ppEnum = new MDObjectEnum(refs);
+            return HRESULTS.S_OK;
         }
     }
 
@@ -505,39 +705,75 @@ namespace NetExt.Shim
             m_region = region;
         }
 
-        public void GetRegionInfo(out ulong pAddress, out ulong pSize, out MDMemoryRegionType pType)
+        public int GetRegionInfo(out ulong pAddress, out ulong pSize, out MDMemoryRegionType pType)
         {
+            if (m_region == null)
+            {
+                pAddress = 0;
+                pSize = 0;
+                pType = MDMemoryRegionType.MDRegion_CacheEntryHeap;
+                return HRESULTS.E_FAIL;
+            }
             pAddress = m_region.Address;
             pSize = m_region.Size;
             pType = (MDMemoryRegionType)m_region.Type;
+            return HRESULTS.S_OK;
         }
 
-        public void GetAppDomain(out IMDAppDomain ppDomain)
+        public int GetAppDomain(out IMDAppDomain ppDomain)
         {
-            if (m_region.AppDomain != null)
+            if (m_region != null && m_region.AppDomain != null)
                 ppDomain = new MDAppDomain(m_region.AppDomain);
             else
+            {
                 ppDomain = null;
+                return HRESULTS.E_FAIL;
+            }
+            return HRESULTS.S_OK;
         }
 
-        public void GetModule(out string pModule)
+        public int GetModule(out string pModule)
         {
+            if (m_region == null)
+            {
+                pModule = "*INVALIDMODULE*";
+                return HRESULTS.E_FAIL;
+            }
             pModule = m_region.Module;
+            return HRESULTS.S_OK;
         }
 
-        public void GetHeapNumber(out int pHeap)
+        public int GetHeapNumber(out int pHeap)
         {
+            if (m_region == null)
+            {
+                pHeap = 0;
+                return HRESULTS.E_FAIL;
+            }
             pHeap = m_region.HeapNumber;
+            return HRESULTS.S_OK;
         }
 
-        public void GetDisplayString(out string pName)
+        public int GetDisplayString(out string pName)
         {
+            if (m_region == null)
+            {
+                pName = null;
+                return HRESULTS.E_FAIL;
+            }
             pName = m_region.ToString(true);
+            return HRESULTS.S_OK;
         }
 
-        public void GetSegmentType(out MDSegmentType pType)
+        public int GetSegmentType(out MDSegmentType pType)
         {
+            if (m_region == null)
+            {
+                pType = new MDSegmentType();
+                return HRESULTS.E_FAIL;
+            }
             pType = (MDSegmentType)m_region.GCSegmentType;
+            return HRESULTS.S_OK;
         }
     }
 
@@ -555,8 +791,13 @@ namespace NetExt.Shim
             m_runtime = runtime;
         }
 
-        public void GetThreadData([Out] out MD_ThreadData threadData)
+        public int GetThreadData([Out] out MD_ThreadData threadData)
         {
+            threadData = new MD_ThreadData();
+            if (m_thread == null)
+            {
+                return HRESULTS.E_FAIL;
+            }
             threadData.Address = m_thread.Address;
             threadData.AppDomain = m_thread.AppDomain;
             threadData.CurrentException = m_thread.CurrentException == null ? 0
@@ -592,61 +833,123 @@ namespace NetExt.Shim
             threadData.BlockingObjectsCount = 0;
             // Performance Killer - Removed
             // threadData.BlockingObjectsCount = m_thread.BlockingObjects == null ? 0 : m_thread.BlockingObjects.Count;
-            AdHoc.GetThreadAllocationLimits(m_runtime, m_thread.Address, out threadData.AllocationStart, out threadData.AllocationLimit); 
+            AdHoc.GetThreadAllocationLimits(m_runtime, m_thread.Address, out threadData.AllocationStart, out threadData.AllocationLimit);
+            return HRESULTS.S_OK;
         }
 
-        public void GetAddress(out ulong pAddress)
+        public int GetAddress(out ulong pAddress)
         {
+            if (m_thread == null)
+            {
+                pAddress = 0;
+                return HRESULTS.E_FAIL;
+            }
             pAddress = m_thread.Address;
+            return HRESULTS.S_OK;
         }
 
-        public void IsFinalizer(out int pIsFinalizer)
+        public int IsFinalizer(out int pIsFinalizer)
         {
+            if (m_thread == null)
+            {
+                pIsFinalizer = 0;
+                return HRESULTS.E_FAIL;
+            }
             pIsFinalizer = m_thread.IsFinalizer ? 1 : 0;
+            return HRESULTS.S_OK;
         }
 
-        public void IsAlive(out int pIsAlive)
+        public int IsAlive(out int pIsAlive)
         {
+            if (m_thread == null)
+            {
+                pIsAlive = 0;
+                return HRESULTS.E_FAIL;
+            }
             pIsAlive = m_thread.IsAlive ? 1 : 0;
+            return HRESULTS.S_OK;
         }
 
-        public void GetOSThreadId(out int pOSThreadId)
+        public int GetOSThreadId(out int pOSThreadId)
         {
+            if (m_thread == null)
+            {
+                pOSThreadId = 0;
+                return HRESULTS.E_FAIL;
+            }
             pOSThreadId = (int)m_thread.OSThreadId;
+            return HRESULTS.S_OK;
         }
 
-        public void GetAppDomainAddress(out ulong pAppDomain)
+        public int GetAppDomainAddress(out ulong pAppDomain)
         {
+            if (m_thread == null)
+            {
+                pAppDomain = 0;
+                return HRESULTS.E_FAIL;
+            }
             pAppDomain = m_thread.AppDomain;
+            return HRESULTS.S_OK;
         }
 
-        public void GetLockCount(out int pLockCount)
+        public int GetLockCount(out int pLockCount)
         {
+            if (m_thread == null)
+            {
+                pLockCount = 0;
+                return HRESULTS.E_FAIL;
+            }
             pLockCount = (int)m_thread.LockCount;
+            return HRESULTS.S_OK;
         }
 
-        public void GetCurrentException(out IMDException ppException)
+        public int GetCurrentException(out IMDException ppException)
         {
-            if (m_thread.CurrentException != null)
+            if (m_thread != null && m_thread.CurrentException != null)
                 ppException = new MDException(m_thread.CurrentException);
             else
                 ppException = null;
+            return HRESULTS.S_OK;
         }
 
-        public void GetTebAddress(out ulong pTeb)
+        public int GetTebAddress(out ulong pTeb)
         {
+            if (m_thread == null)
+            {
+                pTeb = 0;
+                return HRESULTS.E_FAIL;
+            }
             pTeb = m_thread.Teb;
+            return HRESULTS.S_OK;
         }
 
-        public void GetStackLimits(out ulong pBase, out ulong pLimit)
-        {
-            pBase = m_thread.StackBase;
-            pLimit = m_thread.StackLimit;
+        public int GetStackLimits(out ulong pBase, out ulong pLimit)
+        {                
+            pBase = 0;
+            pLimit = 0;
+            if (m_thread == null)
+            {
+                return HRESULTS.E_FAIL;
+            }
+            try
+            {
+                pBase = m_thread.StackBase;
+                pLimit = m_thread.StackLimit;
+            }
+            catch
+            {
+                return HRESULTS.E_FAIL;
+            }
+            return HRESULTS.S_OK;
         }
 
-        public void EnumerateStackTrace(out IMDStackTraceEnum ppEnum)
+        public int EnumerateStackTrace(out IMDStackTraceEnum ppEnum)
         {
+            ppEnum = null;
+            if(m_thread == null)
+                return HRESULTS.E_FAIL;
             ppEnum = new MDStackTraceEnum(m_thread.StackTrace);
+            return HRESULTS.S_OK;
         }
     }
 
@@ -662,34 +965,56 @@ namespace NetExt.Shim
             m_rcw = rcw;
         }
 
-        public void GetIUnknown(out ulong pIUnk)
+        public int GetIUnknown(out ulong pIUnk)
         {
+            pIUnk = 0;
+            if(m_rcw == null)
+                return HRESULTS.E_FAIL;
             pIUnk = m_rcw.IUnknown;
+            return HRESULTS.S_OK;
         }
 
-        public void GetObject(out ulong pObject)
+        public int GetObject(out ulong pObject)
         {
+            pObject = 0;
+            if(m_rcw == null)
+                return HRESULTS.E_FAIL;
             pObject = m_rcw.Object;
+            return HRESULTS.S_OK;
         }
 
-        public void GetRefCount(out int pRefCnt)
+        public int GetRefCount(out int pRefCnt)
         {
+            pRefCnt = 0;
+
             pRefCnt = m_rcw.RefCount;
+            return HRESULTS.S_OK;
         }
 
-        public void GetVTable(out ulong pHandle)
+        public int GetVTable(out ulong pHandle)
         {
+            pHandle = 0;
+
             pHandle = m_rcw.VTablePointer;
+            return HRESULTS.S_OK;
         }
 
-        public void IsDisconnected(out int pDisconnected)
+        public int IsDisconnected(out int pDisconnected)
         {
+            pDisconnected = 0;
+
             pDisconnected = m_rcw.Disconnected ? 1 : 0;
+            return HRESULTS.S_OK;
         }
 
-        public void EnumerateInterfaces(out IMDCOMInterfaceEnum ppEnum)
+        public int EnumerateInterfaces(out IMDCOMInterfaceEnum ppEnum)
         {
+            ppEnum = null;
+            if(m_rcw == null)
+                return HRESULTS.E_FAIL;
+
             ppEnum = new MDCOMInterfaceEnum(m_rcw.Interfaces);
+            return HRESULTS.S_OK;
         }
     }
 
@@ -705,29 +1030,34 @@ namespace NetExt.Shim
             m_ccw = ccw;
         }
 
-        public void GetIUnknown(out ulong pIUnk)
+        public int GetIUnknown(out ulong pIUnk)
         {
             pIUnk = m_ccw.IUnknown;
+            return HRESULTS.S_OK;
         }
 
-        public void GetObject(out ulong pObject)
+        public int GetObject(out ulong pObject)
         {
             pObject = m_ccw.Object;
+            return HRESULTS.S_OK;
         }
 
-        public void GetHandle(out ulong pHandle)
+        public int GetHandle(out ulong pHandle)
         {
             pHandle = m_ccw.Handle;
+            return HRESULTS.S_OK;
         }
 
-        public void GetRefCount(out int pRefCnt)
+        public int GetRefCount(out int pRefCnt)
         {
             pRefCnt = m_ccw.RefCount;
+            return HRESULTS.S_OK;
         }
 
-        public void EnumerateInterfaces(out IMDCOMInterfaceEnum ppEnum)
+        public int EnumerateInterfaces(out IMDCOMInterfaceEnum ppEnum)
         {
             ppEnum = new MDCOMInterfaceEnum(m_ccw.Interfaces);
+            return HRESULTS.S_OK;
         }
     }
 
@@ -743,36 +1073,66 @@ namespace NetExt.Shim
             m_field = field;
         }
 
-        public void GetName(out string pName)
+        public int GetName(out string pName)
         {
+            pName = null;
+            if (m_field == null)
+                return HRESULTS.E_FAIL;
             pName = m_field.Name;
+            return HRESULTS.S_OK;
         }
 
-        public void GetType(out IMDType ppType)
+        public int GetType(out IMDType ppType)
         {
+            ppType = null;
+            if (m_field == null)
+                return HRESULTS.E_FAIL;
             ppType = MDType.Construct(m_field.Type);
+            return HRESULTS.S_OK;
         }
 
-        public void GetElementType(out int pCET)
+        public int GetElementType(out int pCET)
         {
+            pCET = 0;
+            if (m_field == null)
+                return HRESULTS.E_FAIL;
             pCET = (int)m_field.ElementType;
+            return HRESULTS.S_OK;
         }
 
-        public void GetSize(out int pSize)
+        public int GetSize(out int pSize)
         {
+            pSize = 0;
+            if (m_field == null)
+                return HRESULTS.E_FAIL;
+            
             pSize = m_field.Size;
+            return HRESULTS.S_OK;
         }
 
-        public void GetFieldValue(IMDAppDomain appDomain, out IMDValue ppValue)
+        public int GetFieldValue(IMDAppDomain appDomain, out IMDValue ppValue)
         {
+            appDomain = null;
+            ppValue = null;
+
+            if (m_field == null)
+                return HRESULTS.S_OK;
+
             object value = m_field.GetFieldValue((ClrAppDomain)appDomain);
             ppValue = new MDValue(value, m_field.ElementType);
+            return HRESULTS.S_OK;
         }
 
-        public void GetFieldAddress(IMDAppDomain appDomain, out ulong pAddress)
+        public int GetFieldAddress(IMDAppDomain appDomain, out ulong pAddress)
         {
+            appDomain = null;
+            pAddress = 0;
+            if(m_field == null)
+                return HRESULTS.E_FAIL;
+
             ulong addr = m_field.GetAddress((ClrAppDomain)appDomain);
             pAddress = addr;
+            return HRESULTS.S_OK;
         }
     }
 
@@ -788,35 +1148,57 @@ namespace NetExt.Shim
             m_field = field;
         }
 
-        public void GetName(out string pName)
+        public int GetName(out string pName)
         {
+            pName = null;
+            if (m_field == null)
+                return HRESULTS.E_FAIL;
             pName = m_field.Name;
+            return HRESULTS.S_OK;
         }
 
-        public void GetType(out IMDType ppType)
+        public int GetType(out IMDType ppType)
         {
             ppType = MDType.Construct(m_field.Type);
+            if (m_field == null)
+                return HRESULTS.E_FAIL;
+            return HRESULTS.S_OK;
         }
 
-        public void GetElementType(out int pCET)
+        public int GetElementType(out int pCET)
         {
             pCET = (int)m_field.ElementType;
+            if (m_field == null)
+                return HRESULTS.E_FAIL;
+            return HRESULTS.S_OK;
         }
 
-        public void GetSize(out int pSize)
+        public int GetSize(out int pSize)
         {
+            pSize = 0;
+            if (m_field == null)
+                return HRESULTS.E_FAIL;
             pSize = m_field.Size;
+            return HRESULTS.S_OK;
         }
 
-        public void GetFieldValue(IMDAppDomain appDomain, IMDThread thread, out IMDValue ppValue)
+        public int GetFieldValue(IMDAppDomain appDomain, IMDThread thread, out IMDValue ppValue)
         {
+            ppValue = null;
+            if (m_field == null)
+                return HRESULTS.E_FAIL;
             object value = m_field.GetFieldValue((ClrAppDomain)appDomain, (ClrThread)thread);
             ppValue = new MDValue(value, m_field.ElementType);
+            return HRESULTS.S_OK;
         }
 
-        public void GetFieldAddress(IMDAppDomain appDomain, IMDThread thread, out ulong pAddress)
+        public int GetFieldAddress(IMDAppDomain appDomain, IMDThread thread, out ulong pAddress)
         {
+            pAddress = 0;
+            if (m_field == null)
+                return HRESULTS.E_FAIL;
             pAddress = m_field.GetFieldAddress((ClrAppDomain)appDomain, (ClrThread)thread);
+            return HRESULTS.S_OK;
         }
     }
 
@@ -832,40 +1214,68 @@ namespace NetExt.Shim
             m_field = field;
         }
 
-        public void GetName(out string pName)
+        public int GetName(out string pName)
         {
+            pName = null;
+            if (m_field == null)
+                return HRESULTS.E_FAIL;
             pName = m_field.Name;
+            return HRESULTS.S_OK;
         }
 
-        public void GetType(out IMDType ppType)
+        public int GetType(out IMDType ppType)
         {
+            ppType = null;
+            if (m_field == null)
+                return HRESULTS.E_FAIL;
             ppType = MDType.Construct(m_field.Type);
+            return HRESULTS.S_OK;
         }
 
-        public void GetElementType(out int pCET)
+        public int GetElementType(out int pCET)
         {
+            pCET = 0;
+            if (m_field == null)
+                return HRESULTS.E_FAIL;
             pCET = (int)m_field.ElementType;
+            return HRESULTS.S_OK;
         }
 
-        public void GetSize(out int pSize)
+        public int GetSize(out int pSize)
         {
+            pSize = 0;
+            if (m_field == null)
+                return HRESULTS.E_FAIL;
             pSize = m_field.Size;
+            return HRESULTS.S_OK;
         }
 
-        public void GetOffset(out int pOffset)
+        public int GetOffset(out int pOffset)
         {
+            pOffset = 0;
+            if (m_field == null)
+                return HRESULTS.E_FAIL;
             pOffset = m_field.Offset;
+            return HRESULTS.S_OK;
         }
 
-        public void GetFieldValue(ulong objRef, int interior, out IMDValue ppValue)
+        public int GetFieldValue(ulong objRef, int interior, out IMDValue ppValue)
         {
+            ppValue = null;
+            if (m_field == null)
+                return HRESULTS.E_FAIL;
             object value = m_field.GetFieldValue(objRef, interior != 0);
             ppValue = new MDValue(value, m_field.ElementType);
+            return HRESULTS.S_OK;
         }
 
-        public void GetFieldAddress(ulong objRef, int interior, out ulong pAddress)
+        public int GetFieldAddress(ulong objRef, int interior, out ulong pAddress)
         {
+            pAddress = 0;
+            if (m_field == null)
+                return HRESULTS.E_FAIL;
             pAddress = m_field.GetAddress(objRef, interior != 0);
+            return HRESULTS.S_OK;
         }
     }
 
@@ -895,17 +1305,18 @@ namespace NetExt.Shim
              
         }
 
-        public void GetIMetadata([Out] [MarshalAs((UnmanagedType)25)] out object IMetadata)
+        public int GetIMetadata([Out] [MarshalAs((UnmanagedType)25)] out object IMetadata)
         {
             IMetadata = m_type.Module.MetadataImport;
+            return HRESULTS.S_OK;
         }
 
 
-        public void GetHeader(ulong objRef, out MD_TypeData typeData)
+        public int GetHeader(ulong objRef, out MD_TypeData typeData)
         {
             typeData = new MD_TypeData();
             if (m_type == null)
-                return;
+                return HRESULTS.E_FAIL;
             if (m_type.BaseType != null)
                 typeData.parentMT = HeapStatItem.GetMTOfType(m_type.BaseType);
             else
@@ -994,16 +1405,16 @@ namespace NetExt.Shim
             typeData.containPointers = m_type.ContainsPointers;
             typeData.MethodTable &= ~(ulong)3;
             typeData.parentMT &= ~(ulong)3;
- 
-            return;
+
+            return HRESULTS.S_OK;
         }
 
-        public void GetString(ulong ObjRef, [Out] [MarshalAs((UnmanagedType)19)] out string strValue)
+        public int GetString(ulong ObjRef, [Out] [MarshalAs((UnmanagedType)19)] out string strValue)
         {
             if(ObjRef == 0)
             {
                 strValue = null;
-                return;
+                return HRESULTS.E_FAIL;
             }
             
             ClrType strType = m_type.Heap.GetObjectType(ObjRef);
@@ -1013,122 +1424,154 @@ namespace NetExt.Shim
                 strValue = strType.GetValue(ObjRef) as String;
             else
                 strValue = null;
+            return HRESULTS.S_OK;
         }
 
-        public void GetFilename([Out] [MarshalAs((UnmanagedType)19)] out string fileName)
+        public int GetFilename([Out] [MarshalAs((UnmanagedType)19)] out string fileName)
         {
             if (!m_type.Module.IsFile)
             {
                 fileName = "(dynamic)";
-                return;
+                return HRESULTS.S_OK;
             }
             fileName = m_type.Module.FileName;
+            return HRESULTS.S_OK;
         }
     
 
-        public void GetName(out string pName)
+        public int GetName(out string pName)
         {
+            pName = null;
+            if(m_type == null)
+                return HRESULTS.E_FAIL;
             pName = m_type.Name.Replace('+','_');
+            return HRESULTS.S_OK;
         }
 
-        public void GetRuntimeName(ulong objRef, out string pName)
+        public int GetRuntimeName(ulong objRef, out string pName)
         {
-            if (!m_type.IsRuntimeType)
+            if (m_type == null || !m_type.IsRuntimeType)
             {
                 pName = null;
-                return;
+                return HRESULTS.E_FAIL;
             }
             ClrType runtimeType = m_type.GetRuntimeType(objRef);
             if (runtimeType != null)
             {
                 pName = runtimeType.Name.Replace('+', '_');
-                return;
+                return HRESULTS.S_OK;
             }
 
             pName = null;
+            return HRESULTS.E_FAIL;
         }
 
-        public void GetSize(ulong objRef, out ulong pSize)
+        public int GetSize(ulong objRef, out ulong pSize)
         {
+            pSize = 0;
+            if (m_type == null)
+                return HRESULTS.S_OK;
             pSize = m_type.GetSize(objRef);
+            return HRESULTS.S_OK;
         }
 
-        public void ContainsPointers(out int pContainsPointers)
+        public int ContainsPointers(out int pContainsPointers)
         {
             pContainsPointers = m_type.ContainsPointers ? 1 : 0;
+            return HRESULTS.S_OK;
         }
 
-        public void GetCorElementType(out int pCET)
+        public int GetCorElementType(out int pCET)
         {
             pCET = (int)m_type.ElementType;
+            return HRESULTS.S_OK;
         }
 
-        public void GetBaseType(out IMDType ppBaseType)
+        public int GetBaseType(out IMDType ppBaseType)
         {
             ppBaseType = Construct(m_type.BaseType);
+            return HRESULTS.S_OK;
         }
 
-        public void GetArrayComponentType(out IMDType ppArrayComponentType)
+        public int GetArrayComponentType(out IMDType ppArrayComponentType)
         {
             ppArrayComponentType = Construct(m_type.ArrayComponentType);
+            return HRESULTS.S_OK;
         }
 
-        public void GetCCW(ulong addr, out IMDCCW ppCCW)
+        public int GetCCW(ulong addr, out IMDCCW ppCCW)
         {
-            if (m_type.IsCCW(addr))
+            if (m_type != null && m_type.IsCCW(addr))
                 ppCCW = new MDCCW(m_type.GetCCWData(addr));
             else
+            {
                 ppCCW = null;
+                return HRESULTS.E_FAIL;
+            }
+            return HRESULTS.S_OK;
         }
 
-        public void GetRCW(ulong addr, out IMDRCW ppRCW)
+        public int GetRCW(ulong addr, out IMDRCW ppRCW)
         {
-            if (m_type.IsRCW(addr))
+            if (m_type != null && m_type.IsRCW(addr))
                 ppRCW = new MDRCW(m_type.GetRCWData(addr));
             else
+            {
                 ppRCW = null;
+                return HRESULTS.E_FAIL;
+            }
+            return HRESULTS.S_OK;
         }
 
-        public void IsArray(out int pIsArray)
+        public int IsArray(out int pIsArray)
         {
             pIsArray = m_type.IsArray ? 1 : 0;
+            return HRESULTS.S_OK;
         }
 
-        public void IsFree(out int pIsFree)
+        public int IsFree(out int pIsFree)
         {
             pIsFree = m_type.IsFree ? 1 : 0;
+            return HRESULTS.S_OK;
         }
 
-        public void IsException(out int pIsException)
+        public int IsException(out int pIsException)
         {
             pIsException = m_type.IsException ? 1 : 0;
+            return HRESULTS.S_OK;
         }
 
-        public void IsEnum(out int pIsEnum)
+        public int IsEnum(out int pIsEnum)
         {
             pIsEnum = m_type.IsEnum ? 1 : 0;
+            return HRESULTS.S_OK;
         }
 
-        public void GetEnumElementType(out int pValue)
+        public int GetEnumElementType(out int pValue)
         {
             pValue = (int)m_type.GetEnumElementType();
+            return HRESULTS.S_OK;
         }
 
-        public void GetEnumNames(out IMDStringEnum ppEnum)
+        public int GetEnumNames(out IMDStringEnum ppEnum)
         {
             ppEnum = new MDStringEnum(m_type.GetEnumNames().ToArray());
+            return HRESULTS.S_OK;
         }
 
-        public void GetEnumValueInt32(string name, out int pValue)
+        public int GetEnumValueInt32(string name, out int pValue)
         {
-            if (!m_type.TryGetEnumValue(name, out pValue))
-                new InvalidOperationException("Mismatched type.");
+            pValue = 0;
+            if (m_type == null || !m_type.TryGetEnumValue(name, out pValue))
+                return HRESULTS.E_FAIL;
+            return HRESULTS.S_OK;
         }
 
-        public void GetAllFieldsDataRawCount(out int pCount)
+        public int GetAllFieldsDataRawCount(out int pCount)
         {
             pCount = m_type.Fields.Count + m_type.StaticFields.Count
                 + m_type.ThreadStaticFields.Count;
+            return HRESULTS.S_OK;
         }
 
         public int GetAllFieldsDataRaw(int valueType, int count, MD_FieldData[] fields, out int pNeeded)
@@ -1138,7 +1581,7 @@ namespace NetExt.Shim
             if (fields == null || count == 0 || count < total)
             {
                 pNeeded = total;
-                return 1; // S_FALSE
+                return HRESULTS.S_FALSE;
             }
 
             int i=0;
@@ -1165,25 +1608,29 @@ namespace NetExt.Shim
 
             pNeeded = total;
 
-            return 0; // S_OK
+            return HRESULTS.S_OK;
         
         }
 
-        public void GetFieldCount(out int pCount)
+        public int GetFieldCount(out int pCount)
         {
             pCount = m_type.Fields.Count;
+            return HRESULTS.S_OK;
         }
 
-        public void GetField(int index, out IMDField ppField)
+        public int GetField(int index, out IMDField ppField)
         {
             ppField = new MDField(m_type.Fields[index]);
+            return HRESULTS.S_OK;
         }
 
         public int GetRawFieldAddress(ulong obj, int interior, int index, [Out] out ulong address)
         {
-
-            var fields = CacheFieldInfo.Fields(m_type);
             address = 0;
+            if (m_type == null)
+                return HRESULTS.S_FALSE;
+            var fields = CacheFieldInfo.Fields(m_type);
+            
             if (index < fields.Count)
             {
                 if (!fields[index].IsStatic && !fields[index].IsThreadStatic)
@@ -1192,9 +1639,9 @@ namespace NetExt.Shim
                     if (instField != null)
                     {
                         address = instField.GetAddress(obj, interior != 0);
-                        return 0; // S_OK
+                        return HRESULTS.S_OK;
                     }
-                    return 1; // S_FALSE
+                    return HRESULTS.S_FALSE;
 
                 }
                 if (fields[index].IsThreadStatic)
@@ -1211,7 +1658,7 @@ namespace NetExt.Shim
                                     address = threadStat.GetAddress(domain, thread);
                                     if (address != 0)
                                     {
-                                        return 0; // S_OK
+                                        return HRESULTS.S_OK;
                                     }
                                 }
                                 catch
@@ -1221,7 +1668,7 @@ namespace NetExt.Shim
                             }
                         }
                     }
-                    return 1; // S_FALSE
+                    return HRESULTS.S_FALSE;
                 }
 
                 if (fields[index].IsStatic)
@@ -1243,7 +1690,7 @@ namespace NetExt.Shim
                             {
                                 address = stat.GetAddress(domain);
                                 if (address != 0)
-                                        return 0; // S_OK
+                                    return HRESULTS.S_OK;
                             }
                             foreach(var d in AdHoc.GetDomains(m_type.Heap.GetRuntime()))
                             {
@@ -1253,44 +1700,49 @@ namespace NetExt.Shim
                                     //Exports.WriteLine("\nFrom Managed: {0:x16}={1} \n\n", address,
                                     //    stat.GetValue(d));
                                     if(stat.GetValue(d) != null)
-                                        return 0; // S_OK
+                                        return HRESULTS.S_OK;
                                 }
                             }
                         }
 
                     }
-                    
 
-                    return 1; // S_FALSE
+
+                    return HRESULTS.S_FALSE;
                 }
 
-                return 1; //S_FALSE
+                return HRESULTS.S_FALSE;
             }
 
 
 
             address = 0;
-            return 1; // S_FALSE
+            return HRESULTS.S_FALSE;
         }
 
-        public void GetRawFieldTypeAndName(int index, out string pType, out string pName)
+        public int GetRawFieldTypeAndName(int index, out string pType, out string pName)
         {
+            pType = null;
+            pName = null;
+            if(m_type == null)
+                return HRESULTS.E_FAIL;
+
             var fields = CacheFieldInfo.Fields(m_type);
 
             if (index < fields.Count)
             {
                 pType = fields[index].TypeName;
                 pName = fields[index].Name;
-                return;
+                return HRESULTS.S_OK;
             }
 
-            pType = String.Empty;
-            pName = String.Empty;
+            return HRESULTS.E_FAIL;
         }
 
-        public void GetEnumName(ulong value, out string enumString)
+        public int GetEnumName(ulong value, out string enumString)
         {
             enumString = AdHoc.GetEnumName(m_type, value);
+            return HRESULTS.S_OK;
         }
 
         public int GetFieldData(ulong obj, int interior, int count, MD_FieldData[] fields, out int pNeeded)
@@ -1361,45 +1813,52 @@ namespace NetExt.Shim
             return 0; // S_OK;
         }
 
-        public void GetStaticFieldCount(out int pCount)
+        public int GetStaticFieldCount(out int pCount)
         {
             pCount = m_type.StaticFields.Count;
+            return HRESULTS.S_OK;
         }
 
-        public void GetStaticField(int index, out IMDStaticField ppStaticField)
+        public int GetStaticField(int index, out IMDStaticField ppStaticField)
         {
             ppStaticField = new MDStaticField(m_type.StaticFields[index]);
+            return HRESULTS.S_OK;
         }
 
-        public void GetThreadStaticFieldCount(out int pCount)
+        public int GetThreadStaticFieldCount(out int pCount)
         {
             pCount = m_type.ThreadStaticFields.Count;
+            return HRESULTS.S_OK;
         }
 
-        public void GetThreadStaticField(int index, out IMDThreadStaticField ppThreadStaticField)
+        public int GetThreadStaticField(int index, out IMDThreadStaticField ppThreadStaticField)
         {
             ppThreadStaticField = new MDThreadStaticField(m_type.ThreadStaticFields[index]);
+            return HRESULTS.S_OK;
         }
 
-        public void GetArrayLength(ulong objRef, out int pLength)
+        public int GetArrayLength(ulong objRef, out int pLength)
         {
             pLength = m_type.GetArrayLength(objRef);
+            return HRESULTS.S_OK;
         }
 
-        public void GetArrayElementAddress(ulong objRef, int index, out ulong pAddr)
+        public int GetArrayElementAddress(ulong objRef, int index, out ulong pAddr)
         {
             pAddr = m_type.GetArrayElementAddress(objRef, index);
+            return HRESULTS.S_OK;
         }
 
-        public void GetArrayElementValue(ulong objRef, int index, out IMDValue ppValue)
+        public int GetArrayElementValue(ulong objRef, int index, out IMDValue ppValue)
         {
             object value = m_type.GetArrayElementValue(objRef, index);
             ClrElementType elementType = m_type.ArrayComponentType != null ? m_type.ArrayComponentType.ElementType : ClrElementType.Unknown;
             ppValue = new MDValue(value, elementType);
+            return HRESULTS.S_OK;
         }
 
 
-        public void EnumerateReferences(ulong objRef, out IMDReferenceEnum ppEnum)
+        public int EnumerateReferences(ulong objRef, out IMDReferenceEnum ppEnum)
         {
             List<MD_Reference> refs = new List<MD_Reference>();
             m_type.EnumerateRefsOfObject(objRef, delegate(ulong child, int offset)
@@ -1415,11 +1874,13 @@ namespace NetExt.Shim
 
 
             ppEnum = new ReferenceEnum(refs);
+            return HRESULTS.S_OK;
         }
 
-        public void EnumerateInterfaces(out IMDInterfaceEnum ppEnum)
+        public int EnumerateInterfaces(out IMDInterfaceEnum ppEnum)
         {
             ppEnum = new InterfaceEnum(m_type.Interfaces);
+            return HRESULTS.S_OK;
         }
     }
 
@@ -1436,37 +1897,63 @@ namespace NetExt.Shim
             m_ex = ex;
         }
 
-        void IMDException.GetGCHeapType(out IMDType ppType)
+        int IMDException.GetGCHeapType(out IMDType ppType)
         {
+            ppType = null;
+
+            if(m_ex == null)
+                return HRESULTS.E_FAIL;
             ppType = new MDType(m_ex.Type);
+            return HRESULTS.S_OK;
+            
         }
 
-        void IMDException.GetErrorMessage(out string pMessage)
+        int IMDException.GetErrorMessage(out string pMessage)
         {
+            pMessage = null;
+            if (m_ex == null)
+                return HRESULTS.E_FAIL;
             pMessage = m_ex.Message;
+            return HRESULTS.S_OK;
         }
 
-        void IMDException.GetObjectAddress(out ulong pAddress)
+        int IMDException.GetObjectAddress(out ulong pAddress)
         {
+            pAddress = 0;
+            if (m_ex == null)
+                return HRESULTS.E_FAIL;
             pAddress = m_ex.Address;
+            return HRESULTS.S_OK;
         }
 
-        void IMDException.GetInnerException(out IMDException ppException)
+        int IMDException.GetInnerException(out IMDException ppException)
         {
+            ppException = null;
+            if (m_ex == null)
+                return HRESULTS.E_FAIL;
             if (m_ex.Inner != null)
                 ppException = new MDException(m_ex.Inner);
             else
                 ppException = null;
+            return HRESULTS.S_OK;
         }
 
-        void IMDException.GetHRESULT(out int pHResult)
+        int IMDException.GetHRESULT(out int pHResult)
         {
+            pHResult = HRESULTS.S_FALSE;
+            if (m_ex == null)
+                return HRESULTS.E_FAIL;
             pHResult = m_ex.HResult;
+            return HRESULTS.S_OK;
         }
 
-        void IMDException.EnumerateStackFrames(out IMDStackTraceEnum ppEnum)
+        int IMDException.EnumerateStackFrames(out IMDStackTraceEnum ppEnum)
         {
+            ppEnum = null;
+            if (m_ex == null)
+                return HRESULTS.E_FAIL;
             ppEnum = new MDStackTraceEnum(m_ex.StackTrace);
+            return HRESULTS.S_OK;
         }
     }
 
@@ -1495,19 +1982,23 @@ namespace NetExt.Shim
             
         }
 
-        public void GetExceptionObject(ulong addr, out IMDException ppExcep)
+        public int GetExceptionObject(ulong addr, out IMDException ppExcep)
         {
+            
             ppExcep = new MDException(m_heap.GetExceptionObject(addr));
+            return HRESULTS.S_OK;
         }
 
-        public void EnumerateRoots(out IMDRootEnum ppEnum)
+        public int EnumerateRoots(out IMDRootEnum ppEnum)
         {
             ppEnum = new MDRootEnum(new List<ClrRoot>(m_heap.EnumerateRoots()));
+            return HRESULTS.S_OK;
         }
 
-        public void EnumerateSegments(out IMDSegmentEnum ppEnum)
+        public int EnumerateSegments(out IMDSegmentEnum ppEnum)
         {
             ppEnum = new MDSegmentEnum(m_heap.Segments);
+            return HRESULTS.S_OK;
         }
 
         public static string DumpStack(IList<ClrStackFrame> Stack, int WordSize, bool SkipAddress = false)
@@ -1540,14 +2031,14 @@ namespace NetExt.Shim
 
         }
 
-        public void DumpException(ulong ObjRef)
+        public int DumpException(ulong ObjRef)
         {
             var exception = m_heap.GetExceptionObject(ObjRef);
             if (exception == null)
             {
                 Exports.WriteLine("No expeception found at {0:%p}", ObjRef);
                 Exports.WriteLine("");
-                return;
+                return HRESULTS.S_OK;
             }
             Exports.WriteLine("Address: {0:%p}", ObjRef);
             Exports.WriteLine("Exception Type: {0}", exception.Type.Name);
@@ -1562,10 +2053,11 @@ namespace NetExt.Shim
             Exports.WriteLine("{0}", DumpStack(exception.StackTrace, m_heap.GetRuntime().PointerSize));
             Exports.WriteLine("HResult: {0:x4}", exception.HResult);
             Exports.WriteLine("");
+            return HRESULTS.S_OK;
         }
 
 
-        public void DumpAllExceptions(IMDObjectEnum Exceptions)
+        public int DumpAllExceptions(IMDObjectEnum Exceptions)
         {
             Dictionary<string, List<ulong>> allExceptions = new Dictionary<string, List<ulong>>();
             foreach (var obj in ((MDObjectEnum)Exceptions).List)
@@ -1574,7 +2066,7 @@ namespace NetExt.Shim
                 if (ex != null)
                 {
                     if (Exports.isInterrupted())
-                        return;
+                        return HRESULTS.E_FAIL;
                     string key = String.Format("{0}\0{1}\0{2}", ex.Type.Name, ex.Message, DumpStack(ex.StackTrace, m_heap.GetRuntime().PointerSize, true));
                     if (!allExceptions.ContainsKey(key))
                     {
@@ -1582,6 +2074,7 @@ namespace NetExt.Shim
                     }
                     allExceptions[key].Add(obj);
                 }
+
             }
 
             int exCount = 0;
@@ -1606,6 +2099,250 @@ namespace NetExt.Shim
             }
             Exports.WriteLine("{0:#,#} Exceptions in {1:#,#} unique type/stack combinations (duplicate types in similar stacks may be rethrows)", exCount, typeCount);
             Exports.WriteLine("");
+            return HRESULTS.S_OK;
+        }
+
+        public int DumpXml(ulong ObjRef)
+        {
+            InitializeCache();
+            DumpXmlDoc(ObjRef, true);
+            return HRESULTS.S_OK;
+        }
+        public int GetXmlString(ulong ObjRef, [Out] [MarshalAs((UnmanagedType)19)] out string XmlString)
+        {
+            InitializeCache();
+            StringBuilder sb = null;
+            sb = DumpXmlDoc(ObjRef);
+            if (sb == null)
+            {
+                XmlString = null;
+                return HRESULTS.E_FAIL;
+            }
+            else
+            {
+                XmlString = sb.ToString();
+            }
+
+            return HRESULTS.S_OK;
+        }
+
+        private static HeapCache cache = null;
+        public void InitializeCache()
+        {
+            cache = new HeapCache(m_heap.GetRuntime());
+        }
+        public StringBuilder PrintAttribute(ulong Address)
+        {
+            StringBuilder sb = new StringBuilder(100);
+            if (Address == 0)
+                return sb;
+            sb.Append(" ");
+            dynamic attr = cache.GetDinamicFromAddress(Address);
+            sb.Append(String.IsNullOrEmpty((string)(attr.name.prefix)) ? "" : (string)(attr.name.prefix) + ":");
+            sb.Append(String.IsNullOrEmpty((string)(attr.name.localName)) ? "" : (string)(attr.name.localName));
+            //sb.Append(String.IsNullOrEmpty((string)(attr.name.ns)) ? "" : "=\"" + (string)(attr.name.ns) + "\"");
+            sb.Append(String.IsNullOrEmpty((string)(attr.lastChild.data)) ? "" : "=\"" + System.Security.SecurityElement.Escape((string)(attr.lastChild.data)) + "\"");
+            return sb;
+        }
+
+        public StringBuilder PrintXmlNode(ulong Address, int Level)
+        {
+            StringBuilder sb = new StringBuilder(100);
+            if (Address == 0)
+                return sb;
+            ClrType node = m_heap.GetObjectType(Address);
+
+            var nodeObj = cache.GetDinamicFromAddress(Address);
+            if (nodeObj == null)
+                return sb;
+            sb.Append(' ', Level);
+            if (node.Name == "System.Xml.XmlDeclaration")
+            {
+                sb.Append("<?xml version=\"");
+                sb.Append((string)(nodeObj.version));
+                sb.Append("\" encoding=\"");
+                sb.Append((string)(nodeObj.encoding));
+                sb.Append("\" ?>");
+                return sb;
+            }
+            if (node.Name == "System.Xml.XmlComment")
+            {
+                sb.Append("<!-- ");
+                sb.Append((string)(nodeObj.data));
+                sb.Append(" -->");
+                return sb;
+            }
+            if (node.Name == "System.Xml.XmlText")
+            {
+
+                sb.Append((string)(nodeObj.data));
+                return sb;
+            }
+
+            bool prefix = !String.IsNullOrEmpty((string)(nodeObj.name.prefix));
+
+            sb.Append("<");
+            if (prefix) sb.Append((string)(nodeObj.name.prefix) + ":");
+            sb.Append((string)(nodeObj.name.localName));
+            ulong attributes = nodeObj.attributes;
+            if (attributes > 0)
+            {
+                ulong items = 0;
+                int len = 0;
+                ClrType nodes = nodeObj.attributes.nodes;
+
+                if (nodes.Name == "System.Collections.ArrayList")
+                {
+                    items = nodeObj.attributes.nodes._items;
+                    len = nodeObj.attributes.nodes._size;
+                }
+                else
+                {
+                    ClrType fieldType = nodeObj.attributes.nodes.field;
+                    if (fieldType.Name == "System.Collections.ArrayList")
+                    {
+                        items = nodeObj.attributes.nodes.field._items;
+                        len = nodeObj.attributes.nodes.field._size;
+                    }
+                }
+
+                if (items != 0)
+                {
+
+                    ClrType arrAttr = m_heap.GetObjectType(items);
+
+
+                    for (int i = 0; i < len; i++)
+                    {
+
+                        ulong addr = (ulong)arrAttr.GetArrayElementValue(items, i);
+
+                        dynamic attr = cache.GetDinamicFromAddress(addr);
+                        sb.Append(PrintAttribute(addr));
+
+                    }
+                }
+                else
+                {
+                    sb.Append(PrintAttribute((ulong)(nodeObj.attributes.nodes.field)));
+                }
+
+            }
+            if ((ulong)(nodeObj.lastChild) == 0 || (ulong)(nodeObj.lastChild) == Address)
+                sb.Append(" />");
+            else
+                sb.Append(">");
+            return sb;
+        }
+
+        public StringBuilder DumpXmlNodes(ulong Address, int Indentention = 0, StringBuilder sb = null)
+        {
+            if (sb == null)
+                sb = new StringBuilder(100);
+            if (Address == 0)
+                return sb;
+            List<ulong> nodes = new List<ulong>();
+            ulong next = Address;
+            while (next != 0)
+            {
+                if (next != Address) nodes.Add(next); // Add Last child last
+                ClrType node = m_heap.GetObjectType(next);
+                if (node.Name == "System.Xml.XmlDeclaration")
+                {
+                    sb.AppendFormat("{0}\n", PrintXmlNode(next, Indentention));
+                }
+                if (cache.IsDerivedOf(next, "System.Xml.XmlNode"))
+                {
+
+                    ClrInstanceField fNext = node.GetFieldByName("next");
+                    next = (ulong)fNext.GetValue(next);
+                    ulong i = nodes.FirstOrDefault(m => m == next);
+                    if (i != 0 || next == Address)  // Let's avoid infinite loop
+                    {
+                        next = 0; // We went here
+                    }
+                }
+                else
+                {
+                    sb.AppendLine("Something bad happened");
+                    next = 0;
+                }
+            }
+            // Now let's navigate in the right order
+            nodes.Add(Address); // Last Child Node
+            foreach (ulong node in nodes)
+            {
+                ClrType nodeObj = m_heap.GetObjectType(node);
+                string lastName = String.Empty;
+                if (nodeObj.Name != "System.Xml.XmlDeclaration")
+                {
+                    sb.AppendFormat("{0}\n", PrintXmlNode(node, Indentention));
+                    ClrInstanceField fLastChild = nodeObj.GetFieldByName("lastChild");
+                    if (fLastChild != null && (ulong)fLastChild.GetValue(node) != node)
+                    {
+                        dynamic nodeDyn = cache.GetDinamicFromAddress(node);
+
+                        ulong child = (ulong)fLastChild.GetValue(node);
+                        DumpXmlNodes(child, Indentention + 2, sb);
+                        string str = new string(' ', Indentention);
+                        if (nodeObj.Name != "System.Xml.XmlText")
+                            sb.AppendFormat("{0}</{1}>\n", str, (string)(nodeDyn.name.localName));
+                    }
+                }
+
+            }
+
+            return sb;
+        }
+
+        private static int nsId;
+
+        private static Dictionary<string, string> nsToSchema;
+        private static Dictionary<string, string> schemaToNs;
+
+
+        private StringBuilder DumpXmlDoc(ulong Address, bool PrintOnly = false)
+        {
+
+            nsId = 0;
+            nsToSchema = new Dictionary<string, string>();
+            schemaToNs = new Dictionary<string, string>();
+            ClrType xmlDoc = m_heap.GetObjectType(Address);
+            if (xmlDoc == null || !cache.IsDerivedOf(Address, "System.Xml.XmlNode"))
+            {
+                if(PrintOnly) Exports.WriteLine("Not type System.Xml.XmlDocument");
+                return null;
+            }
+
+            ClrInstanceField fLastChild = xmlDoc.GetFieldByName("lastChild");
+            ulong next = (ulong)fLastChild.GetValue(Address);
+            if (xmlDoc.Name != "System.Xml.XmlDocument" && (xmlDoc.BaseType != null && xmlDoc.BaseType.Name != "System.Xml.XmlDocument"))
+            {
+                next = Address;
+                ClrInstanceField fParent = xmlDoc.GetFieldByName("parentNode");
+                ulong parent = next;
+                while (parent != 0)
+                {
+                    next = parent;
+                    parent = (ulong)fParent.GetValue(next);
+                }
+                xmlDoc = m_heap.GetObjectType(next);
+                if (xmlDoc.Name == "System.Xml.XmlDocument" || (xmlDoc.BaseType != null && xmlDoc.BaseType.Name == "System.Xml.XmlDocument"))
+                {
+                    fLastChild = xmlDoc.GetFieldByName("lastChild");
+                    next = (ulong)fLastChild.GetValue(next);
+                }
+
+            }
+
+            var sb = DumpXmlNodes(next);
+
+            if (PrintOnly)
+            {
+                Exports.WriteLine("{0}", sb.ToString());
+               
+            }
+            return sb;
         }
 
 
@@ -1631,42 +2368,56 @@ namespace NetExt.Shim
             isFlushedCalled = true;
         }
 
-        public void GetCommonMethodTable(out MD_CommonMT CommonMT)
+        public int GetCommonMethodTable(out MD_CommonMT CommonMT)
         {
+            CommonMT = new MD_CommonMT();
+            if (m_runtime == null)
+                return HRESULTS.E_FAIL;
 
             AdHoc.GetCommonMT(m_runtime, out CommonMT.StringMethodTable, out CommonMT.ArrayMethodTable,
                 out CommonMT.FreeMethodTable);
+            return HRESULTS.S_OK;
         }
 
-        public void IsServerGC(out int pServerGC)
+        public int IsServerGC(out int pServerGC)
         {
+            pServerGC = 0;
+            if (m_runtime == null)
+                return HRESULTS.E_FAIL;
             pServerGC = m_runtime.ServerGC ? 1 : 0;
+            return HRESULTS.S_OK;
         }
 
-        public void GetHeapCount(out int pHeapCount)
+        public int GetHeapCount(out int pHeapCount)
         {
+            pHeapCount = 0;
+            if (m_runtime == null)
+                return HRESULTS.E_FAIL;
             pHeapCount = m_runtime.HeapCount;
+            return HRESULTS.S_OK;
         }
 
-        public void PrintFieldVisibility(ClrField field, bool isStatic = false)
+        public int PrintFieldVisibility(ClrField field, bool isStatic = false)
         {
             Exports.Write("{0}", field.IsInternal ? "internal " : field.IsProtected ? "protected " : field.IsPrivate ? "private " : field.IsPublic ? "public " : "undefinedvisibility ");
             if (isStatic)
                 Exports.Write("static ");
             Exports.Write("{0} ", field.Type == null ? "object" : field.Type.Name);
             Exports.WriteLine("{0};", field.Name);
+            return HRESULTS.S_OK;
         }
 
-        public void DumpClass(ulong MethodTable)
+        public int DumpClass(ulong MethodTable)
         {
-
+            if (m_runtime == null)
+                return HRESULTS.E_FAIL;
 
             ClrType type = AdHoc.GetTypeFromMT(m_runtime, MethodTable);
             if (type == null)
             {
                 Exports.WriteLine("No type with Method Table {0:%p}", MethodTable);
                 Exports.WriteLine("");
-                return;
+                return HRESULTS.E_FAIL;
             }
             string fileName = type.Module == null || !type.Module.IsFile ? "(dynamic)" : type.Module.FileName;
             Exports.WriteLine("// Method Table: {0}", MethodTable);
@@ -1710,7 +2461,7 @@ namespace NetExt.Shim
             foreach (var field in type.Fields)
             {
                 if (Exports.isInterrupted())
-                    return;
+                    return HRESULTS.S_FALSE;
                 Exports.Write("\t");
                 PrintFieldVisibility(field);
             }
@@ -1722,7 +2473,7 @@ namespace NetExt.Shim
             foreach (var field in type.StaticFields)
             {
                 if (Exports.isInterrupted())
-                    return;
+                    return HRESULTS.S_FALSE;
                 Exports.Write("\t");
                 PrintFieldVisibility(field, true);
             }
@@ -1730,7 +2481,7 @@ namespace NetExt.Shim
             foreach (var field in type.ThreadStaticFields)
             {
                 if (Exports.isInterrupted())
-                    return;
+                    return HRESULTS.S_FALSE;
                 Exports.Write("\t");
                 PrintFieldVisibility(field, true);
             }
@@ -1753,7 +2504,7 @@ namespace NetExt.Shim
             foreach (ClrMethod met in properties)
             {
                 if (Exports.isInterrupted())
-                    return;
+                    return HRESULTS.S_FALSE;
                 string prop = met.Name.Substring(4);
                 bool isFirst = propstr.IndexOf(prop) == -1;
                 if (isFirst)
@@ -1803,7 +2554,7 @@ namespace NetExt.Shim
             foreach (var method in type.Methods)
             {
                 if (Exports.isInterrupted())
-                    return;
+                    return HRESULTS.S_FALSE;
 
                 if (!(method.Name.StartsWith("get_") || method.Name.StartsWith("set_")))
                 {
@@ -1830,16 +2581,18 @@ namespace NetExt.Shim
             Exports.WriteLine("{0}", " }");
             Exports.WriteLine("{0}", "}");
 
-
+            return HRESULTS.S_OK;
         }
 
-        public void DumpDomains()
+        public int DumpDomains()
         {
+            if (m_runtime == null)
+                return HRESULTS.E_FAIL;
             var domains = AdHoc.GetDomains(m_runtime);
             if (domains == null || domains.Length < 2)
             {
                 Exports.WriteLine("Unable to get Application Domains. This is not expected.");
-                return;
+                return HRESULTS.E_FAIL;
             }
 
             if (m_runtime.PointerSize == 8)
@@ -1851,7 +2604,7 @@ namespace NetExt.Shim
             for (int i = 0; i < domains.Length; i++)
             {
                 if (Exports.isInterrupted())
-                    return;
+                    return HRESULTS.S_FALSE;
 
                 Exports.Write("{0:%p} ", domains[i].Address);
                 Exports.Write("{0, -60} ", i == 0 ? "System" : i == 1 ? "Shared" : domains[i].Name);
@@ -1859,13 +2612,16 @@ namespace NetExt.Shim
                 if (!String.IsNullOrEmpty(domains[i].ApplicationBase)) Exports.Write("Base Path: {0} ", domains[i].ApplicationBase);
                 if (!String.IsNullOrEmpty(domains[i].ConfigurationFile)) Exports.Write("Config: {0} ", domains[i].ConfigurationFile);
                 Exports.WriteLine("");
-            }
 
+            }
+            return HRESULTS.S_OK;
 
         }
 
-        public void DumpHandles(int GroupOnly,string filterByType, string filterByObjType)
+        public int DumpHandles(int GroupOnly,string filterByType, string filterByObjType)
         {
+            if (m_runtime == null)
+                return HRESULTS.E_FAIL;
             Dictionary<string, int> categories = new Dictionary<string, int>();
             if (m_runtime.PointerSize == 8)
             {
@@ -1881,7 +2637,7 @@ namespace NetExt.Shim
             foreach (var handle in m_runtime.EnumerateHandles())
             {
                 if (Exports.isInterrupted())
-                    return;
+                    return HRESULTS.S_OK;
                 if (!categories.ContainsKey(handle.HandleType.ToString()))
                 {
                     categories[handle.HandleType.ToString()] = 0;
@@ -1919,6 +2675,7 @@ namespace NetExt.Shim
                 Exports.WriteLine(" found");
             }
             Exports.WriteLine("");
+            return HRESULTS.S_OK;
         }
 
         public static void AddIfTrue(ref StringBuilder Sb, bool IsTrue, string StrToAdd)
@@ -1929,9 +2686,10 @@ namespace NetExt.Shim
 
         }
 
-        public void DumpThreads()
+        public int DumpThreads()
         {
-
+            if(m_runtime == null)
+                return HRESULTS.E_FAIL;
             if (m_runtime.PointerSize == 8)
                 Exports.WriteLine("   Id OSId Address          Domain           Allocation Start:End              COM  GC Type  Locks Type / Status             Last Exception");
             else
@@ -1941,7 +2699,7 @@ namespace NetExt.Shim
             {
                 if (Exports.isInterrupted())
                 {
-                    return;
+                    return HRESULTS.S_FALSE;
                 }
                 StringBuilder sb = new StringBuilder();
                 ulong AllocStart;
@@ -1989,8 +2747,8 @@ namespace NetExt.Shim
                     sb.Append("Background");
                 }
                 Exports.WriteLine("");
-
             }
+            return HRESULTS.S_OK;
         }
 
 
@@ -1998,96 +2756,159 @@ namespace NetExt.Shim
         public int ReadVirtual(ulong addr, byte[] buffer, int requested, out int pRead)
         {
             int read;
-            bool success = m_runtime.ReadMemory(addr, buffer, requested, out read);
+            pRead = 0;
+            if (m_runtime == null)
+                return -1;
 
-            pRead = (int)read;
+            bool success = false;
+            try
+            {
+                success = m_runtime.ReadMemory(addr, buffer, requested, out read);
+
+                pRead = (int)read;
+            }
+            catch
+            {
+                return -1;
+            }
             return success ? 0 : -1;
         }
 
         public int ReadPtr(ulong addr, out ulong pValue)
         {
+            pValue = 0;
+            if (m_runtime == null)
+                return 0;
             bool success = m_runtime.ReadPointer(addr, out pValue);
             return success ? 1 : 0;
         }
 
-        public void Flush()
+        public int Flush()
         {
+            if (m_runtime == null)
+                return HRESULTS.E_FAIL;
             m_runtime.Flush();
+            return HRESULTS.S_OK;
         }
 
-        public void IsFlush(out int isFlushed)
+        public int IsFlush(out int isFlushed)
         {
             isFlushed = isFlushedCalled ? 1 : 0;
+            return HRESULTS.S_OK;
         }
 
-        public void GetHeap(out IMDHeap ppHeap)
+        public int GetHeap(out IMDHeap ppHeap)
         {
+            ppHeap = null;
+            if (m_runtime == null)
+                return HRESULTS.E_FAIL;
             ppHeap = new MDHeap(m_runtime.GetHeap());
+            return HRESULTS.S_OK;
         }
 
-        public void EnumerateAppDomains(out IMDAppDomainEnum ppEnum)
+        public int EnumerateAppDomains(out IMDAppDomainEnum ppEnum)
         {
+            ppEnum = null;
+            if (m_runtime == null)
+                return HRESULTS.E_FAIL;
             ppEnum = new MDAppDomainEnum(AdHoc.GetDomains(m_runtime));
+            return HRESULTS.S_OK;
         }
 
-        public void EnumerateThreads(out IMDThreadEnum ppEnum)
+        public int EnumerateThreads(out IMDThreadEnum ppEnum)
         {
+            ppEnum = null;
+            if (m_runtime == null)
+                return HRESULTS.E_FAIL;
             ppEnum = new MDThreadEnum(m_runtime.Threads, m_runtime);
+            return HRESULTS.S_OK;
         }
 
-        public void EnumerateFinalizerQueue(out IMDObjectEnum ppEnum)
+        public int EnumerateFinalizerQueue(out IMDObjectEnum ppEnum)
         {
+            ppEnum = null;
+            if (m_runtime == null)
+                return HRESULTS.E_FAIL;
             ppEnum = new MDObjectEnum(new List<ulong>(m_runtime.EnumerateFinalizerQueue()));
+            return HRESULTS.S_OK;
         }
 
-        public void EnumerateGCHandles(out IMDHandleEnum ppEnum)
+        public int EnumerateGCHandles(out IMDHandleEnum ppEnum)
         {
+            ppEnum = null;
+            if (m_runtime == null)
+                return HRESULTS.E_FAIL;
             ppEnum = new MDHandleEnum(m_runtime.EnumerateHandles());
+            return HRESULTS.S_OK;
         }
 
-        public void EnumerateMemoryRegions(out IMDMemoryRegionEnum ppEnum)
+        public int EnumerateMemoryRegions(out IMDMemoryRegionEnum ppEnum)
         {
+            ppEnum = null;
+            if (m_runtime == null)
+                return HRESULTS.E_FAIL;
             ppEnum = new MDMemoryRegionEnum(new List<ClrMemoryRegion>(m_runtime.EnumerateMemoryRegions()));
+            return HRESULTS.S_OK;
         }
 
-        public void GetArraySizeByMT(ulong MethodTable, out ulong BaseSize, out ulong ComponentSize)
+        public int GetArraySizeByMT(ulong MethodTable, out ulong BaseSize, out ulong ComponentSize)
         {
+            MethodTable = 0;
+            BaseSize = 0;
+            ComponentSize = 0;
+            if (m_runtime == null)
+                return HRESULTS.E_FAIL;
             TypeBasicInfo bi = AdHoc.GetArrayDataSimple(m_runtime, MethodTable);
             BaseSize = bi.BaseSize;
             ComponentSize = bi.ComponentSize;
+            return HRESULTS.S_OK;
         }
 
-        public void GetNameForMT(ulong MethodTable, [Out] [MarshalAs((UnmanagedType)19)] out string pTypeName)
+        public int GetNameForMT(ulong MethodTable, [Out] [MarshalAs((UnmanagedType)19)] out string pTypeName)
         {
+            pTypeName = null;
+            if (m_runtime == null)
+                return HRESULTS.E_FAIL;
             pTypeName = AdHoc.GetNameForMT(m_runtime, MethodTable);
+            return HRESULTS.S_OK;
         }
 
-        public void GetTypeByMT(ulong addr, out IMDType ppType)
+        public int GetTypeByMT(ulong addr, out IMDType ppType)
         {
+            ppType = null;
+            if (m_runtime == null)
+                return HRESULTS.E_FAIL;
             ppType = new MDType(AdHoc.GetTypeFromMT(m_runtime, addr));
+            return HRESULTS.S_OK;
         }
 
-        public void GetMethodNameByMD(ulong addr, out string pMethodName)
+        public int GetMethodNameByMD(ulong addr, out string pMethodName)
         {
+            pMethodName = null;
+            if (m_runtime == null)
+                return HRESULTS.E_FAIL;
             var method = m_runtime.GetMethodByAddress(addr);
             if (method == null)
             {
-                pMethodName = null;
-                return;
+                return HRESULTS.E_FAIL;
             }
             pMethodName = method.GetFullSignature();
+            return HRESULTS.S_OK;
         }
 
         public int GetOSThreadIDByAddress(ulong ThreadAddress, [Out] out uint OSThreadID)
         {
+            
             OSThreadID = 0;
+            if (m_runtime == null)
+                return HRESULTS.E_FAIL;
             try
             {
                 OSThreadID = AdHoc.GetOSThreadIdByAddress(m_runtime, ThreadAddress);
             }
-            finally
+            catch
             {
-
+                return HRESULTS.E_FAIL;
             }
             return OSThreadID == 0 ? HRESULTS.E_FAIL : HRESULTS.S_OK;
         }
@@ -2107,25 +2928,74 @@ namespace NetExt.Shim
             m_info = info;
         }
 
-        public void GetRuntimeVersion(out string pVersion)
+        public int GetRuntimeVersion(out string pVersion)
         {
-            pVersion = m_info.ToString();
+            Module clr = new Module("clr");
+            Module mscor = new Module("mscorwks");
+            if (clr.IsValid)
+            {
+                Version ver = clr.VersionInfo;
+                if (ver.Minor == 0 && ver.Revision <= 17000)
+                {
+                    pVersion = String.Format("{0} ({1})", clr.Version, ".NET 4.0");
+                    return HRESULTS.S_OK;
+                }
+                if (ver.Minor == 0 && ver.Revision <= 18400)
+                {
+                    pVersion = String.Format("{0} ({1})", clr.Version, ".NET 4.5");
+                    return HRESULTS.S_OK;
+                }
+
+                if (ver.Minor == 0 && ver.Revision <= 34000)
+                {
+                    pVersion = String.Format("{0} ({1})", clr.Version, ".NET 4.5.1");
+                    return HRESULTS.S_OK;
+                }
+
+                if (ver.Minor == 0)
+                {
+                    pVersion = String.Format("{0} ({1})", clr.Version, ".NET 4.5.2");
+                    return HRESULTS.S_OK;
+                }
+
+                pVersion = ver.ToString();
+                return HRESULTS.S_OK;
+
+            }
+            pVersion = null;
+            if (!mscor.IsValid)
+                return HRESULTS.E_FAIL;
+            pVersion = mscor.Version;
+            return HRESULTS.S_OK;
         }
 
-        public void GetDacLocation(out string pLocation)
+        public int GetDacLocation(out string pLocation)
         {
+            pLocation = null;
+            if (m_info == null)
+                return HRESULTS.E_FAIL;
             pLocation = m_info.TryGetDacLocation();
+            return HRESULTS.S_OK;
         } 
 
-        public void GetDacRequestData(out int pTimestamp, out int pFilesize)
+        public int GetDacRequestData(out int pTimestamp, out int pFilesize)
         {
+            pTimestamp = 0;
+            pFilesize = 0;
+            if (m_info == null || m_info.DacInfo == null)
+                return HRESULTS.E_FAIL;
             pTimestamp = (int)m_info.DacInfo.TimeStamp;
             pFilesize = (int)m_info.DacInfo.FileSize;
+            return HRESULTS.S_OK;
         }
 
-        public void GetDacRequestFilename(out string pRequestFileName)
+        public int GetDacRequestFilename(out string pRequestFileName)
         {
+            pRequestFileName = null;
+            if (m_info == null)
+                return HRESULTS.E_FAIL;
             pRequestFileName = m_info.DacInfo.FileName;
+            return HRESULTS.S_OK;
         }
     }
 
@@ -2135,42 +3005,70 @@ namespace NetExt.Shim
     [ComDefaultInterface(typeof(IMDTarget))]
     public class MDTarget : IMDTarget
     {
-        DataTarget m_target;
+        DataTarget m_target = null;
 
         public MDTarget(string crashdump)
         {
             // TODO: Complete member initialization
-            m_target = DataTarget.LoadCrashDump(crashdump);
+            try
+            {
+                m_target = DataTarget.LoadCrashDump(crashdump);
+            }
+            catch { }
         }
 
         public MDTarget(object iDebugClient)
         {
-            m_target = DataTarget.CreateFromDebuggerInterface((IDebugClient)iDebugClient);
+            try
+            {
+                m_target = DataTarget.CreateFromDebuggerInterface((IDebugClient)iDebugClient);
+            }
+            catch { }
         }
 
-        public void GetRuntimeCount(out int pCount)
+        public int GetRuntimeCount(out int pCount)
         {
+            pCount = 0;
+            if(m_target == null || m_target.ClrVersions == null)
+                return HRESULTS.E_FAIL;
             pCount = m_target.ClrVersions.Count;
+            return HRESULTS.S_OK;
         }
 
-        public void GetRuntimeInfo(int num, out IMDRuntimeInfo ppInfo)
+        public int GetRuntimeInfo(int num, out IMDRuntimeInfo ppInfo)
         {
+            ppInfo = null;
+            if (m_target == null || m_target.ClrVersions == null)
+                return HRESULTS.E_FAIL;
             ppInfo = new MDRuntimeInfo(m_target.ClrVersions[num]);
+            return HRESULTS.S_OK;
         }
 
-        public void GetPointerSize(out int pPointerSize)
+        public int GetPointerSize(out int pPointerSize)
         {
+            pPointerSize = 0;
+            if (m_target == null)
+                return HRESULTS.E_FAIL;
             pPointerSize = (int)m_target.PointerSize;
+            return HRESULTS.S_OK;
         }
 
-        public void CreateRuntimeFromDac(string dacLocation, out IMDRuntime ppRuntime)
+        public int CreateRuntimeFromDac(string dacLocation, out IMDRuntime ppRuntime)
         {
+            ppRuntime = null;
+            if (m_target == null || m_target.ClrVersions == null)
+                return HRESULTS.E_FAIL;
             ppRuntime = new MDRuntime(m_target.CreateRuntime(dacLocation));
+            return HRESULTS.S_OK;
         }
 
-        public void CreateRuntimeFromIXCLR(object ixCLRProcess, out IMDRuntime ppRuntime)
+        public int CreateRuntimeFromIXCLR(object ixCLRProcess, out IMDRuntime ppRuntime)
         {
+            ppRuntime = null;
+            if (m_target == null || m_target.ClrVersions == null)
+                return HRESULTS.E_FAIL;
             ppRuntime = new MDRuntime(m_target.CreateRuntime(ixCLRProcess));
+            return HRESULTS.S_OK;
         }
 
         internal const string DownloadUrl = "http://netext.codeplex.com/";
@@ -2253,12 +3151,215 @@ namespace NetExt.Shim
             return HRESULTS.S_OK;
         }
 
-        public void CreateEnum(out IMDObjectEnum ppEnum)
+        public int CreateEnum(out IMDObjectEnum ppEnum)
         {
             ppEnum = new MDObjectEnum();
+            return HRESULTS.S_OK;
+        }
+
+        public int GetCurrentTime(out Int64 TargetTime, out Int64 UtcTime)
+        {
+            TargetTime = DebugApi.CurrentTimeDateLocal.Ticks;
+            UtcTime = DebugApi.CurrentTimeDate.Ticks;
+            if (String.IsNullOrWhiteSpace(DebugApi.SharedData.NtSystemRoot) || DebugApi.SharedData.NtSystemRoot[1] != ':') // Bad SharedData
+                return HRESULTS.E_FAIL;
+            return HRESULTS.S_OK;
+        }
+
+        public int DumpTime()
+        {
+            if (String.IsNullOrWhiteSpace(DebugApi.SharedData.NtSystemRoot) || DebugApi.SharedData.NtSystemRoot[1] != ':') // Bad SharedData
+            {
+                return HRESULTS.E_FAIL;
+            }
+            Exports.WriteLine("UTC Time   : {0}", DebugApi.CurrentTimeDate.ToString("MM/dd/yyyy HH:mm:ss.ff"));
+            Exports.WriteLine("Target Time: {0}", DebugApi.CurrentTimeDateLocal.ToString("MM/dd/yyyy HH:mm:ss.ff"));
+            return HRESULTS.S_OK;
+        }
+
+        public int GetModuleByAddress(ulong Address, [Out] IMDModule Module)
+        {
+            Module = new MDModule(Address);
+            if(((MDModule)Module).module.IsValid)
+                return HRESULTS.S_OK;
+            return HRESULTS.E_FAIL;
+        }
+
+        public int GetModuleByName([MarshalAs((UnmanagedType)19)] string ModuleName, [Out] IMDModule Module)
+        {
+            Module = new MDModule(ModuleName);
+            if (((MDModule)Module).module.IsValid)
+                return HRESULTS.S_OK;
+            return HRESULTS.E_FAIL;
+
+        }
+
+        public int GetModuleByIndex(int Index, [Out] IMDModule Module)
+        {
+            if (Index < NetExt.Shim.Module.Count)
+            {
+                Module = new MDModule(Index);
+            }
+            if (((MDModule)Module).module.IsValid)
+                return HRESULTS.S_OK;
+            return HRESULTS.E_FAIL;
+        }
+
+        public int GetContextModule([Out] IMDModule Module)
+        {
+            Module = new MDModule(DebugApi.ModuleFromScope);
+            if (((MDModule)Module).module.IsValid)
+                return HRESULTS.S_OK;
+            return HRESULTS.E_FAIL;
+        }
+
+        public int GetModuleCount([Out] int Count)
+        {
+            Count = (int)Module.Count;
+            return HRESULTS.S_OK;
+        }
+
+        public int SaveAllModules([MarshalAs((UnmanagedType)19)] string Path)
+        {
+            if (!System.IO.Directory.Exists(Path))
+            {
+                Exports.WriteLine("Path {0} is invalid or not created", Path);
+                return HRESULTS.E_FAIL;
+            }
+            foreach (var mod in Module.Modules)
+            {
+                new MDModule(mod).SaveModule(Path);
+            }
+            return HRESULTS.S_OK;
         }
     }
 
+    [ComVisible(true)]
+    [Guid("FAF74A71-3B2E-42E4-B740-1E0B4EE69B2A")]
+    [ClassInterface(ClassInterfaceType.None)]
+    [ComDefaultInterface(typeof(IMDModule))]
+    public class MDModule : IMDModule
+    {
+
+        internal Module module;
+
+        public MDModule(ulong Address)
+        {
+            module = new Module(Address);
+        }
+
+        public MDModule(string ModuleName)
+        {
+            module = new Module(ModuleName);
+        }
+
+        public MDModule(int Index)
+        {
+            module = Module.Modules[Index];
+        }
+
+        public MDModule(Module CopyModule)
+        {
+            module = CopyModule;
+        }
+        public int GetDetails(out MD_Module ModuleDetails)
+        {
+            ModuleDetails  = new MD_Module();
+            ModuleDetails.Address = module.BaseAddress;
+            ModuleDetails.ClrDebugType = (int)module.ClrDebugType;
+            ModuleDetails.ClrFlags = module.CLRFlags;
+            ModuleDetails.ImageDebugType = (int)module.DebugType;
+            ModuleDetails.Index = (int)module.Index;
+            ModuleDetails.isValid = module.IsValid;
+            ModuleDetails.Build = module.VersionInfo.Build;
+            ModuleDetails.Major = module.VersionInfo.Major;
+            ModuleDetails.Minor = module.VersionInfo.Minor;
+            ModuleDetails.metaBuild = module.DotNetVersion.Build;
+            ModuleDetails.metaMajor = module.DotNetVersion.Major;
+            ModuleDetails.metaMinor = module.DotNetVersion.Minor;
+            ModuleDetails.isClr = module.IsClr;
+
+            if (module.IsValid)
+                return HRESULTS.S_OK;
+
+            return HRESULTS.E_FAIL;
+
+        }
+
+        public int GetOriginalName(out string OriginalName)
+        {
+            OriginalName = module.OriginalFilename;
+
+            if (module.IsValid)
+                return HRESULTS.S_OK;
+
+            return HRESULTS.E_FAIL;
+        }
+        public int GetCopyright(out string Copyright)
+        {
+            Copyright = module.LegalCopyright;
+
+            if (module.IsValid)
+                return HRESULTS.S_OK;
+
+            return HRESULTS.E_FAIL;
+        }
+
+        public int GetCompanyName(out string Company)
+        {
+            Company = module.CompanyName;
+            if (module.IsValid)
+                return HRESULTS.S_OK;
+
+            return HRESULTS.E_FAIL;
+        }
+
+        public int GetModuleName(out string ModuleName)
+        {
+            ModuleName = module.Name;
+            if (module.IsValid)
+                return HRESULTS.S_OK;
+
+            return HRESULTS.E_FAIL;
+        }
+
+        public int GetFullPath(out string FullPath)
+        {
+            FullPath = module.FullPath;
+            if (module.IsValid)
+                return HRESULTS.S_OK;
+
+            return HRESULTS.E_FAIL;
+        }
+
+        public int SaveModule(string Path)
+        {
+            if (!module.IsValid)
+                return HRESULTS.E_FAIL;
+
+            if (!System.IO.Directory.Exists(Path))
+            {
+                Exports.WriteLine("Path {0} is invalid or not created", Path);
+                return HRESULTS.E_FAIL;
+            }
+            string curPath = System.IO.Path.Combine(Path, module.Name);
+            try
+            {
+                using (Stream fs = File.OpenWrite(curPath))
+                {
+                    module.SaveToStream(fs);
+                    Exports.WriteLine("Saved '{0}'", curPath);
+                }
+            }
+            catch (Exception ex)
+            {
+                Exports.WriteLine("Error when saving file {0}", curPath);
+                Exports.WriteLine("{0}", ex.ToString());
+                return HRESULTS.E_FAIL;
+            }
+            return HRESULTS.S_OK;
+        }
+    }
     static class HRESULTS
     {
         internal const int E_FAIL = -1;
@@ -2280,14 +3381,16 @@ namespace NetExt.Shim
             m_data = strings;
         }
 
-        public void GetCount(out int pCount)
+        public int GetCount(out int pCount)
         {
             pCount = m_data.Count;
+            return HRESULTS.S_OK;
         }
 
-        public void Reset()
+        public int Reset()
         {
             m_curr = 0;
+            return HRESULTS.S_OK;
         }
 
         public int Next(out string pValue)
@@ -2323,14 +3426,16 @@ namespace NetExt.Shim
             m_data = interfaces;
         }
 
-        public void GetCount(out int pCount)
+        public int GetCount(out int pCount)
         {
             pCount = m_data.Count;
+            return HRESULTS.S_OK;
         }
 
-        public void Reset()
+        public int Reset()
         {
             m_curr = 0;
+            return HRESULTS.S_OK;
         }
 
         public int Next(out IMDInterface pValue)
@@ -2367,14 +3472,16 @@ namespace NetExt.Shim
             m_data = data;
         }
 
-        public void GetCount(out int pCount)
+        public int GetCount(out int pCount)
         {
             pCount = m_data.Count;
+            return HRESULTS.S_OK;
         }
 
-        public void Reset()
+        public int Reset()
         {
             m_curr = 0;
+            return HRESULTS.S_OK;
         }
 
         public int Next(IMDType pType, out ulong pInterfacePtr)
@@ -2415,8 +3522,10 @@ namespace NetExt.Shim
             m_cet = cet;
 
             if (m_value == null)
+            {
                 m_cet = ClrElementType.Unknown;
-
+                return;
+            }
             switch (m_cet)
             {
                 case ClrElementType.NativeUInt:  // native unsigned int
@@ -2438,21 +3547,24 @@ namespace NetExt.Shim
             }
         }
 
-        public void IsNull(out int pNull)
+        public int IsNull(out int pNull)
         {
             pNull = (m_cet == ClrElementType.Unknown || m_value == null ) ? 1 : 0;
+            return HRESULTS.S_OK;
         }
 
 
-        public void GetElementType(out int pCET)
+        public int GetElementType(out int pCET)
         {
             pCET = (int)m_cet;
+            return HRESULTS.S_OK;
         }
 
-        public void GetInt32(out int pValue)
+        public int GetInt32(out int pValue)
         {
             ulong value = GetValue64();
             pValue = (int)value;
+            return HRESULTS.S_OK;
         }
 
         private ulong GetValue64()
@@ -2469,36 +3581,41 @@ namespace NetExt.Shim
             return (ulong)m_value;
         }
 
-        public void GetUInt32(out uint pValue)
+        public int GetUInt32(out uint pValue)
         {
             ulong value = GetValue64();
             pValue = (uint)value;
+            return HRESULTS.S_OK;
         }
 
-        public void GetInt64(out long pValue)
+        public int GetInt64(out long pValue)
         {
             ulong value = GetValue64();
             pValue = (long)value;
+            return HRESULTS.S_OK;
         }
 
-        public void GetUInt64(out ulong pValue)
+        public int GetUInt64(out ulong pValue)
         {
             ulong value = GetValue64();
             pValue = (ulong)value;
+            return HRESULTS.S_OK;
         }
 
-        public void GetString(out string pValue)
+        public int GetString(out string pValue)
         {
             pValue = (string)m_value;
+            return HRESULTS.S_OK;
         }
 
 
-        public void GetBool(out int pBool)
+        public int GetBool(out int pBool)
         {
             if (m_value is bool)
                 pBool = ((bool)m_value) ? 1 : 0;
             else
                 pBool = (int)GetValue64();
+            return HRESULTS.S_OK;
         }
     }
 
@@ -2515,7 +3632,8 @@ namespace NetExt.Shim
         public ObjectSegmentEnum(ClrSegment seg)
         {
             m_seg = seg;
-            m_obj = seg.FirstObject;
+            if(seg != null)
+                m_obj = seg.FirstObject;
         }
 
         public int Next(int count, ulong[] refs, out int pWrote)
@@ -2551,25 +3669,27 @@ namespace NetExt.Shim
             return HRESULTS.S_OK;
         }
 
-        public void GetCount(out int pCount)
+        public int GetCount(out int pCount)
         {
-            throw new NotImplementedException();
+            pCount = 0;
+            return HRESULTS.E_FAIL;
         }
 
-        public void Clear()
+        public int Clear()
         {
-            throw new NotImplementedException();
+            return HRESULTS.E_FAIL;
         }
 
-        public void Reset()
+        public int Reset()
         {
             m_obj = 0;
             m_done = true;
+            return HRESULTS.S_OK;
         }
 
-        public void AddAddress(ulong ObjRef)
+        public int AddAddress(ulong ObjRef)
         {
-            throw new Exception("Not implemented");
+            return HRESULTS.E_FAIL; 
         }
     }
 
@@ -2602,9 +3722,10 @@ namespace NetExt.Shim
             m_refs = refs;
         }
 
-        public void GetCount(out int pCount)
+        public int GetCount(out int pCount)
         {
             pCount = m_refs.Count;
+            return HRESULTS.S_OK;
         }
 
         public int Next(int count, ulong[] refs, out int pWrote)
@@ -2635,20 +3756,23 @@ namespace NetExt.Shim
             return HRESULTS.S_OK;
         }
 
-        public void Reset()
+        public int Reset()
         {
             m_curr = 0;
+            return HRESULTS.S_OK;
         }
 
-        public void Clear()
+        public int Clear()
         {
             m_curr = 0;
             m_refs.Clear();
+            return HRESULTS.S_OK;
         }
 
-        public void AddAddress(ulong ObjRef)
+        public int AddAddress(ulong ObjRef)
         {
             m_refs.Add(ObjRef);
+            return HRESULTS.S_OK;
         }
     }
 
@@ -2666,9 +3790,10 @@ namespace NetExt.Shim
             m_refs = refs;
         }
 
-        public void GetCount(out int pCount)
+        public int GetCount(out int pCount)
         {
             pCount = m_refs.Count;
+            return HRESULTS.S_OK;
         }
 
         public int Next(out IMDAppDomain ppAppDomain)
@@ -2689,9 +3814,10 @@ namespace NetExt.Shim
             return HRESULTS.E_FAIL;
         }
 
-        public void Reset()
+        public int Reset()
         {
             m_curr = 0;
+            return HRESULTS.S_OK;
         }
     }
 
@@ -2708,14 +3834,16 @@ namespace NetExt.Shim
             m_refs = refs;
         }
 
-        public void GetCount(out int pCount)
+        public int GetCount(out int pCount)
         {
             pCount = m_refs.Count;
+            return HRESULTS.S_OK;
         }
 
-        public void Reset()
+        public int Reset()
         {
             m_curr = 0;
+            return HRESULTS.S_OK;
         }
 
         public int Next(int count, MD_Reference[] refs, out int pWrote)
@@ -2761,9 +3889,10 @@ namespace NetExt.Shim
             m_segments = segments;
         }
 
-        public void GetCount(out int pCount)
+        public int GetCount(out int pCount)
         {
             pCount = m_segments.Count;
+            return HRESULTS.S_OK;
         }
 
         public int Next(out IMDSegment ppSegment)
@@ -2784,9 +3913,10 @@ namespace NetExt.Shim
             return HRESULTS.E_FAIL;
         }
 
-        public void Reset()
+        public int Reset()
         {
             m_curr = 0;
+            return HRESULTS.S_OK;
         }
     }
 
@@ -2804,13 +3934,17 @@ namespace NetExt.Shim
             m_roots = roots;
         }
 
-        public void GetCount(out int pCount)
+        public int GetCount(out int pCount)
         {
             pCount = m_curr;
+            return HRESULTS.S_OK;
         }
 
         public int Next(out IMDRoot ppRoot)
         {
+            ppRoot = null;
+            if(m_roots == null)
+                return HRESULTS.E_FAIL;
             if (m_curr < m_roots.Count)
             {
                 ppRoot = new MDRoot(m_roots[m_curr]);
@@ -2826,9 +3960,10 @@ namespace NetExt.Shim
             return HRESULTS.E_FAIL;
         }
 
-        public void Reset()
+        public int Reset()
         {
             m_curr = 0;
+            return HRESULTS.S_OK;
         }
     }
 
@@ -2846,13 +3981,22 @@ namespace NetExt.Shim
             m_frames = frames;
         }
 
-        public void GetCount(out int pCount)
+        public int GetCount(out int pCount)
         {
+            pCount = 0;
+            if(m_frames == null)
+                return HRESULTS.E_FAIL;
             pCount = m_frames.Count;
+            return HRESULTS.S_OK;
         }
 
         public int Next(out ulong pIP, out ulong pSP, out string pFunction)
         {
+            pIP = 0;
+            pSP = 0;
+            pFunction = null;
+            if(m_frames == null)
+                return HRESULTS.E_FAIL;
             if (m_curr < m_frames.Count)
             {
                 ClrStackFrame frame = m_frames[m_curr++];
@@ -2869,9 +4013,10 @@ namespace NetExt.Shim
             return (m_curr == m_frames.Count) ? HRESULTS.S_FALSE : HRESULTS.E_FAIL;
         }
 
-        public void Reset()
+        public int Reset()
         {
             m_curr = 0;
+            return HRESULTS.S_OK;
         }
     }
 
@@ -2889,13 +4034,20 @@ namespace NetExt.Shim
             m_handles = new List<ClrHandle>(handles);
         }
 
-        public void GetCount(out int pCount)
+        public int GetCount(out int pCount)
         {
+            pCount = 0;
+            if(m_handles == null)
+                return HRESULTS.E_FAIL;
             pCount = m_handles.Count();
+            return HRESULTS.S_OK;
         }
 
         public int Next(out IMDHandle ppHandle)
         {
+            ppHandle = null;
+            if (m_handles == null)
+                return HRESULTS.E_FAIL;
             if (m_curr < m_handles.Count)
             {
                 ppHandle = new MDHandle(m_handles[m_curr++]);
@@ -2912,9 +4064,10 @@ namespace NetExt.Shim
             return HRESULTS.E_FAIL;
         }
 
-        public void Reset()
+        public int Reset()
         {
             m_curr = 0;
+            return HRESULTS.S_OK;
         }
     }
 
@@ -2932,13 +4085,20 @@ namespace NetExt.Shim
             m_regions = regions;
         }
 
-        public void GetCount(out int pCount)
+        public int GetCount(out int pCount)
         {
+            pCount = 0;
+            if (m_regions == null)
+                return HRESULTS.E_FAIL;
             pCount = m_regions.Count;
+            return HRESULTS.S_OK;
         }
 
         public int Next(out IMDMemoryRegion ppRegion)
         {
+            ppRegion = null;
+            if(m_regions == null)
+                return HRESULTS.E_FAIL;
             if (m_curr < m_regions.Count)
             {
                 ppRegion = new MDMemoryRegion(m_regions[m_curr++]);
@@ -2955,9 +4115,9 @@ namespace NetExt.Shim
             return HRESULTS.E_FAIL;
         }
 
-        public void Reset()
+        public int Reset()
         {
-            throw new NotImplementedException();
+            return HRESULTS.E_FAIL;
         }
     }
 
@@ -2976,13 +4136,20 @@ namespace NetExt.Shim
             m_runtime = runtime;
         }
 
-        public void GetCount(out int pCount)
+        public int GetCount(out int pCount)
         {
+            pCount = 0;
+            if (m_threads == null)
+                return HRESULTS.E_FAIL;
             pCount = m_threads.Count;
+            return HRESULTS.S_OK;
         }
 
         public int Next(out IMDThread ppThread)
         {
+            ppThread = null;
+            if(m_threads == null)
+                return HRESULTS.E_FAIL;
             if (m_curr < m_threads.Count)
             {
                 ppThread = new MDThread(m_threads[m_curr++], m_runtime);
@@ -2999,9 +4166,10 @@ namespace NetExt.Shim
             return HRESULTS.E_FAIL;
         }
 
-        public void Reset()
+        public int Reset()
         {
             m_curr = 0;
+            return HRESULTS.S_OK;
         }
     }
 }

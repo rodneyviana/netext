@@ -1,5 +1,5 @@
-// Source Date: Monday, October 5, 2015 2:40:56 PM
-// Source File: C:\projects\netext\NetExt\helptxt.txt
+// Source Date: Friday, July 7, 2017 3:20:07 PM
+// Source File: C:\Users\rviana\OneDrive\Projects\netext\NetExt\helptxt.txt
 // This file was generated. Do not modify. Modify Source File instead
 #include "netext.h"
 
@@ -55,6 +55,7 @@ EXT_COMMAND(whelp,
 		Dml("!<link cmd=\"!whelp wruntime\">wruntime</link> - Display HTTP Runtime Info including Active Requests\n");
 		Dml("!<link cmd=\"!whelp wtoken\">wtoken</link> - Display WIF tokens and cookies\n");
 		Dml("!<link cmd=\"!whelp wclass\">wclass</link> - Dump classs layout and let you set breakpoint\n");
+		Dml("!<link cmd=\"!whelp wxml\">wxml</link> - Dump a XML document\n");
 		Dml("<b>*(new)*</b> !<link cmd=\"!whelp wsocket\">wsocket</link> - Dump socket information\n");
 		Dml("\n");
 		Dml("<b>Misc</b>\n");
@@ -63,6 +64,66 @@ EXT_COMMAND(whelp,
 		Dml("<link cmd=\"!whelp expression\">expression</link> syntax\n");
 		Dml("<link cmd=\"!whelp functions\">functions</link> list *new functions*\n");
 		Dml("<link cmd=\"!whelp license\">license</link> see all licenses applied to this product\n");
+		Dml("\n");
+	return;
+	}
+	if(keyword=="wxml")
+	{
+		Dml("Dump the text representation of an XML document (the order of the nodes may be different)\n");
+		Dml("\n");
+		Dml("<b>Syntax:</b>\n");
+		Dml("-------\n");
+		Dml(" \n");
+		Dml("!wxml &lt;address&gt;\n");
+		Dml("\n");
+		Dml("<b>Where:</b>\n");
+		Dml("-------\n");
+		Dml("\n");
+		Dml("	<b>&lt;address&gt;</b> - Address of the XML document or XML element\n");
+		Dml(" \n");
+		Dml("<b>Examples:</b>\n");
+		Dml("----------\n");
+		Dml("\n");
+		Dml("<i>Dumps an XML Document</i>\n");
+		Dml("------------------------\n");
+		Dml("	0:000&gt; !wxml 000007feef80e538\n");
+		Dml("&lt;migration urlid=&quot;http://www.microsoft.com/migration/1.0/migxmlext/migapp&quot;&gt;\n");
+		Dml("   &lt;component type=&quot;Application&quot;&gt;\n");
+		Dml("      &lt;!-- Name of the application --&gt;\n");
+		Dml("      &lt;displayName&gt;Some Application\n");
+		Dml("      &lt;/displayName&gt;\n");
+		Dml("      &lt;!-- Specify whether the environment variables exist in the context of user or system or both --&gt;\n");
+		Dml("      &lt;environment context=&quot;System&quot;&gt;\n");
+		Dml("         &lt;!-- create the environment variables --&gt;\n");
+		Dml("         &lt;variable name=&quot;myVar1&quot;&gt;\n");
+		Dml("            &lt;!-- simple text value assignment to a variable --&gt;\n");
+		Dml("            &lt;text&gt;value\n");
+		Dml("            &lt;/text&gt;\n");
+		Dml("         &lt;/variable&gt;\n");
+		Dml("         &lt;variable name=&quot;myAppExePath&quot;&gt;\n");
+		Dml("            &lt;!-- make a call to in-built helper function to get a value from a reg key and assign that value to the variable --&gt;\n");
+		Dml("            &lt;script&gt;MigXmlHelper.GetStringContent(&quot;Registry&quot;,&quot;HKLM\\Software\\MyApp\\Installer [EXEPATH]&quot;)\n");
+		Dml("            &lt;/script&gt;\n");
+		Dml("         &lt;/variable&gt;\n");
+		Dml("      &lt;/environment&gt;\n");
+		Dml("      &lt;role role=&quot;Settings&quot;&gt;\n");
+		Dml("         &lt;detects&gt;\n");
+		Dml("            &lt;!-- all of these checks must be true for the component to be detected --&gt;\n");
+		Dml("            &lt;detect&gt;\n");
+		Dml("               &lt;!-- make a call to in-built helper function to check to see if an object exists or not --&gt;\n");
+		Dml("               &lt;condition&gt;MigXmlHelper.DoesObjectExist(&quot;Registry&quot;,&quot;HKLM\\Software\\MyApp [win32_version]&quot;)\n");
+		Dml("               &lt;/condition&gt;\n");
+		Dml("            &lt;/detect&gt;\n");
+		Dml("            &lt;detect&gt;\n");
+		Dml("               &lt;!-- either of these checks must be true for the component to be detected --&gt;\n");
+		Dml("               &lt;!-- make a call to in-built helper function to check to see if a file version matches or not --&gt;\n");
+		Dml("               &lt;condition&gt;MigXmlHelper.DoesFileVersionMatch(&quot;%MyAppExePath%&quot;,&quot;ProductVersion&quot;,&quot;8.*&quot;)\n");
+		Dml("               &lt;/condition&gt;\n");
+		Dml("               &lt;condition&gt;MigXmlHelper.DoesFileVersionMatch(&quot;%MyAppExePath%&quot;,&quot;ProductVersion&quot;,&quot;9.*&quot;)\n");
+		Dml("               &lt;/condition&gt;\n");
+		Dml("            &lt;/detect&gt;\n");
+		Dml("         &lt;/detects&gt;\n");
+		Dml("(... etc ..)\n");
 		Dml("\n");
 	return;
 	}

@@ -655,6 +655,24 @@ std::string SpecialCases::GetHexArray(CLRDATA_ADDRESS Obj, bool Padded)
 	return result;
 
 }
+SVAL SpecialCases::GetBoxedValue(CLRDATA_ADDRESS Address)
+{
+	SVAL s;
+	s.MakeInvalid();
+	if(Address == 0) return s;
+	ObjDetail obj(Address);
+	if(!obj.IsValid() || !obj.classObj.Implement(L"System.ValueType"))
+		return s;
+
+	std::vector<std::string> fields;
+	fields.push_back("m_value");
+	varMap fieldV;
+	DumpFields(Address,fields,0,&fieldV);
+	if(fieldV["m_value"].IsInt() || fieldV["m_value"].IsReal())
+		return fieldV["m_value"];
+	// all failed, return invalid
+	return s;
+}
 
 std::string SpecialCases::PrettyPrint(CLRDATA_ADDRESS Address, CLRDATA_ADDRESS MethodTable)
 {
@@ -663,25 +681,29 @@ std::string SpecialCases::PrettyPrint(CLRDATA_ADDRESS Address, CLRDATA_ADDRESS M
 	if(MethodTable)
 		obj.Request(Address, MethodTable);
 	else
+	{
+		SVAL v = GetBoxedValue(Address);
+		if(v.IsValid)
+			return CW2A(v.strValue.c_str());
 		obj.Request(Address);
-
+	}
 	std::wstring methName = obj.TypeName();
 
 	if(methName == L"System.DateTime")
 	{
-		ExtRemoteData dt(Address, sizeof(UINT64));
+		ExtRemoteData dt(Address + (MethodTable ? 0 : sizeof(void*)) , sizeof(UINT64));
 		UINT64 ticks = dt.GetUlong64();
 		return CW2A(tickstodatetime(ticks).c_str());
 	}
 	if(methName == L"System.TimeSpan")
 	{
-		ExtRemoteData dt(Address, sizeof(UINT64));
+		ExtRemoteData dt(Address + (MethodTable ? 0 : sizeof(void*)), sizeof(UINT64));
 		UINT64 ticks = dt.GetUlong64();
 		return tickstotimespan(ticks);
 	}
 	if(methName == L"System.Guid")
 	{
-		return SpecialCases::ToGuid(Address);
+		return SpecialCases::ToGuid(Address + (MethodTable ? 0 : sizeof(void*)));
 	}
 	if(methName == L"System.Uri")
 	{
@@ -878,7 +900,12 @@ void SpecialCases::DumpArray(CLRDATA_ADDRESS Address, CLRDATA_ADDRESS MethodTabl
 			g_ExtInstancePtr->Dml("<link cmd=\"!wdo %p\">%p</link>",addr, addr);
 			if(eType == ELEMENT_TYPE_STRING)
 				g_ExtInstancePtr->Out(" %S", vl.c_str());
-
+			else
+			{
+				string pretty = SpecialCases::PrettyPrint(addr);
+				if(pretty.size() > 0)
+					g_ExtInstancePtr->Out(" %s", pretty.c_str());
+			}
 		} else
 			g_ExtInstancePtr->Out("%S", vl.c_str());
 		g_ExtInstancePtr->Out("\n");
@@ -1266,7 +1293,7 @@ void DumpFields(CLRDATA_ADDRESS Address, std::vector<std::string> Fields, CLRDAT
 				(*Vars)[key].Offset = fields[i].FieldDesc.offset;
 				(*Vars)[key].MT = fields[i].FieldDesc.MethodTable;
 				(*Vars)[key].Token = fields[i].FieldDesc.token;
-				(*Vars)[key].Module = fields[i].FieldDesc.module;
+				(*Vars)[key].Module = fields[i].FieldDesc.Module;
 			}
 		}
 	}
@@ -1517,7 +1544,7 @@ SVAL GetValue(CLRDATA_ADDRESS offset, CorElementType CorType, CLRDATA_ADDRESS Me
 					{
 						ExtRemoteData ptr(offset, sizeof(INT64));
 						UINT64 u=ptr.GetUlong64();
-						swprintf(NameBuffer, MAX_MTNAME, L"%I64x", u, u);
+						swprintf(NameBuffer, MAX_MTNAME, L"%I64i", u, u);
 						if(Print)
 						{
 							g_ExtInstancePtr->Out("%S", NameBuffer);

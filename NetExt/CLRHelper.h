@@ -202,7 +202,20 @@ public:
 	bool IsUnknown() { return (typeName.compare(L"UNKNOWN")); }
 	bool IsFree() { return obj.IsFree; };
 	bool IsArray() { return obj.IsArray; };
-	bool IsString() { return obj.isString; };
+	bool IsString() 
+	{ 
+		if(!obj.isString)
+		{
+			return false;
+		}
+		// Now let's check if it is a bad string
+		// it may be a string, but chances are that it is not
+		if(obj.size > 1 * 1024 * 1024)
+		{
+			return false;
+		}
+		return true;
+	};
 	bool IsObject() { return !obj.isValueType; };
 
 	bool InnerIsClass() { return (obj.arrayCorType == ELEMENT_TYPE_CLASS); };
@@ -653,7 +666,7 @@ public:
 	int StaticFieldsCount() { return obj.staticFieldsCount; }
 	int Heap() { return obj.heap; }
 	int Gen() { return obj.generation; }
-	int Module() { return obj.module; }
+	int Module() { return obj.Module; }
 	int Assembly() { return obj.assembly; }
 	int Domain() { return obj.appDomain; }
 };

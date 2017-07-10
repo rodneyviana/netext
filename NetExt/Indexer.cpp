@@ -362,6 +362,7 @@ void Indexer::AddAddress(DWORD_PTR Address, DWORD_PTR MethodTable, MD_TypeData* 
 		//ti->EEClass=obj.EEClass;
 		CLRDATA_ADDRESS elemSize=0;
 		CLRDATA_ADDRESS baseSize=0;
+		
 		if(tmpObj.IsValid() && tmpObj.InnerComponentSize() > 0)
 		{
 			obj->elementSize = tmpObj.InnerComponentSize();
@@ -369,10 +370,17 @@ void Indexer::AddAddress(DWORD_PTR Address, DWORD_PTR MethodTable, MD_TypeData* 
 			obj->size = tmpObj.Size();
 		} else
 		{
-			EEClass::GetArraySizeByMT(MethodTable, &baseSize,
-				&elemSize);
-			obj->elementSize = elemSize;
-			obj->BaseSize = baseSize;
+			if(tmpObj.IsArray())
+			{
+				EEClass::GetArraySizeByMT(MethodTable, &baseSize,
+					&elemSize);
+				obj->elementSize = elemSize;
+				obj->BaseSize = baseSize;
+			} else
+			{
+				obj->BaseSize = tmpObj.BaseSize();
+				obj->elementSize = tmpObj.IsString() ? 2 : 0;
+			}
 		}
 		if(obj->BaseSize == 0)
 		{
@@ -402,8 +410,8 @@ void Indexer::AddAddress(DWORD_PTR Address, DWORD_PTR MethodTable, MD_TypeData* 
 		{
 			ti->typeName = L"Free";
 			typeT.insert(pair<std::wstring, DWORD_PTR>(L"Free", MethodTable));
-			//ti->mtData.elementSize = 1;
-			//obj->elementSize = 1; // Free is somewhat an array
+			ti->mtData.elementSize = 1;
+			obj->elementSize = 1; // Free is somewhat an array
 		}
 		//g_ExtInstancePtr->Out("%p: %S (%p) %u\n", Address, ti->typeName.c_str(), MethodTable,  ti->mtData.BaseSize + obj->dwNumComponents * ti->mtData.ComponentSize);
 	}

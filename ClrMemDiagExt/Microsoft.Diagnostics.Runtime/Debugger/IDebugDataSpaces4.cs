@@ -148,8 +148,14 @@ namespace Microsoft.Diagnostics.Runtime.Interop
 
         [PreserveSig]
         new int ReadDebuggerData(
+            /*
             [In] UInt32 Index,
             [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 2)] byte[] buffer,
+            [In] UInt32 BufferSize,
+            [Out] out UInt32 DataSize);
+            */
+            [In] UInt32 Index,
+            [In] IntPtr buffer,
             [In] UInt32 BufferSize,
             [Out] out UInt32 DataSize);
 

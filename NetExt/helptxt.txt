@@ -37,6 +37,7 @@
 !||wruntime|| - Display HTTP Runtime Info including Active Requests
 !||wtoken|| - Display WIF tokens and cookies
 !||wclass|| - Dump classs layout and let you set breakpoint
+!||wxml|| - Dump a XML document
 <b>*(new)*</b> !||wsocket|| - Dump socket information
 
 <b>Misc</b>
@@ -45,6 +46,63 @@
 ||expression|| syntax
 ||functions|| list *new functions*
 ||license|| see all licenses applied to this product
+
+##wxml
+Dump the text representation of an XML document (the order of the nodes may be different)
+
+<b>Syntax:</b>
+-------
+ 
+!wxml &lt;address&gt;
+
+<b>Where:</b>
+-------
+
+	<b>&lt;address&gt;</b> - Address of the XML document or XML element
+ 
+<b>Examples:</b>
+----------
+
+<i>Dumps an XML Document</i>
+------------------------
+	0:000&gt; !wxml 000007feef80e538
+&lt;migration urlid=&quot;http://www.microsoft.com/migration/1.0/migxmlext/migapp&quot;&gt;
+   &lt;component type=&quot;Application&quot;&gt;
+      &lt;!-- Name of the application --&gt;
+      &lt;displayName&gt;Some Application
+      &lt;/displayName&gt;
+      &lt;!-- Specify whether the environment variables exist in the context of user or system or both --&gt;
+      &lt;environment context=&quot;System&quot;&gt;
+         &lt;!-- create the environment variables --&gt;
+         &lt;variable name=&quot;myVar1&quot;&gt;
+            &lt;!-- simple text value assignment to a variable --&gt;
+            &lt;text&gt;value
+            &lt;/text&gt;
+         &lt;/variable&gt;
+         &lt;variable name=&quot;myAppExePath&quot;&gt;
+            &lt;!-- make a call to in-built helper function to get a value from a reg key and assign that value to the variable --&gt;
+            &lt;script&gt;MigXmlHelper.GetStringContent(&quot;Registry&quot;,&quot;HKLM\Software\MyApp\Installer [EXEPATH]&quot;)
+            &lt;/script&gt;
+         &lt;/variable&gt;
+      &lt;/environment&gt;
+      &lt;role role=&quot;Settings&quot;&gt;
+         &lt;detects&gt;
+            &lt;!-- all of these checks must be true for the component to be detected --&gt;
+            &lt;detect&gt;
+               &lt;!-- make a call to in-built helper function to check to see if an object exists or not --&gt;
+               &lt;condition&gt;MigXmlHelper.DoesObjectExist(&quot;Registry&quot;,&quot;HKLM\Software\MyApp [win32_version]&quot;)
+               &lt;/condition&gt;
+            &lt;/detect&gt;
+            &lt;detect&gt;
+               &lt;!-- either of these checks must be true for the component to be detected --&gt;
+               &lt;!-- make a call to in-built helper function to check to see if a file version matches or not --&gt;
+               &lt;condition&gt;MigXmlHelper.DoesFileVersionMatch(&quot;%MyAppExePath%&quot;,&quot;ProductVersion&quot;,&quot;8.*&quot;)
+               &lt;/condition&gt;
+               &lt;condition&gt;MigXmlHelper.DoesFileVersionMatch(&quot;%MyAppExePath%&quot;,&quot;ProductVersion&quot;,&quot;9.*&quot;)
+               &lt;/condition&gt;
+            &lt;/detect&gt;
+         &lt;/detects&gt;
+(... etc ..)
 
 ##wupdate
 Check for new versions and compare with current. If a new version is found, it tries to open the update page

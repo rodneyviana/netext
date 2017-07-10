@@ -8,7 +8,7 @@
 #include "ClrHelper.h"
 #include "VersionInfo.h"
 //
-// From ILSPy on Microsoft.Diagnostics.Runtime
+// From Microsoft.Diagnostics.Runtime
 
 /*
 
@@ -184,6 +184,11 @@ CComPtr<NetExtShim::IMDHeap> pHeap;
 			return dt;
 		} else
 		{
+			if(ticks < TicksPerMillisecond)
+			{
+				return L"1/1/0000 00:00:00";
+			}
+
 			return L"#INVALIDDATE#";
 		}
 	}

@@ -1197,14 +1197,29 @@ namespace ProofOfConcept
             ulong attributes = nodeObj.attributes;
             if (attributes > 0)
             {
-                ClrType fieldType = nodeObj.attributes.nodes.field;
+                ulong items = 0;
+                int len = 0;
+                ClrType nodes = nodeObj.attributes.nodes;
 
-                if (fieldType.Name == "System.Collections.ArrayList")
+                if (nodes.Name == "System.Collections.ArrayList")
                 {
-                    ulong items = nodeObj.attributes.nodes.field._items;
+                    items = nodeObj.attributes.nodes._items;
+                    len = nodeObj.attributes.nodes._size;
+                }
+                else
+                {
+                    ClrType fieldType = nodeObj.attributes.nodes.field;
+                    if (fieldType.Name == "System.Collections.ArrayList")
+                    {
+                        items = nodeObj.attributes.nodes.field._items;
+                        len = nodeObj.attributes.nodes.field._size;
+                    }
+                }
+
+                if (items != 0)
+                {
 
                     ClrType arrAttr = m_heap.GetObjectType(items);
-                    int len = nodeObj.attributes.nodes.field._size;
 
 
                     for (int i = 0; i < len; i++)
@@ -1232,19 +1247,21 @@ namespace ProofOfConcept
 
         private string DumpXmlNodes(ulong Address, int Indentention = 0, StringBuilder sb = null)
         {
+            
             if(sb == null)
                 sb = new StringBuilder(100);
             if (Address == 0)
                 return sb.ToString();
-            Stack<ulong> nodes = new Stack<ulong>();
+            List<ulong> nodes = new List<ulong>();
             ulong next = Address;
             while (next != 0)
             {
-                nodes.Push(next);
+                if(next != Address) nodes.Add(next);
                 ClrType node = m_heap.GetObjectType(next);
                 if (node.Name == "System.Xml.XmlDeclaration")
                 {
-                    break;
+                    sb.AppendFormat("{0}\n", PrintXmlNode(next, Indentention));
+                    //break;
                 }
                 if (cache.IsDerivedOf(next, "System.Xml.XmlNode"))
                 {
@@ -1252,7 +1269,7 @@ namespace ProofOfConcept
                     ClrInstanceField fNext = node.GetFieldByName("next");
                     next = (ulong)fNext.GetValue(next);
                     ulong i = nodes.FirstOrDefault(m => m == next);
-                    if (i != 0)
+                    if (i != 0 || next == Address)
                     {
                         next = 0; // We went here
                     }
@@ -1264,14 +1281,15 @@ namespace ProofOfConcept
                 }
             }
             // Now let's navigate in the right order
-
-            foreach(ulong node in nodes)
+            nodes.Add(Address);
+            foreach(var node in nodes)
             {
-                sb.AppendFormat("{0}\n",PrintXmlNode(node, Indentention));
+
                 ClrType nodeObj = m_heap.GetObjectType(node);
                 string lastName = String.Empty;
                 if (nodeObj.Name != "System.Xml.XmlDeclaration")
                 {
+                    sb.AppendFormat("{0}\n", PrintXmlNode(node, Indentention));
                     ClrInstanceField fLastChild = nodeObj.GetFieldByName("lastChild");
                     if (fLastChild != null && (ulong)fLastChild.GetValue(node) != node)
                     {
@@ -1310,7 +1328,7 @@ namespace ProofOfConcept
             
             ClrInstanceField fLastChild = xmlDoc.GetFieldByName("lastChild");
             ulong next = (ulong)fLastChild.GetValue(Address);
-            if (xmlDoc.Name != "System.Xml.XmlDocument")
+            if (xmlDoc.Name != "System.Xml.XmlDocument" && (xmlDoc.BaseType != null && xmlDoc.BaseType.Name != "System.Xml.XmlDocument") )
             {
                 next = Address;
                 ClrInstanceField fParent = xmlDoc.GetFieldByName("parentNode");
@@ -1319,6 +1337,12 @@ namespace ProofOfConcept
                 {
                     next = parent;
                     parent = (ulong)fParent.GetValue(next);
+                }
+                xmlDoc = m_heap.GetObjectType(next);
+                if (xmlDoc.Name == "System.Xml.XmlDocument" || (xmlDoc.BaseType != null && xmlDoc.BaseType.Name == "System.Xml.XmlDocument"))
+                {
+                    fLastChild = xmlDoc.GetFieldByName("lastChild");
+                    next = (ulong)fLastChild.GetValue(next);
                 }
 
             }

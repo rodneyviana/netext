@@ -24,15 +24,15 @@ namespace NetExt.Shim
     public interface IMDTarget
     {
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetRuntimeCount([Out] out int pCount);
+        int GetRuntimeCount([Out] out int pCount);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetRuntimeInfo(int num, [Out] [MarshalAs((UnmanagedType)28)] out IMDRuntimeInfo ppInfo);
+        int GetRuntimeInfo(int num, [Out] [MarshalAs((UnmanagedType)28)] out IMDRuntimeInfo ppInfo);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetPointerSize([Out] out int pPointerSize);
+        int GetPointerSize([Out] out int pPointerSize);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void CreateRuntimeFromDac([MarshalAs((UnmanagedType)19)] string dacLocation, [Out] [MarshalAs((UnmanagedType)28)] out IMDRuntime ppRuntime);
+        int CreateRuntimeFromDac([MarshalAs((UnmanagedType)19)] string dacLocation, [Out] [MarshalAs((UnmanagedType)28)] out IMDRuntime ppRuntime);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void CreateRuntimeFromIXCLR([MarshalAs((UnmanagedType)25)] Object ixCLRProcess, [MarshalAs((UnmanagedType)28)] out IMDRuntime ppRuntime);
+        int CreateRuntimeFromIXCLR([MarshalAs((UnmanagedType)25)] Object ixCLRProcess, [MarshalAs((UnmanagedType)28)] out IMDRuntime ppRuntime);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
         [PreserveSig]
         int CompareVersion(int Major, int Minor, int Build, int Revision);
@@ -40,7 +40,77 @@ namespace NetExt.Shim
         [PreserveSig]
         int OpenDownloadPage();
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
-        void CreateEnum([Out] [MarshalAs((UnmanagedType)28)] out IMDObjectEnum ppEnum);
+        [PreserveSig]
+        int CreateEnum([Out] [MarshalAs((UnmanagedType)28)] out IMDObjectEnum ppEnum);
+        [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
+        [PreserveSig]
+        int GetCurrentTime([Out] out Int64 TargetTime, [Out] out Int64 UtcTime);
+        [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
+        [PreserveSig]
+        int DumpTime();
+        [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
+        [PreserveSig]
+        int GetModuleByAddress(ulong Address, [Out] IMDModule Module);
+        [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
+        [PreserveSig]
+        int GetModuleByName([MarshalAs((UnmanagedType)19)] string ModuleName, [Out] IMDModule Module);
+        [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
+        [PreserveSig]
+        int GetModuleByIndex(int Index, [Out] IMDModule Module);
+        [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
+        [PreserveSig]
+        int GetContextModule([Out] IMDModule Module);
+        [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
+        [PreserveSig]
+        int GetModuleCount([Out] int Count);
+        [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
+        [PreserveSig]
+        int SaveAllModules([MarshalAs((UnmanagedType)19)] string Path);
+
+    }
+
+    [ComVisible(true)]
+    [System.Runtime.InteropServices.TypeLibTypeAttribute((System.Runtime.InteropServices.TypeLibTypeFlags)128)]
+    [System.Runtime.InteropServices.GuidAttribute("7D3553BC-BB68-403D-B353-A47A684E7763")]
+    [System.Runtime.InteropServices.InterfaceTypeAttribute((System.Runtime.InteropServices.ComInterfaceType)1)]
+    public interface IMDModule
+    {
+        [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
+        int GetDetails([Out] out MD_Module ModuleDetails);
+        [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
+        int GetCopyright([Out] [MarshalAs((UnmanagedType)19)] out string Copyright);
+        [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
+        int GetCompanyName([Out] [MarshalAs((UnmanagedType)19)] out string Company);
+        [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
+        int GetModuleName([Out] [MarshalAs((UnmanagedType)19)] out string ModuleName);
+        [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
+        int GetOriginalName([Out] [MarshalAs((UnmanagedType)19)] out string OriginalName);
+        [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
+        int GetFullPath([Out] [MarshalAs((UnmanagedType)19)] out string FullPath);
+        [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
+        int SaveModule([MarshalAs((UnmanagedType)19)] string Path);
+
+
+    }
+    [ComVisible(true)]
+    [StructLayout(LayoutKind.Sequential, Pack = 8, CharSet = CharSet.Unicode)]
+    public struct MD_Module
+    {
+
+        public ulong Address;
+        public int ClrDebugType;
+        public CorFlags ClrFlags;
+        public bool isValid;
+        public bool isClr;
+        public int ImageDebugType;
+        public int Index;
+        public int Major;
+        public int Minor;
+        public int Build;
+        public int metaMajor;
+        public int metaMinor;
+        public int metaBuild;
+
     }
 
     //[Guid("5DB635A4-8BEB-4353-9674-F8A47104E125")]
@@ -51,13 +121,13 @@ namespace NetExt.Shim
     public interface IMDRuntimeInfo
     {
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetRuntimeVersion([Out] [MarshalAs((UnmanagedType)19)] out string pVersion);
+        int GetRuntimeVersion([Out] [MarshalAs((UnmanagedType)19)] out string pVersion);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetDacLocation([Out] [MarshalAs((UnmanagedType)19)] out string pVersion);
+        int GetDacLocation([Out] [MarshalAs((UnmanagedType)19)] out string pVersion);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetDacRequestData([Out] out int pTimestamp, [Out] out int pFilesize);
+        int GetDacRequestData([Out] out int pTimestamp, [Out] out int pFilesize);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetDacRequestFilename([Out] [MarshalAs((UnmanagedType)19)] out string pRequestFileName);
+        int GetDacRequestFilename([Out] [MarshalAs((UnmanagedType)19)] out string pRequestFileName);
     }
 
     //[Guid("5DB635A4-8BEB-4353-9674-F8A47104E125")]
@@ -68,19 +138,19 @@ namespace NetExt.Shim
     public interface IMDRuntime
     {
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
-        void GetCommonMethodTable([Out] out MD_CommonMT CommonMT);
+        int GetCommonMethodTable([Out] out MD_CommonMT CommonMT);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void IsServerGC([Out] out int pServerGC);
+        int IsServerGC([Out] out int pServerGC);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetHeapCount([Out] out int pHeapCount);
+        int GetHeapCount([Out] out int pHeapCount);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
-        void DumpClass(ulong MethodTable);
+        int DumpClass(ulong MethodTable);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
-        void DumpDomains();
+        int DumpDomains();
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
-        void DumpHandles(int GroupOnly, [MarshalAs((UnmanagedType)19)] string filterByType, [MarshalAs((UnmanagedType)19)] string filterByObjType);
+        int DumpHandles(int GroupOnly, [MarshalAs((UnmanagedType)19)] string filterByType, [MarshalAs((UnmanagedType)19)] string filterByObjType);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
-        void DumpThreads();
+        int DumpThreads();
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
         [PreserveSig]
         int ReadVirtual(ulong addr, [In, Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex=0)] byte[] buffer, int requested, [Out] out int pRead);
@@ -88,29 +158,29 @@ namespace NetExt.Shim
         [PreserveSig]
         int ReadPtr(ulong addr, [Out] out ulong pValue);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void Flush();
+        int Flush();
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
-        void IsFlush([Out] out int isFlushed);
+        int IsFlush([Out] out int isFlushed);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetHeap([Out] [MarshalAs((UnmanagedType)28)] out IMDHeap ppHeap);
+        int GetHeap([Out] [MarshalAs((UnmanagedType)28)] out IMDHeap ppHeap);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void EnumerateAppDomains([Out] [MarshalAs((UnmanagedType)28)] out IMDAppDomainEnum ppEnum);
+        int EnumerateAppDomains([Out] [MarshalAs((UnmanagedType)28)] out IMDAppDomainEnum ppEnum);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void EnumerateThreads([Out] [MarshalAs((UnmanagedType)28)] out IMDThreadEnum ppEnum);
+        int EnumerateThreads([Out] [MarshalAs((UnmanagedType)28)] out IMDThreadEnum ppEnum);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void EnumerateFinalizerQueue([Out] [MarshalAs((UnmanagedType)28)] out IMDObjectEnum ppEnum);
+        int EnumerateFinalizerQueue([Out] [MarshalAs((UnmanagedType)28)] out IMDObjectEnum ppEnum);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void EnumerateGCHandles([Out] [MarshalAs((UnmanagedType)28)] out IMDHandleEnum ppEnum);
+        int EnumerateGCHandles([Out] [MarshalAs((UnmanagedType)28)] out IMDHandleEnum ppEnum);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void EnumerateMemoryRegions([Out] [MarshalAs((UnmanagedType)28)] out IMDMemoryRegionEnum ppEnum);
+        int EnumerateMemoryRegions([Out] [MarshalAs((UnmanagedType)28)] out IMDMemoryRegionEnum ppEnum);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
-        void GetTypeByMT(ulong addr, [Out] [MarshalAs((UnmanagedType)28)] out IMDType ppType);
+        int GetTypeByMT(ulong addr, [Out] [MarshalAs((UnmanagedType)28)] out IMDType ppType);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
-        void GetArraySizeByMT(ulong MethodTable, [Out] out ulong BaseSize, [Out] out ulong ComponentSize);
+        int GetArraySizeByMT(ulong MethodTable, [Out] out ulong BaseSize, [Out] out ulong ComponentSize);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetNameForMT(ulong MethodTable, [Out] [MarshalAs((UnmanagedType)19)] out string pTypeName);
+        int GetNameForMT(ulong MethodTable, [Out] [MarshalAs((UnmanagedType)19)] out string pTypeName);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
-        void GetMethodNameByMD(ulong addr, [Out] [MarshalAs((UnmanagedType)19)] out string pMethodName);
+        int GetMethodNameByMD(ulong addr, [Out] [MarshalAs((UnmanagedType)19)] out string pMethodName);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
         [PreserveSig]
         int GetOSThreadIDByAddress(ulong ThreadAddress, [Out] out uint OSThreadID);
@@ -129,15 +199,20 @@ namespace NetExt.Shim
         [PreserveSig]
         int GetObjectType(ulong addr, [Out] [MarshalAs((UnmanagedType)28)] out IMDType ppType);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetExceptionObject(ulong addr, [Out] [MarshalAs((UnmanagedType)28)] out IMDException ppExcep);
+        int GetExceptionObject(ulong addr, [Out] [MarshalAs((UnmanagedType)28)] out IMDException ppExcep);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void EnumerateRoots([Out] [MarshalAs((UnmanagedType)28)] out IMDRootEnum ppEnum);
+        int EnumerateRoots([Out] [MarshalAs((UnmanagedType)28)] out IMDRootEnum ppEnum);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void EnumerateSegments([Out] [MarshalAs((UnmanagedType)28)] out IMDSegmentEnum ppEnum);
+        int EnumerateSegments([Out] [MarshalAs((UnmanagedType)28)] out IMDSegmentEnum ppEnum);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
-        void DumpAllExceptions([MarshalAs((UnmanagedType)28)] IMDObjectEnum ppEnum);
+        int DumpAllExceptions([MarshalAs((UnmanagedType)28)] IMDObjectEnum ppEnum);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
-        void DumpException(ulong ObjRef);
+        int DumpException(ulong ObjRef);
+        [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
+        int DumpXml(ulong ObjRef);
+        [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
+        int GetXmlString(ulong ObjRef, [Out] [MarshalAs((UnmanagedType)19)] out string XmlString);
+
     }
 
     //[Guid("5DB635A4-8BEB-4353-9674-F8A47104E125")]
@@ -148,9 +223,9 @@ namespace NetExt.Shim
     public interface IMDAppDomainEnum
     {
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetCount([Out] out int pCount);
+        int GetCount([Out] out int pCount);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void Reset();
+        int Reset();
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
         [PreserveSig]
         int Next([Out] [MarshalAs((UnmanagedType)28)] out IMDAppDomain ppAppDomain);
@@ -164,9 +239,9 @@ namespace NetExt.Shim
     public interface IMDThreadEnum
     {
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetCount([Out] out int pCount);
+        int GetCount([Out] out int pCount);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void Reset();
+        int Reset();
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
         [PreserveSig]
         int Next([Out] [MarshalAs((UnmanagedType)28)] out IMDThread ppThread);
@@ -180,16 +255,16 @@ namespace NetExt.Shim
     public interface IMDObjectEnum
     {
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetCount([Out] out int pCount);
+        int GetCount([Out] out int pCount);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void Reset();
+        int Reset();
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
-        void Clear();
+        int Clear();
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
         [PreserveSig]
         int Next(int count, [In, Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex=0)] ulong[] objs, [Out] out int pWrote);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
-        void AddAddress(ulong ObjRef);
+        int AddAddress(ulong ObjRef);
     }
 
     //[Guid("5DB635A4-8BEB-4353-9674-F8A47104E125")]
@@ -200,9 +275,9 @@ namespace NetExt.Shim
     public interface IMDHandleEnum
     {
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetCount([Out] out int pCount);
+        int GetCount([Out] out int pCount);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void Reset();
+        int Reset();
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
         [PreserveSig]
         int Next([Out] [MarshalAs((UnmanagedType)28)] out IMDHandle ppHandle);
@@ -216,9 +291,9 @@ namespace NetExt.Shim
     public interface IMDMemoryRegionEnum
     {
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetCount([Out] out int pCount);
+        int GetCount([Out] out int pCount);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void Reset();
+        int Reset();
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
         [PreserveSig]
         int Next([Out] [MarshalAs((UnmanagedType)28)] out IMDMemoryRegion ppRegion);
@@ -232,82 +307,82 @@ namespace NetExt.Shim
     public interface IMDType
     {
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
-        void GetIMetadata([Out] [MarshalAs((UnmanagedType)25)] out object IMetadata);
+        int GetIMetadata([Out] [MarshalAs((UnmanagedType)25)] out object IMetadata);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetHeader(ulong objRef, [Out] out MD_TypeData typeData);
+        int GetHeader(ulong objRef, [Out] out MD_TypeData typeData);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetName([Out] [MarshalAs((UnmanagedType)19)] out string pName);
+        int GetName([Out] [MarshalAs((UnmanagedType)19)] out string pName);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetRuntimeName(ulong objRef, [Out] [MarshalAs((UnmanagedType)19)] out string pName);
+        int GetRuntimeName(ulong objRef, [Out] [MarshalAs((UnmanagedType)19)] out string pName);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
-        void GetSize(ulong objRef, [Out] out ulong pSize);
+        int GetSize(ulong objRef, [Out] out ulong pSize);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void ContainsPointers([Out] out int pContainsPointers);
+        int ContainsPointers([Out] out int pContainsPointers);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetCorElementType([Out] out int pCET);
+        int GetCorElementType([Out] out int pCET);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
-        void GetString(ulong ObjRef, [Out] [MarshalAs((UnmanagedType)19)] out string strValue);
+        int GetString(ulong ObjRef, [Out] [MarshalAs((UnmanagedType)19)] out string strValue);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
-        void GetFilename([Out] [MarshalAs((UnmanagedType)19)] out string fileName);
+        int GetFilename([Out] [MarshalAs((UnmanagedType)19)] out string fileName);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetBaseType([Out] [MarshalAs((UnmanagedType)28)] out IMDType ppBaseType);
+        int GetBaseType([Out] [MarshalAs((UnmanagedType)28)] out IMDType ppBaseType);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetArrayComponentType([Out] [MarshalAs((UnmanagedType)28)] out IMDType ppArrayComponentType);
+        int GetArrayComponentType([Out] [MarshalAs((UnmanagedType)28)] out IMDType ppArrayComponentType);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetCCW(ulong addr, [Out] [MarshalAs((UnmanagedType)28)] out IMDCCW ppCCW);
+        int GetCCW(ulong addr, [Out] [MarshalAs((UnmanagedType)28)] out IMDCCW ppCCW);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetRCW(ulong addr, [Out] [MarshalAs((UnmanagedType)28)] out IMDRCW ppRCW);
+        int GetRCW(ulong addr, [Out] [MarshalAs((UnmanagedType)28)] out IMDRCW ppRCW);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void IsArray([Out] out int pIsArray);
+        int IsArray([Out] out int pIsArray);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void IsFree([Out] out int pIsFree);
+        int IsFree([Out] out int pIsFree);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void IsException([Out] out int pIsException);
+        int IsException([Out] out int pIsException);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void IsEnum([Out] out int pIsEnum);
+        int IsEnum([Out] out int pIsEnum);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetEnumElementType([Out] out int pValue);
+        int GetEnumElementType([Out] out int pValue);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetEnumNames([Out] [MarshalAs((UnmanagedType)28)] out IMDStringEnum ppEnum);
+        int GetEnumNames([Out] [MarshalAs((UnmanagedType)28)] out IMDStringEnum ppEnum);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetEnumValueInt32([MarshalAs((UnmanagedType)19)] string name, [Out] out int pValue);
+        int GetEnumValueInt32([MarshalAs((UnmanagedType)19)] string name, [Out] out int pValue);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetFieldCount([Out] out int pCount);
+        int GetFieldCount([Out] out int pCount);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetField(int index, [Out] [MarshalAs((UnmanagedType)28)] out IMDField ppField);
+        int GetField(int index, [Out] [MarshalAs((UnmanagedType)28)] out IMDField ppField);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
-        void GetEnumName(ulong value, [Out] [MarshalAs((UnmanagedType)19)] out string enumString);
+        int GetEnumName(ulong value, [Out] [MarshalAs((UnmanagedType)19)] out string enumString);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
         [PreserveSig]
         int GetFieldData(ulong obj, int interior, int count, [In, Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex=2)] MD_FieldData[] fields, [Out] out int pNeeded);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
-        void GetAllFieldsDataRawCount([Out] out int pCount);
+        int GetAllFieldsDataRawCount([Out] out int pCount);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
         [PreserveSig]
         int GetRawFieldAddress(ulong obj, int interior, int index, [Out] out ulong address);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
-        void GetRawFieldTypeAndName(int index, [Out] [MarshalAs((UnmanagedType)19)] out string pType, [Out] [MarshalAs((UnmanagedType)19)] out string pName);
+        int GetRawFieldTypeAndName(int index, [Out] [MarshalAs((UnmanagedType)19)] out string pType, [Out] [MarshalAs((UnmanagedType)19)] out string pName);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
         [PreserveSig]
         int GetAllFieldsDataRaw(int valueType, int count, [In, Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 1)] MD_FieldData[] fields, [Out] out int pNeeded);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetStaticFieldCount([Out] out int pCount);
+        int GetStaticFieldCount([Out] out int pCount);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetStaticField(int index, [Out] [MarshalAs((UnmanagedType)28)] out IMDStaticField ppStaticField);
+        int GetStaticField(int index, [Out] [MarshalAs((UnmanagedType)28)] out IMDStaticField ppStaticField);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetThreadStaticFieldCount([Out] out int pCount);
+        int GetThreadStaticFieldCount([Out] out int pCount);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetThreadStaticField(int index, [Out] [MarshalAs((UnmanagedType)28)] out IMDThreadStaticField ppThreadStaticField);
+        int GetThreadStaticField(int index, [Out] [MarshalAs((UnmanagedType)28)] out IMDThreadStaticField ppThreadStaticField);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetArrayLength(ulong objRef, [Out] out int pLength);
+        int GetArrayLength(ulong objRef, [Out] out int pLength);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetArrayElementAddress(ulong objRef, int index, [Out] out ulong pAddr);
+        int GetArrayElementAddress(ulong objRef, int index, [Out] out ulong pAddr);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetArrayElementValue(ulong objRef, int index, [Out] [MarshalAs((UnmanagedType)28)] out IMDValue ppValue);
+        int GetArrayElementValue(ulong objRef, int index, [Out] [MarshalAs((UnmanagedType)28)] out IMDValue ppValue);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void EnumerateReferences(ulong objRef, [Out] [MarshalAs((UnmanagedType)28)] out IMDReferenceEnum ppEnum);
+        int EnumerateReferences(ulong objRef, [Out] [MarshalAs((UnmanagedType)28)] out IMDReferenceEnum ppEnum);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void EnumerateInterfaces([Out] [MarshalAs((UnmanagedType)28)] out IMDInterfaceEnum ppEnum);
+        int EnumerateInterfaces([Out] [MarshalAs((UnmanagedType)28)] out IMDInterfaceEnum ppEnum);
     }
 
     //[Guid("5DB635A4-8BEB-4353-9674-F8A47104E125")]
@@ -318,17 +393,17 @@ namespace NetExt.Shim
     public interface IMDException
     {
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetGCHeapType([Out] [MarshalAs((UnmanagedType)28)] out IMDType ppType);
+        int GetGCHeapType([Out] [MarshalAs((UnmanagedType)28)] out IMDType ppType);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetErrorMessage([Out] [MarshalAs((UnmanagedType)19)] out string pMessage);
+        int GetErrorMessage([Out] [MarshalAs((UnmanagedType)19)] out string pMessage);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetObjectAddress([Out] out ulong pAddress);
+        int GetObjectAddress([Out] out ulong pAddress);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetInnerException([Out] [MarshalAs((UnmanagedType)28)] out IMDException ppException);
+        int GetInnerException([Out] [MarshalAs((UnmanagedType)28)] out IMDException ppException);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetHRESULT([Out] [MarshalAs((UnmanagedType)45)] out int pHResult);
+        int GetHRESULT([Out] [MarshalAs((UnmanagedType)45)] out int pHResult);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void EnumerateStackFrames([Out] [MarshalAs((UnmanagedType)28)] out IMDStackTraceEnum ppEnum);
+        int EnumerateStackFrames([Out] [MarshalAs((UnmanagedType)28)] out IMDStackTraceEnum ppEnum);
     }
 
     //[Guid("5DB635A4-8BEB-4353-9674-F8A47104E125")]
@@ -339,9 +414,9 @@ namespace NetExt.Shim
     public interface IMDRootEnum
     {
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetCount([Out] out int pCount);
+        int GetCount([Out] out int pCount);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void Reset();
+        int Reset();
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
         [PreserveSig]
         int Next([Out] [MarshalAs((UnmanagedType)28)] out IMDRoot ppRoot);
@@ -355,9 +430,9 @@ namespace NetExt.Shim
     public interface IMDSegmentEnum
     {
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetCount([Out] out int pCount);
+        int GetCount([Out] out int pCount);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void Reset();
+        int Reset();
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
         [PreserveSig]
         int Next([Out] [MarshalAs((UnmanagedType)28)] out IMDSegment ppSegment);
@@ -371,15 +446,15 @@ namespace NetExt.Shim
     public interface IMDCCW
     {
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetIUnknown([Out] out ulong pIUnk);
+        int GetIUnknown([Out] out ulong pIUnk);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetObject([Out] out ulong pObject);
+        int GetObject([Out] out ulong pObject);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetHandle([Out] out ulong pHandle);
+        int GetHandle([Out] out ulong pHandle);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetRefCount([Out] out int pRefCnt);
+        int GetRefCount([Out] out int pRefCnt);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void EnumerateInterfaces([Out] [MarshalAs((UnmanagedType)28)] out IMDCOMInterfaceEnum ppEnum);
+        int EnumerateInterfaces([Out] [MarshalAs((UnmanagedType)28)] out IMDCOMInterfaceEnum ppEnum);
     }
 
     //[Guid("5DB635A4-8BEB-4353-9674-F8A47104E125")]
@@ -390,17 +465,17 @@ namespace NetExt.Shim
     public interface IMDRCW
     {
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetIUnknown([Out] out ulong pIUnk);
+        int GetIUnknown([Out] out ulong pIUnk);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetObject([Out] out ulong pObject);
+        int GetObject([Out] out ulong pObject);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetRefCount([Out] out int pRefCnt);
+        int GetRefCount([Out] out int pRefCnt);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetVTable([Out] out ulong pHandle);
+        int GetVTable([Out] out ulong pHandle);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void IsDisconnected([Out] out int pDisconnected);
+        int IsDisconnected([Out] out int pDisconnected);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void EnumerateInterfaces([Out] [MarshalAs((UnmanagedType)28)] out IMDCOMInterfaceEnum ppEnum);
+        int EnumerateInterfaces([Out] [MarshalAs((UnmanagedType)28)] out IMDCOMInterfaceEnum ppEnum);
     }
 
     //[Guid("5DB635A4-8BEB-4353-9674-F8A47104E125")]
@@ -411,9 +486,9 @@ namespace NetExt.Shim
     public interface IMDStringEnum
     {
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetCount([Out] out int pCount);
+        int GetCount([Out] out int pCount);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void Reset();
+        int Reset();
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
         [PreserveSig]
         int Next([Out] [MarshalAs((UnmanagedType)19)] out string pValue);
@@ -427,19 +502,19 @@ namespace NetExt.Shim
     public interface IMDField
     {
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetName([Out] [MarshalAs((UnmanagedType)19)] out string pName);
+        int GetName([Out] [MarshalAs((UnmanagedType)19)] out string pName);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetType([Out] [MarshalAs((UnmanagedType)28)] out IMDType ppType);
+        int GetType([Out] [MarshalAs((UnmanagedType)28)] out IMDType ppType);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetElementType([Out] out int pCET);
+        int GetElementType([Out] out int pCET);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetSize([Out] out int pSize);
+        int GetSize([Out] out int pSize);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetOffset([Out] out int pOffset);
+        int GetOffset([Out] out int pOffset);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetFieldValue(ulong objRef, int interior, [Out] [MarshalAs((UnmanagedType)28)] out IMDValue ppValue);
+        int GetFieldValue(ulong objRef, int interior, [Out] [MarshalAs((UnmanagedType)28)] out IMDValue ppValue);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetFieldAddress(ulong objRef, int interior, [Out] out ulong pAddress);
+        int GetFieldAddress(ulong objRef, int interior, [Out] out ulong pAddress);
     }
 
     [ComVisible(true)]
@@ -758,17 +833,17 @@ namespace NetExt.Shim
     public interface IMDStaticField
     {
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetName([Out] [MarshalAs((UnmanagedType)19)] out string pName);
+        int GetName([Out] [MarshalAs((UnmanagedType)19)] out string pName);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetType([Out] [MarshalAs((UnmanagedType)28)] out IMDType ppType);
+        int GetType([Out] [MarshalAs((UnmanagedType)28)] out IMDType ppType);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetElementType([Out] out int pCET);
+        int GetElementType([Out] out int pCET);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetSize([Out] out int pSize);
+        int GetSize([Out] out int pSize);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetFieldValue([MarshalAs((UnmanagedType)28)] IMDAppDomain appDomain, [Out] [MarshalAs((UnmanagedType)28)] out IMDValue ppValue);
+        int GetFieldValue([MarshalAs((UnmanagedType)28)] IMDAppDomain appDomain, [Out] [MarshalAs((UnmanagedType)28)] out IMDValue ppValue);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetFieldAddress([MarshalAs((UnmanagedType)28)] IMDAppDomain appDomain, [Out] out ulong pAddress);
+        int GetFieldAddress([MarshalAs((UnmanagedType)28)] IMDAppDomain appDomain, [Out] out ulong pAddress);
     }
 
     //[Guid("5DB635A4-8BEB-4353-9674-F8A47104E125")]
@@ -779,17 +854,17 @@ namespace NetExt.Shim
     public interface IMDThreadStaticField
     {
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetName([Out] [MarshalAs((UnmanagedType)19)] out string pName);
+        int GetName([Out] [MarshalAs((UnmanagedType)19)] out string pName);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetType([Out] [MarshalAs((UnmanagedType)28)] out IMDType ppType);
+        int GetType([Out] [MarshalAs((UnmanagedType)28)] out IMDType ppType);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetElementType([Out] out int pCET);
+        int GetElementType([Out] out int pCET);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetSize([Out] out int pSize);
+        int GetSize([Out] out int pSize);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetFieldValue([MarshalAs((UnmanagedType)28)] IMDAppDomain appDomain, [MarshalAs((UnmanagedType)28)] IMDThread thread, [Out] [MarshalAs((UnmanagedType)28)] out IMDValue ppValue);
+        int GetFieldValue([MarshalAs((UnmanagedType)28)] IMDAppDomain appDomain, [MarshalAs((UnmanagedType)28)] IMDThread thread, [Out] [MarshalAs((UnmanagedType)28)] out IMDValue ppValue);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetFieldAddress([MarshalAs((UnmanagedType)28)] IMDAppDomain appDomain, [MarshalAs((UnmanagedType)28)] IMDThread thread, [Out] out ulong pAddress);
+        int GetFieldAddress([MarshalAs((UnmanagedType)28)] IMDAppDomain appDomain, [MarshalAs((UnmanagedType)28)] IMDThread thread, [Out] out ulong pAddress);
     }
 
     //[Guid("5DB635A4-8BEB-4353-9674-F8A47104E125")]
@@ -800,21 +875,21 @@ namespace NetExt.Shim
     public interface IMDValue
     {
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void IsNull(out int pNull);
+        int IsNull(out int pNull);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetElementType(out int pCET);
+        int GetElementType(out int pCET);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetInt32(out int pValue);
+        int GetInt32(out int pValue);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetUInt32(out UInt32 pValue);
+        int GetUInt32(out UInt32 pValue);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetInt64(out Int64 pValue);
+        int GetInt64(out Int64 pValue);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetUInt64(out ulong pValue);
+        int GetUInt64(out ulong pValue);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetString([MarshalAs((UnmanagedType)19)] out string pValue);
+        int GetString([MarshalAs((UnmanagedType)19)] out string pValue);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetBool(out int pBool);
+        int GetBool(out int pBool);
     }
 
     //[Guid("5DB635A4-8BEB-4353-9674-F8A47104E125")]
@@ -825,9 +900,9 @@ namespace NetExt.Shim
     public interface IMDReferenceEnum
     {
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetCount([Out] out int pCount);
+        int GetCount([Out] out int pCount);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void Reset();
+        int Reset();
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
         [PreserveSig]
         int Next(int count, [In, Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex=0)] MD_Reference[] refs, [Out] out int pWrote);
@@ -841,9 +916,9 @@ namespace NetExt.Shim
     public interface IMDInterfaceEnum
     {
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetCount([Out] out int pCount);
+        int GetCount([Out] out int pCount);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void Reset();
+        int Reset();
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
         [PreserveSig]
         int Next([Out] [MarshalAs((UnmanagedType)28)] out IMDInterface ppValue);
@@ -857,9 +932,9 @@ namespace NetExt.Shim
     public interface IMDCOMInterfaceEnum
     {
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetCount([Out] out int pCount);
+        int GetCount([Out] out int pCount);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void Reset();
+        int Reset();
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
         [PreserveSig]
         int Next([MarshalAs((UnmanagedType)28)] IMDType pType, out ulong pInterfacePtr);
@@ -873,11 +948,11 @@ namespace NetExt.Shim
     public interface IMDAppDomain
     {
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetName([Out] [MarshalAs((UnmanagedType)19)] out string pName);
+        int GetName([Out] [MarshalAs((UnmanagedType)19)] out string pName);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetID([Out] out int pID);
+        int GetID([Out] out int pID);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetAddress([Out] out ulong pAddress);
+        int GetAddress([Out] out ulong pAddress);
     }
 
     //[Guid("5DB635A4-8BEB-4353-9674-F8A47104E125")]
@@ -888,27 +963,27 @@ namespace NetExt.Shim
     public interface IMDThread
     {
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
-        void GetThreadData([Out] out MD_ThreadData threadData);
+        int GetThreadData([Out] out MD_ThreadData threadData);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetAddress([Out] out ulong pAddress);
+        int GetAddress([Out] out ulong pAddress);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void IsFinalizer([Out] out int IsFinalizer);
+        int IsFinalizer([Out] out int IsFinalizer);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void IsAlive([Out] out int IsAlive);
+        int IsAlive([Out] out int IsAlive);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetOSThreadId([Out] out int pOSThreadId);
+        int GetOSThreadId([Out] out int pOSThreadId);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetAppDomainAddress([Out] out ulong pAppDomain);
+        int GetAppDomainAddress([Out] out ulong pAppDomain);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetLockCount([Out] out int pLockCount);
+        int GetLockCount([Out] out int pLockCount);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetCurrentException([Out] [MarshalAs((UnmanagedType)28)] out IMDException ppException);
+        int GetCurrentException([Out] [MarshalAs((UnmanagedType)28)] out IMDException ppException);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetTebAddress([Out] out ulong pTeb);
+        int GetTebAddress([Out] out ulong pTeb);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetStackLimits([Out] out ulong pBase, [Out] out ulong pLimit);
+        int GetStackLimits([Out] out ulong pBase, [Out] out ulong pLimit);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void EnumerateStackTrace([Out] [MarshalAs((UnmanagedType)28)] out IMDStackTraceEnum ppEnum);
+        int EnumerateStackTrace([Out] [MarshalAs((UnmanagedType)28)] out IMDStackTraceEnum ppEnum);
     }
 
     //[Guid("5DB635A4-8BEB-4353-9674-F8A47104E125")]
@@ -919,9 +994,9 @@ namespace NetExt.Shim
     public interface IMDStackTraceEnum
     {
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetCount([Out] out int pCount);
+        int GetCount([Out] out int pCount);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void Reset();
+        int Reset();
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
         [PreserveSig]
         int Next([Out] out ulong pIP, [Out] out ulong pSP, [Out] [MarshalAs((UnmanagedType)19)] out string pFunction);
@@ -943,9 +1018,9 @@ namespace NetExt.Shim
     public interface IMDInterface
     {
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetName([Out] [MarshalAs((UnmanagedType)19)] out string pName);
+        int GetName([Out] [MarshalAs((UnmanagedType)19)] out string pName);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetBaseInterface([Out] [MarshalAs((UnmanagedType)28)] out IMDInterface ppBase);
+        int GetBaseInterface([Out] [MarshalAs((UnmanagedType)28)] out IMDInterface ppBase);
     }
 
     //[Guid("5DB635A4-8BEB-4353-9674-F8A47104E125")]
@@ -956,13 +1031,13 @@ namespace NetExt.Shim
     public interface IMDRoot
     {
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetRootInfo([Out] out ulong pAddress, [Out] out ulong pObjRef, [Out] out MDRootType pType);
+        int GetRootInfo([Out] out ulong pAddress, [Out] out ulong pObjRef, [Out] out MDRootType pType);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetType([Out] [MarshalAs((UnmanagedType)28)] out IMDType ppType);
+        int GetType([Out] [MarshalAs((UnmanagedType)28)] out IMDType ppType);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetName([Out] [MarshalAs((UnmanagedType)19)] out string ppName);
+        int GetName([Out] [MarshalAs((UnmanagedType)19)] out string ppName);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetAppDomain([Out] [MarshalAs((UnmanagedType)28)] out IMDAppDomain ppDomain);
+        int GetAppDomain([Out] [MarshalAs((UnmanagedType)28)] out IMDAppDomain ppDomain);
     }
 
     [ComVisible(true)]
@@ -986,31 +1061,31 @@ namespace NetExt.Shim
     public interface IMDSegment
     {
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
-        void GetSegData([Out] out MD_SegData SegData);
+        int GetSegData([Out] out MD_SegData SegData);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetStart([Out] out ulong pAddress);
+        int GetStart([Out] out ulong pAddress);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetEnd([Out] out ulong pAddress);
+        int GetEnd([Out] out ulong pAddress);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetReserveLimit([Out] out ulong pAddress);
+        int GetReserveLimit([Out] out ulong pAddress);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetCommitLimit([Out] out ulong pAddress);
+        int GetCommitLimit([Out] out ulong pAddress);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetLength([Out] out ulong pLength);
+        int GetLength([Out] out ulong pLength);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetProcessorAffinity([Out] out int pProcessor);
+        int GetProcessorAffinity([Out] out int pProcessor);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void IsLarge([Out] out int pLarge);
+        int IsLarge([Out] out int pLarge);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void IsEphemeral([Out] out int pEphemeral);
+        int IsEphemeral([Out] out int pEphemeral);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetGen0Info([Out] out ulong pStart, [Out] out ulong pLen);
+        int GetGen0Info([Out] out ulong pStart, [Out] out ulong pLen);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetGen1Info([Out] out ulong pStart, [Out] out ulong pLen);
+        int GetGen1Info([Out] out ulong pStart, [Out] out ulong pLen);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetGen2Info([Out] out ulong pStart, [Out] out ulong pLen);
+        int GetGen2Info([Out] out ulong pStart, [Out] out ulong pLen);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void EnumerateObjects([Out] [MarshalAs((UnmanagedType)28)] out IMDObjectEnum ppEnum);
+        int EnumerateObjects([Out] [MarshalAs((UnmanagedType)28)] out IMDObjectEnum ppEnum);
     }
 
     //[Guid("5DB635A4-8BEB-4353-9674-F8A47104E125")]
@@ -1021,15 +1096,15 @@ namespace NetExt.Shim
     public interface IMDHandle
     {
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetHandleData([Out] out ulong pAddr, [Out] out ulong pObjRef, [Out] out MDHandleTypes pType);
+        int GetHandleData([Out] out ulong pAddr, [Out] out ulong pObjRef, [Out] out MDHandleTypes pType);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void IsStrong([Out] out int pStrong);
+        int IsStrong([Out] out int pStrong);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetRefCount([Out] out int pRefCount);
+        int GetRefCount([Out] out int pRefCount);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetDependentTarget([Out] out ulong pTarget);
+        int GetDependentTarget([Out] out ulong pTarget);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetAppDomain([Out] [MarshalAs((UnmanagedType)28)] out IMDAppDomain ppDomain);
+        int GetAppDomain([Out] [MarshalAs((UnmanagedType)28)] out IMDAppDomain ppDomain);
     }
 
     [ComVisible(true)]
@@ -1054,17 +1129,17 @@ namespace NetExt.Shim
     public interface IMDMemoryRegion
     {
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetRegionInfo([Out] out ulong pAddress, [Out] out ulong pSize, [Out] out MDMemoryRegionType pType);
+        int GetRegionInfo([Out] out ulong pAddress, [Out] out ulong pSize, [Out] out MDMemoryRegionType pType);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetAppDomain([Out] [MarshalAs((UnmanagedType)28)] out IMDAppDomain ppDomain);
+        int GetAppDomain([Out] [MarshalAs((UnmanagedType)28)] out IMDAppDomain ppDomain);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetModule([Out] [MarshalAs((UnmanagedType)19)] out string pModule);
+        int GetModule([Out] [MarshalAs((UnmanagedType)19)] out string pModule);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetHeapNumber([Out] out int pHeap);
+        int GetHeapNumber([Out] out int pHeap);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetDisplayString([Out] [MarshalAs((UnmanagedType)19)] out string pName);
+        int GetDisplayString([Out] [MarshalAs((UnmanagedType)19)] out string pName);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void GetSegmentType([Out] out MDSegmentType pType);
+        int GetSegmentType([Out] out MDSegmentType pType);
     }
 
 
@@ -1104,9 +1179,9 @@ namespace NetExt.Shim
     public interface IMDActivator
     {
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void CreateFromCrashDump([MarshalAs((UnmanagedType)19)] string crashdump, [Out] [MarshalAs((UnmanagedType)28)] out IMDTarget ppTarget);
+        int CreateFromCrashDump([MarshalAs((UnmanagedType)19)] string crashdump, [Out] [MarshalAs((UnmanagedType)28)] out IMDTarget ppTarget);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
-        void CreateFromIDebugClient([MarshalAs((UnmanagedType)25)] Object iDebugClient, [Out] [MarshalAs((UnmanagedType)28)] out IMDTarget ppTarget);
+        int CreateFromIDebugClient([MarshalAs((UnmanagedType)25)] Object iDebugClient, [Out] [MarshalAs((UnmanagedType)28)] out IMDTarget ppTarget);
     }
 
 }

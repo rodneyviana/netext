@@ -243,7 +243,7 @@ public:
 	}
 	SVAL& operator=(const UINT64 rs)
 	{
-		Value.i64 = rs;
+		Value.u64 = rs;
 		corBaseType = corType = ELEMENT_TYPE_U8;
 		DoublePrint(rs);
 		Size = sizeof(rs);
@@ -592,6 +592,7 @@ public:
 	static INT64 TicksFromTarget();
 	static INT64 DateToTicks(INT64 year, INT64 month, INT64 day);
 	static INT64 TimeToTicks(INT64 hour, INT64 minute, INT64 second);
+	static SVAL GetBoxedValue(CLRDATA_ADDRESS Address);
 	static std::string PrettyPrint(CLRDATA_ADDRESS Address, CLRDATA_ADDRESS MethodTable=0);
 	static void StringXml( TiXmlNode * Parent, std::string& Result, unsigned int indent = 0 );
 	static std::string IndentedXml(std::wstring XmlDoc);
