@@ -1,5 +1,5 @@
-// Source Date: Friday, July 7, 2017 3:20:07 PM
-// Source File: C:\Users\rviana\OneDrive\Projects\netext\NetExt\helptxt.txt
+// Source Date: Monday, July 10, 2017 4:18:20 PM
+// Source File: D:\Onedrive\Projects\netext\NetExt\helptxt.txt
 // This file was generated. Do not modify. Modify Source File instead
 #include "netext.h"
 
@@ -2038,9 +2038,10 @@ EXT_COMMAND(whelp,
 		Dml("\n");
 		Dml("<b>Xml</b>\n");
 		Dml("----------\n");
-		Dml("*new* <b>$xml(&lt;expr&gt;)</b> - Return the XML-indented version of the Xml string (pretty print)\n");
-		Dml("*new* <b>$xmltree(&lt;expr&gt;)</b> - Return the XML tree version of the Xml string\n");
-		Dml("*new* <b>$html(&lt;expr&gt;)</b> - Html encode a string\n");
+		Dml("<b>$xml(&lt;expr&gt;)</b> - Return the XML-indented version of the Xml string (pretty print)\n");
+		Dml("<b>$xmltree(&lt;expr&gt;)</b> - Return the XML tree version of the Xml string\n");
+		Dml("<b>$html(&lt;expr&gt;)</b> - Html encode a string\n");
+		Dml("<b>$xmldoc(&lt;expr&gt;)</b> - Convert a System.Xml.XmlDocument object to string\n");
 		Dml("\n");
 		Dml("<i>Example</i>\n");
 		Dml("------------\n");

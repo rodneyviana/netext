@@ -66,7 +66,9 @@ namespace NetExt.Shim
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
         [PreserveSig]
         int SaveAllModules([MarshalAs((UnmanagedType)19)] string Path);
-
+        [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
+        [PreserveSig]
+        int SaveModule([MarshalAs((UnmanagedType)19)] string Path, [MarshalAs((UnmanagedType)19)] string ModuleName);
     }
 
     [ComVisible(true)]

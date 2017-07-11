@@ -2108,7 +2108,7 @@ namespace NetExt.Shim
             DumpXmlDoc(ObjRef, true);
             return HRESULTS.S_OK;
         }
-        public int GetXmlString(ulong ObjRef, [Out] [MarshalAs((UnmanagedType)19)] out string XmlString)
+        public int GetXmlString(ulong ObjRef, out string XmlString)
         {
             InitializeCache();
             StringBuilder sb = null;
@@ -2170,6 +2170,13 @@ namespace NetExt.Shim
                 sb.Append("<!-- ");
                 sb.Append((string)(nodeObj.data));
                 sb.Append(" -->");
+                return sb;
+            }
+            if (node.Name == "System.Xml.XmlCDataSection")
+            {
+                sb.Append("<![CData[");
+                sb.Append((string)(nodeObj.data));
+                sb.Append("]]>");
                 return sb;
             }
             if (node.Name == "System.Xml.XmlText")
@@ -2340,6 +2347,7 @@ namespace NetExt.Shim
             if (PrintOnly)
             {
                 Exports.WriteLine("{0}", sb.ToString());
+                return null;
                
             }
             return sb;
@@ -3071,7 +3079,8 @@ namespace NetExt.Shim
             return HRESULTS.S_OK;
         }
 
-        internal const string DownloadUrl = "http://netext.codeplex.com/";
+        internal const string DownloadUrl = "https://github.com/rodneyviana/netext/tree/master/binaries/";
+        internal const string versionUrl = "https://github.com/rodneyviana/netext/";
 
         internal static Version GetOnlineVersion()
         {
@@ -3080,7 +3089,7 @@ namespace NetExt.Shim
             try
             {
                 WebClient client = new WebClient();
-                string text = client.DownloadString(DownloadUrl);
+                string text = client.DownloadString(versionUrl);
                 Regex reg = new Regex(@"VERSION:\s+(\d+)\.(\d+)\.(\d+)\.(\d+)");
                 Match match = reg.Match(text);
 
@@ -3226,10 +3235,53 @@ namespace NetExt.Shim
                 Exports.WriteLine("Path {0} is invalid or not created", Path);
                 return HRESULTS.E_FAIL;
             }
+            int total = 0;
+            int errors = 0;
             foreach (var mod in Module.Modules)
             {
-                new MDModule(mod).SaveModule(Path);
+                try
+                {
+                    total++;
+                    var md = new MDModule(mod);
+                    if (md.SaveModule(Path) != HRESULTS.S_OK)
+                    {
+                        errors++;
+                        Exports.WriteLine("Unable to save module {0}", mod.Name);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    errors++;
+                    Exports.WriteLine("Unable to save module {0}", mod.Name);
+                    Exports.WriteLine("{0}", ex.ToString());
+                }
             }
+            Exports.WriteLine("{0} modules saved, {1} errors", total - errors, errors);
+            return HRESULTS.S_OK;
+        }
+
+        public int SaveModule(string Path, string ModuleName)
+        {
+            if (!System.IO.Directory.Exists(Path))
+            {
+                Exports.WriteLine("Path {0} is invalid or not created", Path);
+                return HRESULTS.E_FAIL;
+            }
+
+            Module mod = new Module(ModuleName);
+            if (!mod.IsValid)
+            {
+                Exports.WriteLine("Unable to find module {0}", ModuleName);
+                return HRESULTS.E_FAIL;
+            }
+            string fullPath = System.IO.Path.Combine(Path, ModuleName);
+
+            var md = new MDModule(mod);
+            if (md.SaveModule(Path) != HRESULTS.S_OK)
+            {
+                Exports.WriteLine("Unable to save module {0}", mod.Name);
+            }
+
             return HRESULTS.S_OK;
         }
     }

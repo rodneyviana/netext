@@ -1936,9 +1936,10 @@ calculated: SPSvc
 
 <b>Xml</b>
 ----------
-*new* <b>$xml(&lt;expr&gt;)</b> - Return the XML-indented version of the Xml string (pretty print)
-*new* <b>$xmltree(&lt;expr&gt;)</b> - Return the XML tree version of the Xml string
-*new* <b>$html(&lt;expr&gt;)</b> - Html encode a string
+<b>$xml(&lt;expr&gt;)</b> - Return the XML-indented version of the Xml string (pretty print)
+<b>$xmltree(&lt;expr&gt;)</b> - Return the XML tree version of the Xml string
+<b>$html(&lt;expr&gt;)</b> - Html encode a string
+<b>$xmldoc(&lt;expr&gt;)</b> - Convert a System.Xml.XmlDocument object to string
 
 <i>Example</i>
 ------------

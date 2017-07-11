@@ -154,7 +154,8 @@ namespace CALC
 		frtrim,
 		fupper,
 		flower,
-		fxmltree
+		fxmltree,
+		fxmldoc
 	};
 
 	struct funcDef
@@ -925,7 +926,8 @@ namespace CALC
 			return;
 		}
 
-		wstring mtName = v.typeName;
+		ObjDetail obj(v.Value.ptr);
+		wstring mtName = obj.TypeName();
 		if(mtName != L"System.Char[]" && mtName != L"System.Byte[]" && mtName != L"System.Int16[]"  && mtName != L"System.UInt16[]")
 		{
 			st.push(e);
@@ -1106,6 +1108,19 @@ namespace CALC
 		do_stdstring(s.strValue);
 	}
 
+	void do_xmldoc()
+	{
+		SVAL v=st.top(); st.pop();
+		CComBSTR str;
+		if(pHeap->GetXmlString(v.Value.ptr, &str) != S_OK)
+		{
+			v.MakeInvalid();
+			st.push(v);
+		}
+		wstring str1 = str;
+		do_stdstring(str1);
+
+	}
 
 	void do_func(char const*, char const*)
 	{
@@ -1336,17 +1351,6 @@ namespace CALC
 				assert_param(1);
 				do_containfieldoftype();
 				break;
-
-		/*
-		*ffieldfrommt*,
-		*farrayend*,
-		fimplement,
-		fchain,
-		fcontainpointer,
-		fcontainfieldoftype
-
-*/
-
 			case ftickstotimespan:
 				assert_param(1);
 				do_tickstotimespan();
@@ -1467,6 +1471,10 @@ namespace CALC
 				assert_param(1);
 				do_xmltree();
 				break;
+			case fxmldoc:
+				assert_param(1);
+				do_xmldoc();
+				break;
 
 
 			default:
@@ -1581,6 +1589,7 @@ struct calculator : public grammar<calculator>
 				("$upper", fupper)
 				("$lower", flower)
 				("$xmltree", fxmltree)
+				("$xmldoc", fxmldoc)
 				;
 
 				escapes.add("\\a", '\a')("\\b", '\b')("\\f", '\f')("\\n", '\n')

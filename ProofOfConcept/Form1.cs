@@ -804,7 +804,7 @@ namespace ProofOfConcept
 
         private void button9_Click(object sender, EventArgs e)
         {
-            string uri = "http://netext.codeplex.com/";
+            string uri = "https://github.com/rodneyviana/netext/";
             WebClient client = new WebClient();
             string text = client.DownloadString(uri);
             //string adj = text.Replace("<br>", Environment.NewLine).Replace("{", "(").Replace("}", ")").Replace("UPDATE", "LATEST VERSION: 2.0.0.3");
@@ -829,10 +829,10 @@ namespace ProofOfConcept
             }
 
             if (codeplex > now)
-                WriteLine("There is a new version ({0}) at http://netext.codeplex.com",
+                WriteLine("There is a new version ({0}) at https://github.com/rodneyviana/netext/tree/master/binaries/",
                     codeplex.ToString());
 
-            Process.Start("http://netext.codeplex.com");
+            Process.Start("https://github.com/rodneyviana/netext/tree/master/binaries/");
 
         }
 
@@ -1180,6 +1180,13 @@ namespace ProofOfConcept
                 sb.Append("<!-- ");
                 sb.Append((string)(nodeObj.data));
                 sb.Append(" -->");
+                return sb;
+            }
+            if (node.Name == "System.Xml.XmlCDataSection")
+            {
+                sb.Append("<![CData[");
+                sb.Append((string)(nodeObj.data));
+                sb.Append("]]>");
                 return sb;
             }
             if (node.Name == "System.Xml.XmlText")
