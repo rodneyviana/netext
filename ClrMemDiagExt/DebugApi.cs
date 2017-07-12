@@ -1204,6 +1204,18 @@ kernel32!KUSER_SHARED_DATA
             return true;
 
         }
+
+        public static void InitApi()
+        {
+            INIT_API();
+        }
+
+        public static void InitClr(ClrRuntime Runtime)
+        {
+            InitApi();
+            runtime = Runtime;
+        }
+
         internal static void INIT_CLRAPI()
         {
             INIT_API();

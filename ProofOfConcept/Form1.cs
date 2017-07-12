@@ -1366,5 +1366,57 @@ namespace ProofOfConcept
             ulong xmlDocAddr = Convert.ToUInt64(textBox9.Text, 16);
             DumpXmlDoc(xmlDocAddr);
         }
+
+        public List<NetExt.Shim.Module> GetModules(string Pattern, string Company, bool DebugMode,
+            bool ManagedOnly, bool ExcludeMicrosoft)
+        {
+            DebugApi.InitClr(m_runtime);
+            List<NetExt.Shim.Module> modules = new List<NetExt.Shim.Module>();
+
+            foreach (var mod in NetExt.Shim.Module.Modules)
+            {
+                if (DebugMode && (int)mod.ClrDebugType < 4)
+                {
+                    continue;
+                }
+                if (ManagedOnly && !mod.IsClr)
+                {
+                    continue;
+                }
+                if(!String.IsNullOrEmpty(Pattern) && !HeapCache.WildcardCompare(mod.Name, Pattern))
+                {
+                    continue;
+                }
+                if (!String.IsNullOrEmpty(Company) && !HeapCache.WildcardCompare(mod.LegalCopyright, Pattern))
+                {
+                    continue;
+                }
+                if(ExcludeMicrosoft && (mod.CompanyName == "Microsoft Corporation"))
+                {
+                    continue;
+                }
+                modules.Add(mod);
+            }
+
+
+            return modules;
+        }
+
+
+        private void button15_Click(object sender, EventArgs e)
+        {
+            StartRuntime();
+            CreateCache();
+            var modules = GetModules(textBox10.Text, textBox11.Text, checkDebug.Checked,
+                checkManaged.Checked, checkNoMS.Checked);
+
+            foreach (var mod in modules)
+            {
+                Write("{0:%p} ", mod.BaseAddress);
+                string fileName = checkPath.Checked ? mod.FullPath : mod.Name;
+                WriteLine(" {0,25} {1,-25} {2,-3} {3,-3} {4}", mod.VersionInfo, mod.CompanyName, (int)mod.ClrDebugType >= 4 ? "Yes" : "No", mod.IsClr ? "CLR" : "NAT", fileName);
+            }
+            
+        }
     }
 }
