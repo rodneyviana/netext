@@ -69,6 +69,12 @@
             this.textBox11 = new System.Windows.Forms.TextBox();
             this.checkManaged = new System.Windows.Forms.CheckBox();
             this.checkDebug = new System.Windows.Forms.CheckBox();
+            this.label7 = new System.Windows.Forms.Label();
+            this.textBox12 = new System.Windows.Forms.TextBox();
+            this.label8 = new System.Windows.Forms.Label();
+            this.textBox13 = new System.Windows.Forms.TextBox();
+            this.checkByNane = new System.Windows.Forms.CheckBox();
+            this.button16 = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // label1
@@ -467,11 +473,70 @@
             this.checkDebug.Text = "Debug Mode";
             this.checkDebug.UseVisualStyleBackColor = true;
             // 
+            // label7
+            // 
+            this.label7.AutoSize = true;
+            this.label7.Location = new System.Drawing.Point(1243, 250);
+            this.label7.Name = "label7";
+            this.label7.Size = new System.Drawing.Size(109, 20);
+            this.label7.TabIndex = 42;
+            this.label7.Text = "Save Module: ";
+            // 
+            // textBox12
+            // 
+            this.textBox12.Location = new System.Drawing.Point(1370, 247);
+            this.textBox12.Name = "textBox12";
+            this.textBox12.Size = new System.Drawing.Size(192, 26);
+            this.textBox12.TabIndex = 43;
+            // 
+            // label8
+            // 
+            this.label8.AutoSize = true;
+            this.label8.Location = new System.Drawing.Point(1593, 253);
+            this.label8.Name = "label8";
+            this.label8.Size = new System.Drawing.Size(42, 20);
+            this.label8.TabIndex = 44;
+            this.label8.Text = "Path";
+            // 
+            // textBox13
+            // 
+            this.textBox13.Location = new System.Drawing.Point(1642, 247);
+            this.textBox13.Name = "textBox13";
+            this.textBox13.Size = new System.Drawing.Size(193, 26);
+            this.textBox13.TabIndex = 45;
+            this.textBox13.Text = "c:\\temp\\libs";
+            // 
+            // checkByNane
+            // 
+            this.checkByNane.AutoSize = true;
+            this.checkByNane.Location = new System.Drawing.Point(1864, 247);
+            this.checkByNane.Name = "checkByNane";
+            this.checkByNane.Size = new System.Drawing.Size(95, 24);
+            this.checkByNane.TabIndex = 46;
+            this.checkByNane.Text = "ByName";
+            this.checkByNane.UseVisualStyleBackColor = true;
+            // 
+            // button16
+            // 
+            this.button16.Location = new System.Drawing.Point(1965, 239);
+            this.button16.Name = "button16";
+            this.button16.Size = new System.Drawing.Size(116, 39);
+            this.button16.TabIndex = 47;
+            this.button16.Text = "Save Module";
+            this.button16.UseVisualStyleBackColor = true;
+            this.button16.Click += new System.EventHandler(this.button16_Click);
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 20F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(2153, 1042);
+            this.Controls.Add(this.button16);
+            this.Controls.Add(this.checkByNane);
+            this.Controls.Add(this.textBox13);
+            this.Controls.Add(this.label8);
+            this.Controls.Add(this.textBox12);
+            this.Controls.Add(this.label7);
             this.Controls.Add(this.checkDebug);
             this.Controls.Add(this.checkManaged);
             this.Controls.Add(this.label6);
@@ -563,6 +628,12 @@
         private System.Windows.Forms.TextBox textBox11;
         private System.Windows.Forms.CheckBox checkManaged;
         private System.Windows.Forms.CheckBox checkDebug;
+        private System.Windows.Forms.Label label7;
+        private System.Windows.Forms.TextBox textBox12;
+        private System.Windows.Forms.Label label8;
+        private System.Windows.Forms.TextBox textBox13;
+        private System.Windows.Forms.CheckBox checkByNane;
+        private System.Windows.Forms.Button button16;
     }
 }
 

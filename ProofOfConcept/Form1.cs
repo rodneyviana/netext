@@ -1407,16 +1407,57 @@ namespace ProofOfConcept
         {
             StartRuntime();
             CreateCache();
-            var modules = GetModules(textBox10.Text, textBox11.Text, checkDebug.Checked,
+            IEnumerable<NetExt.Shim.Module> modules = GetModules(textBox10.Text, textBox11.Text, checkDebug.Checked,
                 checkManaged.Checked, checkNoMS.Checked);
 
+            if (checkOrder.Checked)
+            {
+                modules = from m in modules
+                          orderby m.Name
+                          select m;
+            }
+            if(DebugApi.IsTaget64Bits)
+                WriteLine("{0}", "Address                      Module Version Company Name       Debug Mode Type Module Binary");
+            else
+                WriteLine("{0}", "Address              Module Version Company Name       Debug Mode Type Module Binary");
+                                //03420000             15.0.4789.1000 Microsoft Corporation     Yes  CLR Microsoft.Sharepoint.Sandbox.dll
             foreach (var mod in modules)
             {
                 Write("{0:%p} ", mod.BaseAddress);
                 string fileName = checkPath.Checked ? mod.FullPath : mod.Name;
-                WriteLine(" {0,25} {1,-25} {2,-3} {3,-3} {4}", mod.VersionInfo, mod.CompanyName, (int)mod.ClrDebugType >= 4 ? "Yes" : "No", mod.IsClr ? "CLR" : "NAT", fileName);
+                WriteLine(" {0,25} {1,-25} {2,-3}  {3,-3} {4}", mod.VersionInfo, mod.CompanyName, (int)mod.ClrDebugType >= 4 ? "Yes" : "No", mod.IsClr ? "CLR" : "NAT", fileName);
             }
             
+        }
+
+        public int SaveModuleInternal(string ModuleName, ulong Address = 0)
+        {
+            DebugApi.InitClr(m_runtime);
+            NetExt.Shim.Module mod = null;
+            if (Address != 0)
+            {
+                mod = new NetExt.Shim.Module(Address);
+            }
+            if (!String.IsNullOrEmpty(ModuleName))
+            {
+                mod = new NetExt.Shim.Module(Address);
+            }
+            if (mod != null)
+            {
+                //MDModule md = new MDModule(
+            }
+            return 0;
+        }
+
+        private void button16_Click(object sender, EventArgs e)
+        {
+            StartRuntime();
+            CreateCache();
+            string str = textBox12.Text;
+            if (checkByNane.Checked)
+            {
+               
+            }
         }
     }
 }

@@ -2369,6 +2369,7 @@ namespace NetExt.Shim
         {
             m_runtime = runtime;
             m_runtime.RuntimeFlushed += m_runtime_RuntimeFlushed;
+            DebugApi.InitClr(m_runtime);
         }
 
         void m_runtime_RuntimeFlushed(ClrRuntime runtime)
@@ -3282,6 +3283,71 @@ namespace NetExt.Shim
                 Exports.WriteLine("Unable to save module {0}", mod.Name);
             }
 
+            return HRESULTS.S_OK;
+        }
+
+        public List<NetExt.Shim.Module> GetModules(string Pattern, string Company, bool DebugMode,
+            bool ManagedOnly, bool ExcludeMicrosoft)
+        {
+            List<NetExt.Shim.Module> modules = new List<NetExt.Shim.Module>();
+
+            foreach (var mod in NetExt.Shim.Module.Modules)
+            {
+                if (DebugMode && (int)mod.ClrDebugType < 4)
+                {
+                    continue;
+                }
+                if (ManagedOnly && !mod.IsClr)
+                {
+                    continue;
+                }
+                if (!String.IsNullOrEmpty(Pattern) && !HeapCache.WildcardCompare(mod.Name, Pattern))
+                {
+                    continue;
+                }
+                if (!String.IsNullOrEmpty(Company) && !HeapCache.WildcardCompare(mod.LegalCopyright, Pattern))
+                {
+                    continue;
+                }
+                if (ExcludeMicrosoft && (mod.CompanyName == "Microsoft Corporation"))
+                {
+                    continue;
+                }
+                modules.Add(mod);
+            }
+
+
+            return modules;
+        }
+
+        public int DumpModules(string Pattern, string Company, bool DebugMode,
+            bool ManagedOnly, bool ExcludeMicrosoft, bool Ordered, bool IncludePath)
+        {
+            IEnumerable<Module> modules = GetModules(Pattern, Company, DebugMode,
+            ManagedOnly, ExcludeMicrosoft);
+
+            if (Ordered)
+            {
+                modules = from m in modules
+                          orderby m.Name
+                          select m;
+            }
+
+            if (DebugApi.IsTaget64Bits)
+                Exports.WriteLine("{0}", "Address                      Module Version Company Name       Debug Mode Type Module Binary");
+            else
+                Exports.WriteLine("{0}", "Address              Module Version Company Name       Debug Mode Type Module Binary");
+
+            int i = 0;
+            foreach (var mod in modules)
+            {
+                Exports.WriteDml("<link cmd=\"lmv a {0:%p}\">{0:%p}</link> ", mod.BaseAddress);
+                string fileName = IncludePath ? mod.FullPath : mod.Name;
+                Exports.WriteLine(" {0,25} {1,-25} {2,-3}  {3,-3} {4}", mod.VersionInfo, mod.CompanyName, (int)mod.ClrDebugType >= 4 ? "Yes" : "No", mod.IsClr ? "CLR" : "NAT", fileName);
+                i++;
+            }
+            Exports.WriteLine("");
+            Exports.WriteLine("{0} module(s) listed, {1} skipped by the filters", i, Module.Modules.Count - i);
             return HRESULTS.S_OK;
         }
     }
