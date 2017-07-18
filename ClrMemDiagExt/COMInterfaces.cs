@@ -71,7 +71,7 @@ namespace NetExt.Shim
         int SaveModule([MarshalAs((UnmanagedType)19)] string Path, [MarshalAs((UnmanagedType)19)] string ModuleName);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
         [PreserveSig]
-        int DumpModules(string Pattern, string Company, bool DebugMode,
+        int DumpModules([MarshalAs(UnmanagedType.LPStr)] string Pattern, [MarshalAs(UnmanagedType.LPStr)] string Company, bool DebugMode,
             bool ManagedOnly, bool ExcludeMicrosoft, bool Ordered, bool IncludePath);
 
     }

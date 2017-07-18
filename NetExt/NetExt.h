@@ -287,7 +287,8 @@ public:
 	EXT_COMMAND_METHOD(wdomain);
 	EXT_COMMAND_METHOD(wsocket);
 	EXT_COMMAND_METHOD(wxml);
-
+	EXT_COMMAND_METHOD(wtime);
+	EXT_COMMAND_METHOD(wmodule);
 
 	regex_constants::syntax_option_type GetFlavor(const string& flavor);
 	std::ostringstream regexmatch(const string& Target, const string& Pattern, bool CaseSensitive, const string& Flavor, bool Run, const string& Format);

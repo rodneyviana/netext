@@ -2159,9 +2159,23 @@ namespace NetExt.Shim
             if (node.Name == "System.Xml.XmlDeclaration")
             {
                 sb.Append("<?xml version=\"");
-                sb.Append((string)(nodeObj.version));
+                try
+                {
+                    sb.Append((string)(nodeObj.version));
+                }
+                catch
+                {
+                    sb.Append("1.0");
+                }
                 sb.Append("\" encoding=\"");
-                sb.Append((string)(nodeObj.encoding));
+                try
+                {
+                    sb.Append((string)(nodeObj.encoding));
+                }
+                catch
+                {
+                    sb.Append("utf-8");
+                }
                 sb.Append("\" ?>");
                 return sb;
             }
@@ -3305,7 +3319,7 @@ namespace NetExt.Shim
                 {
                     continue;
                 }
-                if (!String.IsNullOrEmpty(Company) && !HeapCache.WildcardCompare(mod.LegalCopyright, Pattern))
+                if (!String.IsNullOrEmpty(Company) && !HeapCache.WildcardCompare(mod.CompanyName, Company))
                 {
                     continue;
                 }

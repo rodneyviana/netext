@@ -1172,10 +1172,10 @@ EXT_COMMAND(wclass,
 
 EXT_COMMAND(wservice,
             "Dump WCF Services. Use '!whelp wservice' for detailed help",
-			"{;e,o;;Address,HttpContext Address}"
+			"{;e,o;;Address,WCF Service Address}"
 			)
 {
-	INIT_API();
+	DO_INIT_API;
 	if(!HasUnnamedArg(0))
 	{
 		if(!indc)
@@ -1331,7 +1331,7 @@ EXT_COMMAND(wservice,
 				"{;e,r;;Address,Address of the XML Element}"
 				)
 	{
-		INIT_API();
+		DO_INIT_API;
 		CLRDATA_ADDRESS addr = GetUnnamedArgU64(0);
 		ObjDetail Obj(addr);
 		HRESULT hr = E_FAIL;
@@ -1344,3 +1344,69 @@ EXT_COMMAND(wservice,
 			Out("There is no valid XML object at %p\n", addr);
 		}
 	}
+
+struct ModuleFlags
+{
+	bool fname;
+	bool fcompany;
+	bool forder;
+	bool fdebug;
+	bool fmanaged;
+	bool fnoms;
+	bool ffullpath;
+	std::string name;
+	std::string company;
+};
+
+EXT_COMMAND(wmodule,
+	"Dump all modules in process which can be filtered by name, company, debug mode, etc. Use '!whelp wmodule' for detailed help",
+	"{name;s,o;;Dump only modules with this name pattern. Optional (e.g -name Contoso.Classes*)}"
+	"{company;s,o;;Dump only modules with this company name pattern. Optional (e.g. -company Contoso*)}"
+	"{debug;b,o;;Show only managed modules compiled in debug mode}"
+	"{managed;b,o;;Show only managed modules}"
+	"{noms;b,o;;Hide all modules which company attribute is Microsoft Corporation (show non-system modules)}"
+	"{order;b,o;;Sort output bu module name}"
+	"{fullpath;b,o;;Show module full path (instead of just name}"
+	)
+{
+		DO_INIT_API;
+		ModuleFlags flags;
+
+		flags.fname = HasArg("name");
+		flags.fcompany = HasArg("company");
+		flags.fdebug= HasArg("debug");
+		flags.fmanaged = HasArg("managed");
+		flags.fnoms = HasArg("noms");
+		flags.forder = HasArg("order");
+		flags.ffullpath = HasArg("fullpath");
+
+		if(flags.fname)
+			flags.name = GetArgStr("name");
+
+		if(flags.fcompany)
+			flags.company = GetArgStr("company");
+
+
+		if(pTarget->DumpModules((LPSTR)flags.name.c_str(), (LPSTR)flags.company.c_str(), flags.fdebug,
+            flags.fmanaged, flags.fnoms, flags.forder, flags.ffullpath) != S_OK)
+		{
+			Out("UNEXPECTED: Unable to dump modules");
+		};
+
+
+
+
+}
+
+EXT_COMMAND(wtime,
+	"Dump all modules in process which can be filtered by name, company, debug mode, etc. Use '!whelp wmodule' for detailed help",
+	""
+	)
+{
+		DO_INIT_API;
+		if(pTarget->DumpTime() != S_OK)
+		{
+			Out("UNEXPECTED: Unable to dump modules");
+		};
+
+}
