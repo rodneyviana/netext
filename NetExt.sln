@@ -10,24 +10,6 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BuildHelp", "BuildHelp\BuildHelp.csproj", "{38961746-516F-443B-953B-DDAC3E328459}"
 EndProject
 Global
-	GlobalSection(TeamFoundationVersionControl) = preSolution
-		SccNumberOfProjects = 5
-		SccEnterpriseProvider = {4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}
-		SccTeamFoundationServer = https://rviana.visualstudio.com/defaultcollection
-		SccLocalPath0 = .
-		SccProjectUniqueName1 = NetExt\\NetExt.vcxproj
-		SccProjectName1 = NetExt
-		SccLocalPath1 = NetExt
-		SccProjectUniqueName2 = ProofOfConcept\\ProofOfConcept.csproj
-		SccProjectName2 = ProofOfConcept
-		SccLocalPath2 = ProofOfConcept
-		SccProjectUniqueName3 = BuildHelp\\BuildHelp.csproj
-		SccProjectName3 = BuildHelp
-		SccLocalPath3 = BuildHelp
-		SccProjectUniqueName4 = ClrMemDiagExt\\NetExtShim.csproj
-		SccProjectName4 = ClrMemDiagExt
-		SccLocalPath4 = ClrMemDiagExt
-	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Debug|Mixed Platforms = Debug|Mixed Platforms
@@ -57,9 +39,7 @@ Global
 		{10825480-9CB0-4B3E-B94F-E1DEA58F7789}.Debug|Win32.ActiveCfg = Debug|Win32
 		{10825480-9CB0-4B3E-B94F-E1DEA58F7789}.Debug|Win32.Build.0 = Debug|Win32
 		{10825480-9CB0-4B3E-B94F-E1DEA58F7789}.Debug|x64.ActiveCfg = Debug|x64
-		{10825480-9CB0-4B3E-B94F-E1DEA58F7789}.Debug|x64.Build.0 = Debug|x64
 		{10825480-9CB0-4B3E-B94F-E1DEA58F7789}.Debug|x86.ActiveCfg = Debug|x64
-		{10825480-9CB0-4B3E-B94F-E1DEA58F7789}.Debug|x86.Build.0 = Debug|x64
 		{10825480-9CB0-4B3E-B94F-E1DEA58F7789}.Release|Any CPU.ActiveCfg = Release|Win32
 		{10825480-9CB0-4B3E-B94F-E1DEA58F7789}.Release|Mixed Platforms.ActiveCfg = Release|Win32
 		{10825480-9CB0-4B3E-B94F-E1DEA58F7789}.Release|Mixed Platforms.Build.0 = Release|Win32
@@ -93,8 +73,8 @@ Global
 		{249A0236-8FC8-4CD7-B6E1-C3422924EA09}.Debug|Win32.Build.0 = Debug|x86
 		{249A0236-8FC8-4CD7-B6E1-C3422924EA09}.Debug|x64.ActiveCfg = Debug|x64
 		{249A0236-8FC8-4CD7-B6E1-C3422924EA09}.Debug|x64.Build.0 = Debug|x64
-		{249A0236-8FC8-4CD7-B6E1-C3422924EA09}.Debug|x86.ActiveCfg = Debug|x64
-		{249A0236-8FC8-4CD7-B6E1-C3422924EA09}.Debug|x86.Build.0 = Debug|x64
+		{249A0236-8FC8-4CD7-B6E1-C3422924EA09}.Debug|x86.ActiveCfg = Debug|x86
+		{249A0236-8FC8-4CD7-B6E1-C3422924EA09}.Debug|x86.Build.0 = Debug|x86
 		{249A0236-8FC8-4CD7-B6E1-C3422924EA09}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{249A0236-8FC8-4CD7-B6E1-C3422924EA09}.Release|Any CPU.Build.0 = Release|Any CPU
 		{249A0236-8FC8-4CD7-B6E1-C3422924EA09}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
@@ -127,7 +107,8 @@ Global
 		{D84567E9-A5E9-4672-9EB7-83A95892645F}.Debug|Win32.ActiveCfg = Debug|Any CPU
 		{D84567E9-A5E9-4672-9EB7-83A95892645F}.Debug|x64.ActiveCfg = Debug|Any CPU
 		{D84567E9-A5E9-4672-9EB7-83A95892645F}.Debug|x64.Build.0 = Debug|Any CPU
-		{D84567E9-A5E9-4672-9EB7-83A95892645F}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{D84567E9-A5E9-4672-9EB7-83A95892645F}.Debug|x86.ActiveCfg = Debug|x86
+		{D84567E9-A5E9-4672-9EB7-83A95892645F}.Debug|x86.Build.0 = Debug|x86
 		{D84567E9-A5E9-4672-9EB7-83A95892645F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D84567E9-A5E9-4672-9EB7-83A95892645F}.Release|Any CPU.Build.0 = Release|Any CPU
 		{D84567E9-A5E9-4672-9EB7-83A95892645F}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
@@ -155,7 +136,6 @@ Global
 		{38961746-516F-443B-953B-DDAC3E328459}.Debug|Win32.Build.0 = Debug|x86
 		{38961746-516F-443B-953B-DDAC3E328459}.Debug|x64.ActiveCfg = Debug|Any CPU
 		{38961746-516F-443B-953B-DDAC3E328459}.Debug|x86.ActiveCfg = Debug|x86
-		{38961746-516F-443B-953B-DDAC3E328459}.Debug|x86.Build.0 = Debug|x86
 		{38961746-516F-443B-953B-DDAC3E328459}.Release|Any CPU.ActiveCfg = Release|x86
 		{38961746-516F-443B-953B-DDAC3E328459}.Release|Mixed Platforms.ActiveCfg = Release|x86
 		{38961746-516F-443B-953B-DDAC3E328459}.Release|Mixed Platforms.Build.0 = Release|x86

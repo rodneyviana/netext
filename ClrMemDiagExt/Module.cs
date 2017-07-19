@@ -153,6 +153,23 @@ namespace NetExt.Shim
             }
         }
 
+        public IMAGE_OPTIONAL_HEADER32 OptionalHeader32
+        {
+            get
+            {
+                ulong sectionAddr = BaseAddress + (ulong)DOSHeader.e_lfanew +
+                    (ulong)Marshal.OffsetOf(typeof(IMAGE_NT_HEADERS64), "OptionalHeader");
+                var opHeader = new IMAGE_OPTIONAL_HEADER32();
+                if (!DebugApi.ReadMemory<IMAGE_OPTIONAL_HEADER32>(sectionAddr, out opHeader))
+                {
+                    DebugApi.WriteLine("Fail to read PE section info\n");
+                    opHeader.ImageBase = 0;
+                    opHeader.CLRRuntimeHeader = new IMAGE_DATA_DIRECTORY();
+                }
+                return opHeader;
+            }
+        }
+
         public IMAGE_OPTIONAL_HEADER64 OptionalHeader
         {
             get
@@ -175,11 +192,22 @@ namespace NetExt.Shim
             get
             {
                 IMAGE_COR20_HEADER corHeader = new IMAGE_COR20_HEADER();
-                var opHeader = OptionalHeader;
-                if (opHeader.CLRRuntimeHeader.VirtualAddress != 0)
+                ulong VirtualAddress = 0;
+                if (IntPtr.Size == 8)
+                {
+                    var opHeader = OptionalHeader;
+                    VirtualAddress = opHeader.CLRRuntimeHeader.VirtualAddress;
+                }
+                else
+                {
+                    var opHeader = OptionalHeader32;
+                    VirtualAddress = opHeader.CLRRuntimeHeader.VirtualAddress;
+                }
+
+                if (VirtualAddress != 0)
                 {
 
-                    ulong sectionAddr = BaseAddress + OptionalHeader.CLRRuntimeHeader.VirtualAddress;
+                    ulong sectionAddr = BaseAddress + VirtualAddress;
 
                     if (!DebugApi.ReadMemory<IMAGE_COR20_HEADER>(sectionAddr, out corHeader))
                     {
@@ -296,7 +324,7 @@ namespace NetExt.Shim
                 return false;
             }
 
-            bool bIsImage = (mbi.State == MEM.IMAGE);
+            bool bIsImage = (mbi.Type == MEM.IMAGE || mbi.Type == MEM.PRIVATE);
 
             IMAGE_DOS_HEADER dosHeader;
             if (!DebugApi.ReadMemory<IMAGE_DOS_HEADER>(BaseAddress, out dosHeader))
@@ -346,7 +374,7 @@ namespace NetExt.Shim
                         break;
                 }
                 for (int k = indxSec; k >= slot; k--)
-                    memLoc[k] = memLoc[k + 1];
+                    memLoc[k + 1] = memLoc[k];
 
                 memLoc[slot].VAAddr = (IntPtr)section.VirtualAddress;
                 memLoc[slot].VASize = (IntPtr)section.VirtualSize;

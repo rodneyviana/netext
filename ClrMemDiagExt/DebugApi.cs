@@ -1600,7 +1600,8 @@ kernel32!KUSER_SHARED_DATA
                 WriteLine("Unable to read memory at %p", DllBase);
                 return false;
             }
-            
+
+            bool bIsImage = (mbi.Type == MEM.IMAGE);            
             IMAGE_DOS_HEADER dosHeader;
             if (!ReadMemory<IMAGE_DOS_HEADER>(DllBase, out dosHeader))
             {
@@ -1613,7 +1614,7 @@ kernel32!KUSER_SHARED_DATA
                 WriteLine("Invalid image at %p", DllBase);
                 return false;
             }
-
+            
             IMAGE_NT_HEADERS64 Header;
             if (!ReadMemory<IMAGE_NT_HEADERS64>(DllBase + (ulong)dosHeader.e_lfanew, out Header))
             {
@@ -1698,7 +1699,7 @@ kernel32!KUSER_SHARED_DATA
                 {
                     if (!IsTaget64Bits)
                     {
-                        if ( true /*bIsImage*/)
+                        if ( bIsImage)
                             dwAddr = DllBase + (ulong)memLoc[slot].VAAddr;
                         else
                             dwAddr = DllBase + (ulong)memLoc[slot].FileAddr;

@@ -1444,23 +1444,29 @@ namespace ProofOfConcept
             
         }
 
-        public int SaveModuleInternal(string ModuleName, ulong Address = 0)
+        public int SaveModuleInternal(string ModuleName, ulong Address = 0, string Path = null)
         {
             DebugApi.InitClr(m_runtime);
-            NetExt.Shim.Module mod = null;
+            //NetExt.Shim.Module mod = null;
+            MDModule mod = null;
             if (Address != 0)
             {
-                mod = new NetExt.Shim.Module(Address);
+                //mod = new NetExt.Shim.Module(Address);
+                mod = new MDModule(Address);
+                return mod.SaveModule(Path);
             }
             if (!String.IsNullOrEmpty(ModuleName))
             {
-                mod = new NetExt.Shim.Module(Address);
+                var mod1 = new NetExt.Shim.Module(ModuleName);
+                if (mod1.IsValid)
+                {
+                    mod = new MDModule(mod1.BaseAddress);
+                    return mod.SaveModule(Path);
+                }
+
             }
-            if (mod != null)
-            {
-                //MDModule md = new MDModule(
-            }
-            return 0;
+
+            return -1;
         }
 
         private void button16_Click(object sender, EventArgs e)
@@ -1468,9 +1474,25 @@ namespace ProofOfConcept
             StartRuntime();
             CreateCache();
             string str = textBox12.Text;
+            NetExt.Shim.Module mod = null;
+            int res = -1;
             if (checkByNane.Checked)
             {
-               
+                res = SaveModuleInternal(str, 0, textBox13.Text);
+            }
+            else
+            {
+                ulong Address = Convert.ToUInt64(str, 16);
+                res = SaveModuleInternal(null, Address, textBox13.Text);
+            }
+            if (res == 0)
+            {
+                WriteLine("Module was saved!");
+            }
+            else
+            {
+                WriteLine("Unable to save module!");
+
             }
         }
     }

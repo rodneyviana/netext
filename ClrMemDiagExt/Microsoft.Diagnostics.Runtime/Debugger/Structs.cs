@@ -430,6 +430,19 @@ namespace Microsoft.Diagnostics.Runtime.Interop
     }
 
     [StructLayout(LayoutKind.Sequential)]
+    public struct MEMORY_BASIC_INFORMATION32
+    {
+        public UInt32 BaseAddress;
+        public UInt32 AllocationBase;
+        public PAGE AllocationProtect;
+        public UInt32 __alignment1;
+        public UInt32 RegionSize;
+        public MEM State;
+        public PAGE Protect;
+        public MEM Type;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
     public struct MEMORY_BASIC_INFORMATION64
     {
         public UInt64 BaseAddress;

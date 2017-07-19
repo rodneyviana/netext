@@ -3475,11 +3475,12 @@ namespace NetExt.Shim
                 return HRESULTS.E_FAIL;
             }
             string curPath = System.IO.Path.Combine(Path, module.Name);
+            bool success = false;
             try
             {
                 using (Stream fs = File.OpenWrite(curPath))
                 {
-                    module.SaveToStream(fs);
+                    success = module.SaveToStream(fs);
                     Exports.WriteLine("Saved '{0}'", curPath);
                 }
             }
@@ -3489,7 +3490,9 @@ namespace NetExt.Shim
                 Exports.WriteLine("{0}", ex.ToString());
                 return HRESULTS.E_FAIL;
             }
-            return HRESULTS.S_OK;
+            if (success)
+                return HRESULTS.S_OK;
+            return HRESULTS.E_FAIL;
         }
     }
     static class HRESULTS
