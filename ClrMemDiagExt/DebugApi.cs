@@ -726,6 +726,10 @@ namespace NetExt.Shim
     {
         public const uint DEBUG_ANY_ID = 0xffffffff;
         public const uint DEBUG_DATA_SharedUserData = 100008;
+
+        [DllImport("DbgHelp.dll", CharSet=CharSet.Ansi)]
+        internal static extern bool SymMatchString(string Text, string Pattern, bool IsCase);
+
         [DllImport("dbgeng.dll")]
         internal static extern uint DebugCreate(ref Guid InterfaceId, [MarshalAs(UnmanagedType.IUnknown)] out object Interface);
 
@@ -754,6 +758,10 @@ namespace NetExt.Shim
             }
         }
 
+        public static bool MatchPattern(string Text, string Pattern, bool IsCase = false)
+        {
+            return SymMatchString(Text, Pattern, IsCase);
+        }
 
 
         public static DateTime ConvertDateTime(WinApi.FILETIME Time)

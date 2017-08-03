@@ -886,10 +886,15 @@ namespace NetExt.HeapCacheUtil
 
         }
 
-        public static bool WildcardCompare(string Text, string Pattern)
+        public static bool WildcardCompare(string Text, string Pattern, bool IsCase = false)
         {
             if (String.IsNullOrEmpty(Pattern))
                 return true;
+            if (String.IsNullOrEmpty(Text))
+                return false;
+
+            return DebugApi.MatchPattern(Text, Pattern, IsCase);
+            /*
             string[] parts = Pattern.Split('*');
             if (parts.Length > 0)
             {
@@ -905,7 +910,7 @@ namespace NetExt.HeapCacheUtil
             {
                 return String.Compare(Text, Pattern, true) == 0;
             }
-
+            */
             return true;
         }
         //

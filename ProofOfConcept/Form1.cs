@@ -1401,7 +1401,7 @@ namespace ProofOfConcept
                 {
                     continue;
                 }
-                if (!String.IsNullOrEmpty(Company) && !HeapCache.WildcardCompare(mod.LegalCopyright, Pattern))
+                if (!String.IsNullOrEmpty(Company) && !HeapCache.WildcardCompare(mod.CompanyName, Company))
                 {
                     continue;
                 }

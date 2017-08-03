@@ -3334,11 +3334,52 @@ namespace NetExt.Shim
             return modules;
         }
 
-        public int DumpModules(string Pattern, string Company, bool DebugMode,
+        public int DumpModules(string Pattern, string Company, string folderToSave, bool DebugMode,
             bool ManagedOnly, bool ExcludeMicrosoft, bool Ordered, bool IncludePath)
         {
             IEnumerable<Module> modules = GetModules(Pattern, Company, DebugMode,
             ManagedOnly, ExcludeMicrosoft);
+
+            if (!String.IsNullOrWhiteSpace(folderToSave))
+            {
+                int m = 0;
+                int f = 0;
+                foreach (var mod in modules)
+                {
+                    if (!Directory.Exists(folderToSave))
+                    {
+                        Exports.WriteLine("Folder '{0}' does not exist. Please choose an existing folder.", folderToSave);
+                        return HRESULTS.E_FAIL;
+                    }
+                    string fileName = Path.Combine(folderToSave, mod.Name);
+                    if (File.Exists(fileName))
+                    {
+                        Exports.WriteLine("File '{0}' already exists. Skipping this file", fileName);
+                        f++;
+                    }
+                    else
+                    {
+                        try
+                        {
+                            using (FileStream fs = new FileStream(fileName, FileMode.CreateNew))
+                            {
+                                mod.SaveToStream(fs);
+                                m++;
+                                Exports.WriteLine("Saved '{0}' successfully", fileName);
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Exports.WriteLine("Failed to save '{0}' - {1}: {2}", fileName, ex.GetType().ToString(), ex.Message);
+                            f++;
+                        }
+                    }
+                }
+                Exports.WriteLine("");
+                Exports.WriteLine("{0} module(s) saved, {1} failed, {2} skipped by the filters", m, f, Module.Modules.Count - m);
+                return HRESULTS.S_OK;
+
+            }
 
             if (Ordered)
             {
@@ -3362,6 +3403,124 @@ namespace NetExt.Shim
             }
             Exports.WriteLine("");
             Exports.WriteLine("{0} module(s) listed, {1} skipped by the filters", i, Module.Modules.Count - i);
+            return HRESULTS.S_OK;
+        }
+
+        private static bool isExeCreated = false;
+        private static string toolsPath = null;
+
+        public static void CopyTools()
+        {
+            if (!isExeCreated)
+            {
+
+                DebugApi.WriteDmlLine("Expanding tools...");
+                toolsPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+
+                try
+                {
+                    Directory.CreateDirectory(toolsPath);
+                }
+                catch (Exception ex)
+                {
+                    Exports.WriteLine("Failed to create tools folder at {0}", toolsPath);
+                    Exports.WriteLine("Error: {0}: {1}", ex.GetType(), ex.Message);
+                    return;
+                }
+                isExeCreated = true;
+                string[] files = new string[] { "ICSharpCode_Decompiler", "ICSharpCode_NRefactory", "ICSharpCode_NRefactory_CSharp",
+                    "ILSpy.exe", "Mono_Cecil", "Mono_Cecil_Pdb", "PdbRestorer.exe", "PdbRestorer_Engine" };
+
+                for (int i = 0; i < files.Length; i++)
+                {
+                    string file = files[i].Replace('_', '.');
+                    if (!file.EndsWith(".exe"))
+                        file += ".dll";
+                    try
+                    {
+                        byte[] streamBytes = (byte[])Properties.Resources.ResourceManager.GetObject(files[i].Split('.')[0]);
+                        using (Stream fileStream = File.OpenWrite(Path.Combine(toolsPath, file)))
+                        {
+                            DebugApi.DebugWriteLine("Copying {0}", Path.Combine(toolsPath, file));
+                            fileStream.Write(streamBytes, 0, streamBytes.Length);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Exports.WriteLine("Failed to copy tool {0}", file);
+                        Exports.WriteLine("Error: {0}: {1}", ex.GetType(), ex.Message);
+                    }
+
+                }
+
+            }
+        }
+
+
+        public int MakeSource()
+        {
+            Module mod = DebugApi.ModuleFromScope;
+            if (!mod.IsClr)
+            {
+                Exports.WriteLine("Module {0} is not managed. No source will be created.", mod.Name);
+                Exports.WriteLine("Move to the frame context in the stack where you want the code created (example .frame 3)");
+                return HRESULTS.E_FAIL;
+            }
+            if (mod != null && mod.BaseAddress != 0)
+            {
+                CopyTools();
+                if (!isExeCreated)
+                    return HRESULTS.E_FAIL;
+
+                string[] parts = mod.FullPath.Split('\\');
+                string exeFolder = Path.Combine(toolsPath, "lib");
+                string symFolder = Path.Combine(toolsPath, "sym");
+                if (!Directory.Exists(exeFolder))
+                    Directory.CreateDirectory(exeFolder);
+                if (!Directory.Exists(symFolder))
+                    Directory.CreateDirectory(symFolder);
+
+
+
+                string file = Path.Combine(exeFolder, parts[parts.Length - 1]);
+                string source = Path.Combine(symFolder, Path.ChangeExtension(parts[parts.Length - 1], "cs"));
+                string symbol = Path.Combine(symFolder, Path.ChangeExtension(parts[parts.Length - 1], "pdb"));
+
+                Stream fileStream = File.OpenWrite(file);
+                try
+                {
+                    mod.SaveToStream(fileStream);
+                }
+                finally
+                {
+                    fileStream.Close();
+                }
+
+                Process decomp = new Process();
+                decomp.StartInfo.FileName = Path.Combine(toolsPath, "PdbRestorer.exe");
+                decomp.StartInfo.Arguments = String.Format("C# \"{0}\" \"{1}\" \"{2}\"", file, source, symbol);
+                
+                decomp.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
+                decomp.StartInfo.CreateNoWindow = true;
+                decomp.Start();
+                DebugApi.DebugWriteLine("running {0} {1}", decomp.StartInfo.FileName, decomp.StartInfo.Arguments);
+                Exports.WriteLine("Generating source and Pdb file");
+                while (!decomp.WaitForExit(1000))
+                {
+                    Exports.Write(".");
+                }
+                Exports.WriteLine("");
+
+                if (decomp.ExitCode != 0)
+                {
+                    Exports.WriteLine("Failed to generate file/symbol {0:x4}", decomp.ExitCode);
+                    return decomp.ExitCode;
+                }
+
+                DebugApi.AddToSourcePath(symFolder);
+                DebugApi.AddToSymPath(symFolder);
+                DebugApi.IgnoreSymbolMismatch();
+            }
             return HRESULTS.S_OK;
         }
     }

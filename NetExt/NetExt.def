@@ -54,3 +54,4 @@ EXPORTS
 	wxml
 	wtime
 	wmodule
+	wmakesource
