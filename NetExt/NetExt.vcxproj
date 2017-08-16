@@ -164,7 +164,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release64|x64'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>C:\spirit\boost_1_46_1;C:\spirit\tinyXml;inc;$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSDK_IncludePath);</IncludePath>
-    <LibraryPath>lib\$(PlatformShortName);;$(VCInstallDir)lib\amd64;$(VCInstallDir)atlmfc\lib\amd64;$(WindowsSDK_LibraryPath_x64);</LibraryPath>
+    <LibraryPath>lib\$(PlatformShortName);$(VCInstallDir)lib\amd64;$(VCInstallDir)atlmfc\lib\amd64;$(WindowsSDK_LibraryPath_x64)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -276,6 +276,10 @@ copy /y $(TargetDir)*.* c:\debuggers32</Command>
       <Command>$(SolutionDir)BuildHelp\bin\Release\BuildHelp.exe $(MSBuildProjectDirectory)\helptxt.txt $(MSBuildProjectDirectory)\whelp.cpp
 </Command>
     </PreBuildEvent>
+    <PreLinkEvent>
+      <Command>
+      </Command>
+    </PreLinkEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release64|Win32'">
     <ClCompile>
@@ -373,6 +377,10 @@ copy /y $(TargetDir)*.* c:\debuggers32</Command>
     <PreBuildEvent>
       <Command>$(SolutionDir)BuildHelp\bin\Release\BuildHelp.exe $(MSBuildProjectDirectory)\helptxt.txt $(MSBuildProjectDirectory)\whelp.cpp</Command>
     </PreBuildEvent>
+    <PreLinkEvent>
+      <Command>cd
+echo lib\$(PlatformShortName)</Command>
+    </PreLinkEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <None Include="ClassDiagram.cd" />
@@ -420,6 +428,12 @@ copy /y $(TargetDir)*.* c:\debuggers32</Command>
   </ItemGroup>
   <ItemGroup>
     <Text Include="helptxt.txt" />
+    <Text Include="lib\lib.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Library Include="lib\x64\dbgeng.lib" />
+    <Library Include="lib\x64\dbghelp.lib" />
+    <Library Include="lib\x64\engextcpp.lib" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

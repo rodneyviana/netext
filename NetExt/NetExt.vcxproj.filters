@@ -130,5 +130,11 @@
   </ItemGroup>
   <ItemGroup>
     <Text Include="helptxt.txt" />
+    <Text Include="lib\lib.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Library Include="lib\x64\dbgeng.lib" />
+    <Library Include="lib\x64\dbghelp.lib" />
+    <Library Include="lib\x64\engextcpp.lib" />
   </ItemGroup>
 </Project>
