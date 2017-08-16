@@ -2484,9 +2484,9 @@ Line: 0n32
 
 ##license
 
-<b>For NetExt:<b> (https://github.com/rodneyviana/netext)
+<b>For NetExt:</b> (https://github.com/rodneyviana/netext)
 
-<b>MIT License<b>
+<b>MIT License</b>
 
 Copyright (c) 2017 Rodney Viana
 
