@@ -49,7 +49,8 @@ For example, to get the url of a HttpContext it is necessary to
 
 *Or to list all requests that are "http:" and the status code is not 200 (OK) from ALL HttpRequests:*
 
-`!wfrom -type *.HttpContext 
+`
+!wfrom -type *.HttpContext 
   where ( ($contains(_request._url.m_String, "http:")) && (_response._statuscode != 0n200) ) 
   select $addr(), _request._url.m_String, _response._statusCode
 
@@ -58,7 +59,8 @@ _request._url.m_String: http://rviana-serv.contoso.com:80/TestClass/Service.svc/
 _response._statusCode: 0n401
 calculated: 0n6802002784
 _request._url.m_String: http://rviana-serv.contoso.com:80/TestClass/Service.svc/net
-_response._statusCode: 0n401 `
+_response._statusCode: 0n401 
+`
 
 It also works very well showing arrays (!wdo, !wselect and !wfrom) and providing link to the objects or showing the items value depending on the content of the array.
 
@@ -66,7 +68,7 @@ It also works very well showing arrays (!wdo, !wselect and !wfrom) and providing
 
 Please use netext.dll for .NET 2.0-4.5.x. There are both 32 and 64-bits versions.
 
-<a link id='examples'></a>
+<a id='examples'></a>
 *Examples:*
 `
 .load netext
@@ -138,7 +140,7 @@ Listing objects from: 0000000004208000 to 0000000004210000 from thread: 20 [1780
 (...)
 
 `
-<a link id='menu'></a>
+<a id='menu'></a>
 
 *List of commands*
 
@@ -160,7 +162,7 @@ Listing objects from: 0000000004208000 to 0000000004210000 from thread: 20 [1780
 - [!wdict](#wdict) - Display dictionary objects
 - [!whash](#whash) - Display HashTable objects
 - [!whttp](#whttp) - List HttpContext Objects
-- ![wconfig](#wconfig) - Show all .config file lines in memory 
+- [!wconfig](#wconfig) - Show all .config file lines in memory 
 - [!wservice](#wservice) - List WCF service Objects
 - [!weval](#weval) - Evaluate expression list
 - [!wclass](#wclass) - Show "reflected" class definition (fields, properties and methods)\(*new*) 
@@ -184,7 +186,7 @@ Listing objects from: 0000000004208000 to 0000000004210000 from thread: 20 [1780
 [functions list](#functions] *new functions*
 
 
-<a link id='wpe'></a>
+<a id='wpe'></a>
 *!wpe - Dump Details of an Exception Object*
 
 `
@@ -213,7 +215,7 @@ HResult: 80131509
 
 `
 
-<a link id='wdae></a>
+<a id='wdae></a>
 *!wdae - Dump all exceptions in the heap (you must index via !windex first)*
 `
 
@@ -301,7 +303,7 @@ IP               Function
 
 `
 
-<a link id='wdomain'></a>
+<a id='wdomain'></a>
 *!wdomain - Dump domain information including name, base folder, config file and modules loaded*
 `
 
@@ -327,7 +329,7 @@ Address          Domain Name                                   Modules Base Path
 `
 
 
-<a link id='wupdate'></a>
+<a id='wupdate'></a>
 *!wupdate - Check for new versions and compare with current. If a new version is found, it tries to open the update page*
 *If the page is not in http://netext.codeplex.com, do not download*
 `
@@ -339,7 +341,7 @@ Syntax:
 
 `
 
-<a link id='wver'></a>
+<a id='wver'></a>
 *!wver - Show version of the .NET framework(s) present in the process or dump. It may have more than one framework in memory*
 *It also shows the extension version*
 `
@@ -364,7 +366,7 @@ NetExt (this extension) Version: 2.0.1.5000
 
 `
 
-<a link id='wthreads'></a>
+<a id='wthreads'></a>
 *!wthreads - Dump thread information*
 `
 
@@ -423,7 +425,7 @@ Show all managed threads
 `
 
 
-<a link id='wkeyvalue'></a>
+<a id='wkeyvalue'></a>
 *!wkeyvalue - Display pair key/value for objects that derives NameObjectCollectionBase*
 `
 
@@ -473,7 +475,7 @@ value=[000000016299ee50:System.Configuration.ConfigurationValue]{  { "SourceInfo
 
 `
 
-<a link id='wcookie'></a>
+<a id='wcookie'></a>
 *!wcookie - Dump all cookies for all Http context objects, a single context or matching a cookie filter criteria*
 `
 Usage: !wcookie [-summary] [-name <partial-name>] [-value <partial-value>]
@@ -531,7 +533,7 @@ ASP.NET_SessionId=0qtahu45hokrcs45052cn0a5
 
 `
 
-<a link id='wruntime'></a>
+<a id='wruntime'></a>
 *!wruntime - Dump all active Http Runtime information*
 `
 This is equivalent to this command:
@@ -581,7 +583,7 @@ HostingEnvironment caused shutdownn   at System.Environment.GetStackTrace(Except
 
 `
 
-<a link id='wtoken'></a>
+<a id='wtoken'></a>
 *!wtoken - Display WIF tokens and claims*
 `
 Dump all claims for a WIF Tokens in memory or if an HttpContext is specified it lists all claims for that request
@@ -641,7 +643,7 @@ Value          : 0#.w|contoso\administrator
 
 `
 
-<a link id='wdo'></a>
+<a id='wdo'></a>
 *!wdo - Dump an object or array*
 `!wdo [/forcearray] [/shownull] [/noheader] [/noindex] [/mt <expr>]
      [/start <expr>] [/end <expr>] <expr>
@@ -701,7 +703,7 @@ Inherits: System.ValueType System.Object System.Collections.Hashtable+bucket (00
 400099b 000007feefc0ecf0 2000266 System.Int32 +0010           hash_coll 6bf311c4 (0n1811091908)
 
 `
-<a link id='wselect'></a>
+<a id='wselect'></a>
 *!wselect - select specific fields from an object or array (accepts wildcard ? and {"*"})*
 `
 !wselect [mt <expr>] <field1>, ..., <fieldN> from <obj-expr> | <array-expr>
@@ -760,7 +762,7 @@ Hint: You can get to the array of endpoints from a System.ServiceModel.Descripti
 System.Object[] endpoints.items._items = 000000015595FAA0
 
 `
-<a link id='windex'></a>
+<a id='windex'></a>
 *!windex - Index and dump managed heap types enabling tree view and save index in disk (useful for large dumps)*
 `
 !windex [/quiet] [/enumtypes] [/tree] [/flush] [/short] [/ignorestate]
@@ -851,7 +853,7 @@ Index is up to date
 
 
 `
-<a link id='wstack'></a>
+<a id='wstack'></a>
 *!wstack - Dump objects in the current thread*
 `
 !wstack takes no parameter
@@ -880,7 +882,7 @@ Listing objects from: 0000000001069000 to 0000000001070000 from thread: 3 [22f4]
 (...)
 
 `
-<a link id='wdict'></a>
+<a id='wdict'></a>
 *!wdict - Dump items in a dictionary type*
 `
 !wdict<address>
@@ -897,7 +899,7 @@ System.__Canon key = 00000001557d2a70 CompilerVersion
 System.__Canon value = 00000001557d2aa8 v2.0
 
 `
-<a link id='whash'></a>
+<a id='whash'></a>
 *!whash - Dump items in a hash table*
 `
 !whash <address>
@@ -915,7 +917,7 @@ System.Object key = 000000015568c658 utf-8
 System.Object val = 000000015568d3d8
 
 `
-<a link id='wgchandles'></a>
+<a id='wgchandles'></a>
 *!wgchandles - List all rooted objects (handles) in heap*
 `
 !wgchandles
@@ -944,7 +946,7 @@ GCHandles
 
 
 `
-<a link id='whttp'></a>
+<a id='whttp'></a>
 *!whttp - Dump HttpContext objects*
 `
 !whttp [/order] [/running] [/withthread] [/status <decimal>] [/notstatus <decimal>] [/verb <string>] [<expr>] 
@@ -1087,7 +1089,7 @@ Xml Tree of Request    : !wfrom -obj 00000001c30d2878 select $xmltree($rawfield(
 
 `
 
-<a link id='wservice'></a>
+<a id='wservice'></a>
 *!wservice - Dump all WCF Services or details about a specific service (System.ServiceModel.ServiceHost)*
 `
 !wservice [<expr>]
@@ -1246,7 +1248,7 @@ Detail a service:
 
 
 `
-<a link id='wclass'></a>
+<a id='wclass'></a>
 *!wclass - Dump the class defintion and let you set managed breakpoints *
 `
 !wclass <expr>
@@ -1364,7 +1366,7 @@ namespace System.Web.Configuration {
 
 
 `
-<a link id='wheap'></a>
+<a id='wheap'></a>
 *!wheap - Dump heap objects without indexing*
 `
 !wheap [/short] [/detailsonly] [/nothrottle] [/start <expr>] [/end <expr>]
@@ -1429,7 +1431,7 @@ List only object addresses for a particular type (to use with .foreach)
 (...)
 
 `
-<a link id='wfrom'></a>
+<a id='wfrom'></a>
 *!wfrom - Print objects based on a condition (where) and evaluate operations on fields*
 `
 !wfrom [/nofield] [/withpointer] [/type <string>]
@@ -1540,7 +1542,7 @@ This example print summary all HttpContext objects in memory
 0000000195702098	No	Running	0n200	POST	http://rviana-serv.northamerica.contoso.com:80/TestClass/Service.svc/net
 
 `
-<a link id='weval'></a>
+<a id='weval'></a>
 *!weval - evaluates expression ad-hoc*
 `
 !weval <expr1>,..,<expr2>
@@ -1555,7 +1557,7 @@ calculated: System.Configuration.ConfigurationErrorsException
 _firstFilename: C:\inetpub\wwwroot\TestClass\web.config
 
 `
-<a link id='wconfig}
+<a id='wconfig}
 *!wconfig - Dump all content of .config files in memory*
 `
 !wconfig
@@ -1605,7 +1607,7 @@ Line: 0n32
 
 
 `
-<a link id='expression'></a>
+<a id='expression'></a>
 *!wfrom expression syntax*
 
 `
@@ -1651,7 +1653,7 @@ Strings:
 Examples: "abc"+"def", field1=="rodney", lastname+", "+firstname
 `
 
-<a link id='functions'></a>
+<a id='functions'></a>
 *Functions*
 `
 The ability to use functions is the most powerful feature of the extension.
