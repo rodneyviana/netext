@@ -176,18 +176,22 @@ Listing objects from: 0000000004208000 to 0000000004210000 from thread: 20 [1780
 - [!wdomain ](#wdomain) - Dump all Application Domains
 - [!wdae ](#wdae) - Dump all exceptions in the heap
 - [!wpe ](#wpe) - Dump Exception Object
-
+- *(new)* [!wmodule](#wmodule) - List modules based on a pattern
+- *(new)* [!wtime](#wtime) - Show UTC and local time
+- *(new)* [!wxml](#wxml) - Dump a XML document
+- *(new)* [!wmakesource](#wmakesource) - It tries to reflect the current frame into source code
 ----
 
 
 [expression syntax](#expression)
 
 
-[functions list](#functions] *new functions*
+[functions list](#functions) 
+
 
 
 <a id='wpe'></a>
-*!wpe - Dump Details of an Exception Object*
+## !wpe - Dump Details of an Exception Object
 
 ```
 Syntax:
@@ -215,8 +219,8 @@ HResult: 80131509
 
 ```
 
-<a id='wdae></a>
-*!wdae - Dump all exceptions in the heap (you must index via !windex first)*
+<a id='wdae'></a>
+## !wdae - Dump all exceptions in the heap (you must index via !windex first)
 ```
 
 
@@ -304,7 +308,7 @@ IP               Function
 ```
 
 <a id='wdomain'></a>
-*!wdomain - Dump domain information including name, base folder, config file and modules loaded*
+## !wdomain - Dump domain information including name, base folder, config file and modules loaded
 ```
 
 
@@ -330,7 +334,7 @@ Address          Domain Name                                   Modules Base Path
 
 
 <a id='wupdate'></a>
-*!wupdate - Check for new versions and compare with current. If a new version is found, it tries to open the update page*
+## !wupdate - Check for new versions and compare with current. If a new version is found, it tries to open the update page
 *If the page is not in http://netext.codeplex.com, do not download*
 ```
 
@@ -342,7 +346,7 @@ Syntax:
 ```
 
 <a id='wver'></a>
-*!wver - Show version of the .NET framework(s) present in the process or dump. It may have more than one framework in memory*
+## !wver - Show version of the .NET framework(s) present in the process or dump. It may have more than one framework in memory
 *It also shows the extension version*
 ```
 
@@ -367,7 +371,7 @@ NetExt (this extension) Version: 2.0.1.5000
 ```
 
 <a id='wthreads'></a>
-*!wthreads - Dump thread information*
+## !wthreads - Dump thread information
 ```
 
 
@@ -426,7 +430,7 @@ Show all managed threads
 
 
 <a id='wkeyvalue'></a>
-*!wkeyvalue - Display pair key/value for objects that derives NameObjectCollectionBase*
+## !wkeyvalue - Display pair key/value for objects that derives NameObjectCollectionBase
 ```
 
 Usage: !wkeyvalue <expr>
@@ -476,7 +480,7 @@ value=[000000016299ee50:System.Configuration.ConfigurationValue]{  { "SourceInfo
 ```
 
 <a id='wcookie'></a>
-*!wcookie - Dump all cookies for all Http context objects, a single context or matching a cookie filter criteria*
+## !wcookie - Dump all cookies for all Http context objects, a single context or matching a cookie filter criteria
 ```
 Usage: !wcookie [-summary] [-name <partial-name>] [-value <partial-value>]
                        [-min <expr>] <expr>
@@ -534,7 +538,7 @@ ASP.NET_SessionId=0qtahu45hokrcs45052cn0a5
 ```
 
 <a id='wruntime'></a>
-*!wruntime - Dump all active Http Runtime information*
+## !wruntime - Dump all active Http Runtime information
 ```
 This is equivalent to this command:
 !wfrom -nospace -nofield -type System.Web.HttpRuntime where ((!_beforeFirstRequest) || _shutdownReason) "\n=========================================================================\n","Address         : ",$addr(),"\nFirst Request   : ",$tickstodatetime(_firstRequestStartTime.dateData),"\nApp Pool User   : ",_wpUserId,"\nTrust Level     : ",_trustLevel,"\nApp Domnain Id  : ",_appDomainId,"\nDebug Enabled   : ",$if(_debuggingEnabled,"True (Not recommended in production)","False"),"\nActive Requests : ",_activeRequestCount,"\nPath            : ",_appDomainAppPath,$if(_isOnUNCShare," (in a share)"," (local disk)"),"\nTemp Folder     : ",_tempDir,"\nCompiling Folder: ",_codegenDir,"\nShutdown Reason : ",$if(_shutdownReason,$enumname(_shutdownReason)+" at "+$tickstodatetime(_lastShutdownAttemptTime.dateData),"Not shutting down"),"\n\n",$if(_shutdownReason,_shutDownMessage+"n"+_shutDownStack,"")
@@ -584,7 +588,7 @@ HostingEnvironment caused shutdownn   at System.Environment.GetStackTrace(Except
 ```
 
 <a id='wtoken'></a>
-*!wtoken - Display WIF tokens and claims*
+## !wtoken - Display WIF tokens and claims
 ```
 Dump all claims for a WIF Tokens in memory or if an HttpContext is specified it lists all claims for that request
 
@@ -644,7 +648,7 @@ Value          : 0#.w|contoso\administrator
 ```
 
 <a id='wdo'></a>
-*!wdo - Dump an object or array*
+## !wdo - Dump an object or array
 ```
 !wdo [/forcearray] [/shownull] [/noheader] [/noindex] [/mt <expr>]
      [/start <expr>] [/end <expr>] <expr>
@@ -705,7 +709,7 @@ Inherits: System.ValueType System.Object System.Collections.Hashtable+bucket (00
 
 ```
 <a id='wselect'></a>
-*!wselect - select specific fields from an object or array (accepts wildcard ? and {"*"})*
+## !wselect - select specific fields from an object or array (accepts wildcard ? and {"*"})
 ```
 !wselect [mt <expr>] <field1>, ..., <fieldN> from <obj-expr> | <array-expr>
 <field1>, ..., <fieldN> List of fields to display (accepts * and ?)
@@ -764,7 +768,7 @@ System.Object[] endpoints.items._items = 000000015595FAA0
 
 ```
 <a id='windex'></a>
-*!windex - Index and dump managed heap types enabling tree view and save index in disk (useful for large dumps)*
+## !windex - Index and dump managed heap types enabling tree view and save index in disk (useful for large dumps)
 ```
 !windex [/quiet] [/enumtypes] [/tree] [/flush] [/short] [/ignorestate]
         [/withpointer] [/type <string>] [/fieldname <string>]
@@ -855,7 +859,7 @@ Index is up to date
 
 ```
 <a id='wstack'></a>
-*!wstack - Dump objects in the current thread*
+## !wstack - Dump objects in the current thread
 ```
 !wstack takes no parameter
 Due to the nature of the stack objects this approach is not deterministic.
@@ -884,7 +888,7 @@ Listing objects from: 0000000001069000 to 0000000001070000 from thread: 3 [22f4]
 
 ```
 <a id='wdict'></a>
-*!wdict - Dump items in a dictionary type*
+## !wdict - Dump items in a dictionary type
 ```
 !wdict<address>
 <address> - Address of the dictionary.
@@ -901,7 +905,7 @@ System.__Canon value = 00000001557d2aa8 v2.0
 
 ```
 <a id='whash'></a>
-*!whash - Dump items in a hash table*
+## !whash - Dump items in a hash table
 ```
 !whash <address>
 <address> - Address of the hash table.
@@ -919,7 +923,7 @@ System.Object val = 000000015568d3d8
 
 ```
 <a id='wgchandles'></a>
-*!wgchandles - List all rooted objects (handles) in heap*
+## !wgchandles - List all rooted objects (handles) in heap
 ```
 !wgchandles
 
@@ -948,7 +952,7 @@ GCHandles
 
 ```
 <a id='whttp'></a>
-*!whttp - Dump HttpContext objects*
+## !whttp - Dump HttpContext objects
 ```
 !whttp [/order] [/running] [/withthread] [/status <decimal>] [/notstatus <decimal>] [/verb <string>] [<expr>] 
 -------
@@ -1091,7 +1095,7 @@ Xml Tree of Request    : !wfrom -obj 00000001c30d2878 select $xmltree($rawfield(
 ```
 
 <a id='wservice'></a>
-*!wservice - Dump all WCF Services or details about a specific service (System.ServiceModel.ServiceHost)*
+## !wservice - Dump all WCF Services or details about a specific service (System.ServiceModel.ServiceHost)
 ```
 !wservice [<expr>]
 
@@ -1250,7 +1254,7 @@ Detail a service:
 
 ```
 <a id='wclass'></a>
-*!wclass - Dump the class defintion and let you set managed breakpoints *
+## !wclass - Dump the class defintion and let you set managed breakpoints
 ```
 !wclass <expr>
 Where:
@@ -1368,7 +1372,7 @@ namespace System.Web.Configuration {
 
 ```
 <a id='wheap'></a>
-*!wheap - Dump heap objects without indexing*
+## !wheap - Dump heap objects without indexing
 ```
 !wheap [/short] [/detailsonly] [/nothrottle] [/start <expr>] [/end <expr>]
        [/type <string>] [/mt <string>]
@@ -1433,7 +1437,7 @@ List only object addresses for a particular type (to use with .foreach)
 
 ```
 <a id='wfrom'></a>
-*!wfrom - Print objects based on a condition (where) and evaluate operations on fields*
+## !wfrom - Print objects based on a condition (where) and evaluate operations on fields
 ```
 !wfrom [/nofield] [/withpointer] [/type <string>]
        [/mt <string>] [/fieldname <string>] [/fieldtype <string>]
@@ -1544,7 +1548,7 @@ This example print summary all HttpContext objects in memory
 
 ```
 <a id='weval'></a>
-*!weval - evaluates expression ad-hoc*
+## !weval - evaluates expression ad-hoc
 ```
 !weval <expr1>,..,<expr2>
 
@@ -1558,8 +1562,8 @@ calculated: System.Configuration.ConfigurationErrorsException
 _firstFilename: C:\inetpub\wwwroot\TestClass\web.config
 
 ```
-<a id='wconfig}
-*!wconfig - Dump all content of .config files in memory*
+<a id='wconfig'></a>
+## !wconfig - Dump all content of .config files in memory
 ```
 !wconfig
 
@@ -1608,8 +1612,171 @@ Line: 0n32
 
 
 ```
+
+<a id='wmakesource'></a>
+## !wmakesource - Reflect source code and create symbol
+```
+If the current frame is managed, it will try to reflect to
+source code in C# and create a symbol file to associate the
+context address with the reflect source code line
+
+Why it is useful:
+================================
+To understand why a component you do not have symbol (or source) files anymore is
+not working anymore.
+This command leverages ILSpy and PdbRestorer (special thanks to Marek Pokorny
+ for his blessing)
+
+Syntax:
+-------
+ 
+!wmakesource
+
+ 
+Example:
+---------
+
+Reflect and create symbol for a frame
+-------------------------------------
+0:000> kc
+
+ # Call Site
+00 ntdll!ZwWaitForSingleObject
+01 mswsock!SockWaitForSingleObject
+02 mswsock!WSPRecv
+03 ws2_32!DPROVIDER::WSPRecv
+04 ws2_32!recv
+05 System_ni!DomainBoundILStubClass.IL_STUB_PInvoke(IntPtr, Byte*, Int32, System.Net.Sockets.SocketFlags)
+06 System_ni!System.Net.Sockets.Socket.Receive(Byte[], Int32, Int32, System.Net.Sockets.SocketFlags, System.Net.Sockets.SocketError ByRef)
+07 System_ni!System.Net.Sockets.Socket.Receive(Byte[], Int32, Int32, System.Net.Sockets.SocketFlags)
+08 System_ServiceModel_ni!System.ServiceModel.Channels.SocketConnection.ReadCore(Byte[], Int32, Int32, System.TimeSpan, Boolean)
+09 System_ServiceModel_ni!System.ServiceModel.Channels.SocketConnection.Read(Byte[], Int32, Int32, System.TimeSpan)
+0a System_ServiceModel_ni!System.ServiceModel.Channels.DelegatingConnection.Read(Byte[], Int32, Int32, System.TimeSpan)
+0b System_ServiceModel_ni!System.ServiceModel.Channels.ConnectionStream.Read(Byte[], Int32, Int32)
+0c System_ni!System.Net.FixedSizeReader.ReadPacket(Byte[], Int32, Int32)
+0d System_ni!System.Net.Security.NegotiateStream.StartFrameHeader(Byte[], Int32, Int32, System.Net.AsyncProtocolRequest)
+0e System_ni!System.Net.Security.NegotiateStream.ProcessRead(Byte[], Int32, Int32, System.Net.AsyncProtocolRequest)
+0f System_ni!System.Net.Security.NegotiateStream.Read(Byte[], Int32, Int32)
+10 System_ServiceModel_ni!System.ServiceModel.Channels.StreamConnection.Read(Byte[], Int32, Int32, System.TimeSpan)
+11 System_ServiceModel_ni!System.ServiceModel.Channels.SessionConnectionReader.Receive(System.TimeSpan)
+12 System_ServiceModel_ni!System.ServiceModel.Channels.SynchronizedMessageSource.Receive(System.TimeSpan)
+13 System_ServiceModel_ni!System.ServiceModel.Channels.TransportDuplexSessionChannel.Receive(System.TimeSpan)
+14 System_ServiceModel_ni!System.ServiceModel.Channels.TransportDuplexSessionChannel.TryReceive(System.TimeSpan, System.ServiceModel.Channels.Message ByRef)
+15 System_ServiceModel_ni!System.ServiceModel.Dispatcher.DuplexChannelBinder.Request(System.ServiceModel.Channels.Message, System.TimeSpan)
+16 System_ServiceModel_ni!System.ServiceModel.Channels.ServiceChannel.Call(System.String, Boolean, System.ServiceModel.Dispatcher.ProxyOperationRuntime, System.Object[], System.Object[], System.TimeSpan)
+17 System_ServiceModel_ni!System.ServiceModel.Channels.ServiceChannelProxy.InvokeService(System.Runtime.Remoting.Messaging.IMethodCallMessage, System.ServiceModel.Dispatcher.ProxyOperationRuntime)
+18 System_ServiceModel_ni!System.ServiceModel.Channels.ServiceChannelProxy.Invoke(System.Runtime.Remoting.Messaging.IMessage)
+19 mscorlib_ni!System.Runtime.Remoting.Proxies.RealProxy.PrivateInvoke(System.Runtime.Remoting.Proxies.MessageData ByRef, Int32)
+1a clr!CTPMethodTable__CallTargetHelper3
+1b clr!CallTargetWorker2
+1c clr!CTPMethodTable::CallTarget
+1d clr!TransparentProxyStubWorker
+1e clr!TransparentProxyStub_CrossContext
+1f LoadTestClient!LoadTestClient.ServiceReference1.DataContractSampleClient.DoYourMagic(LoadTestClient.ServiceReference1.Blob)
+20 LoadTestClient!LoadTestClient.TestClient.DoTest(System.Object)
+21 mscorlib_ni!System.Threading.ExecutionContext.RunInternal(System.Threading.ExecutionContext, System.Threading.ContextCallback, System.Object, Boolean)
+(...)
+
+0:000> !wmakesource
+Module ntdll.dll is not managed. No source will be created.
+Move to the frame context in the stack where you want the code created (example .frame 3)
+
+0:000> .frame 20
+20 00000000`1e08f090 00007fff`1cabaffe LoadTestClient!LoadTestClient.TestClient.DoTest(System.Object)+0xba
+
+0:000> !wmakesource
+
+```
+<a id='wtime'></a>
+## !wtime - Display precise target time
+
+```
+Show UTC (GMT-0) and local time (from the machine being debugged or where the dump was captured).
+
+Why it is useful:
+================================
+IIS Logs use UTC time
+ULS logs use local time
+
+Syntax:
+-------
+ 
+!wtime
+
+ 
+Example:
+----------
+
+Show local and UTC time:
+-------------------------
+0:000> !wtime
+UTC Time   : 07/24/2017 14:42:03.81
+Target Time: 07/24/2017 09:42:03.81
+```
+
+<a id='wxml'></a>
+## !wxml - Dump a XmlDocument object
+```
+Dump the text representation of an XML document
+
+
+Syntax:
+-------
+ 
+!wxml <address>
+
+Where:
+-------
+
+	<address> - Address of the XML document or XML element
+ 
+Examples:
+----------
+
+Dumps an XML Document
+------------------------
+0:000> !wxml 000007feef80e538
+<migration urlid="http://www.microsoft.com/migration/1.0/migxmlext/migapp">
+   <component type="Application">
+      <!-- Name of the application -->
+      <displayName>Some Application
+      </displayName>
+      <!-- Specify whether the environment variables exist in the context of user or system or both -->
+      <environment context="System">
+         <!-- create the environment variables -->
+         <variable name="myVar1">
+            <!-- simple text value assignment to a variable -->
+            <text>value
+            </text>
+         </variable>
+         <variable name="myAppExePath">
+            <!-- make a call to in-built helper function to get a value from a reg key and assign that value to the variable -->
+            <script>MigXmlHelper.GetStringContent("Registry","HKLM\Software\MyApp\Installer [EXEPATH]")
+            </script>
+         </variable>
+      </environment>
+      <role role="Settings">
+         <detects>
+            <!-- all of these checks must be true for the component to be detected -->
+            <detect>
+               <!-- make a call to in-built helper function to check to see if an object exists or not -->
+               <condition>MigXmlHelper.DoesObjectExist("Registry","HKLM\Software\MyApp [win32_version]")
+               </condition>
+            </detect>
+            <detect>
+               <!-- either of these checks must be true for the component to be detected -->
+               <!-- make a call to in-built helper function to check to see if a file version matches or not -->
+               <condition>MigXmlHelper.DoesFileVersionMatch("%MyAppExePath%","ProductVersion","8.*")
+               </condition>
+               <condition>MigXmlHelper.DoesFileVersionMatch("%MyAppExePath%","ProductVersion","9.*")
+               </condition>
+            </detect>
+         </detects>
+(... etc ..)
+```
+
 <a id='expression'></a>
-*!wfrom expression syntax*
+## !wfrom expression syntax
 
 ```
 Boolean (self-describing):
@@ -1742,9 +1909,10 @@ calculated: SPSvc
 
 Xml
 ----------
-*new* $xml(<expr>) - Return the XML-indented version of the Xml string (pretty print)
-*new* $xmltree(<expr>) - Return the XML tree version of the Xml string
-*new* $html(<expr>) - Html encode a string
+$xml(<expr>) - Return the XML-indented version of the Xml string (pretty print)
+$xmltree(<expr>) - Return the XML tree version of the Xml string
+$html(<expr>) - Html encode a string
+*new* $xmldoc(<expr>) - Convert a System.Xml.XmlDocument object to string
 
 Example
 ------------

@@ -112,14 +112,14 @@ This command leverages ILSpy and PdbRestorer (special thanks to Marek Pokorny
 21 mscorlib_ni!System.Threading.ExecutionContext.RunInternal(System.Threading.ExecutionContext, System.Threading.ContextCallback, System.Object, Boolean)
 (...)
 
-0:000&gt; wmakesource
+0:000&gt; !wmakesource
 Module ntdll.dll is not managed. No source will be created.
 Move to the frame context in the stack where you want the code created (example .frame 3)
 
 0:000&gt; .frame 20
 20 00000000`1e08f090 00007fff`1cabaffe LoadTestClient!LoadTestClient.TestClient.DoTest(System.Object)+0xba
 
-0:000&gt; wmakesource
+0:000&gt; !wmakesource
 
 
 
@@ -199,8 +199,7 @@ Address                      Module Version Company Name       Debug Mode Type M
 
 
 ##wxml
-Dump the text representation of an XML document (the order of the nodes may be different)
-
+Dump the text representation of an XML document
 <b>Syntax:</b>
 -------
  
