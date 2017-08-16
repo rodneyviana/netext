@@ -1495,5 +1495,35 @@ namespace ProofOfConcept
 
             }
         }
+
+        private void button18_Click(object sender, EventArgs e)
+        {
+            StartRuntime();
+            CreateCache();
+            string assemblyName = textAssemby.Text;
+            NetExt.Shim.Module mod = new NetExt.Shim.Module(assemblyName);
+            if (!(mod.IsValid && mod.IsClr))
+            {
+                MessageBox.Show("Module is invalid");
+                return;
+            }
+            string fileName = @"c:\temp\" + mod.Name;
+            string baseDir = AppDomain.CurrentDomain.BaseDirectory;
+            AppDomain newDomain = AppDomain.CreateDomain("ReflectionOnly");
+            newDomain.AppendPrivatePath(@"c:\temp");
+            Assembly.ReflectionOnlyLoadFrom(@"c:\temp\Microsoft.Web.Administration.dll");
+            using (FileStream stream = File.Open(@fileName, FileMode.Create))
+            {
+                mod.SaveToStream(stream);
+                stream.Close();
+                //byte[] bytes = new byte[stream.Length];
+                //stream.Position = 0;
+                //stream.Read(bytes,0,(int)stream.Length);
+                Assembly.ReflectionOnlyLoadFrom(mod.Name);
+                AppDomain.Unload(newDomain);
+            }
+        }
+
+
     }
 }
