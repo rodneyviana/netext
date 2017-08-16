@@ -21,13 +21,15 @@ NetExt is back. New commands added not yet included in this help. Use !whelp for
 - For scripts, see [!wfrom](#wfrom) and [!wselect](#wselect)
 - Download the training material here: [https://netext.codeplex.com/releases/view/611486] - Training material is NOW up-to-date.
 
-*COMPATIBLE WITH .NET 2.0 to 4.5.x*
+*COMPATIBLE WITH .NET 2.0 to 4.7.*
 
 
 *Common Resources*
 
 
 [List of available commands](#menu)
+
+
 [Examples](#examples)
 
 
@@ -1774,6 +1776,57 @@ Dumps an XML Document
          </detects>
 (... etc ..)
 ```
+<a id='wmodule'></a>
+## !wmodule
+```
+Dump modules filtered by type or pattern.
+
+The types are:
+- Not from Microsoft
+- Managed only
+- Compiled in debug mode (managed code only)
+ 
+
+Syntax:
+-------
+ 
+!wmodule [-debug] [-managed] [-noms] [-order] [-fullpath] [-name <partial-name>]
+         [-company <partial-name>] [-saveto <folder>]
+
+
+Where:
+	-debug Lists only managed modules compiled in debug mode. Optional
+	-managed Lists only managed modules. Optional
+	-noms Lists modules which are not from Microsoft (it may contain false positives). Optional
+	-order The output will be sorted by name. Optional
+	-fullpath It includes the full path to the modules. Optional
+	-name <partial-name&> List only modules matching the pattern (e.g -name Contoso.MyLibrary*). Optional
+	-company <partial-name> List only modules from the company in the pattern (e.g -company TailsSpin*). Optional
+	-saveto <folder> When present it will save the selected module to an existing folder (e.g. -saveto "c:\mymods\"). Optional. 
+ 
+Examples:
+
+Dumps all modules containing 'mscor'
+------------------------------------
+0:000> !wmodule -name mscor* -fullpath
+Address                      Module Version Company Name       Debug Mode Type Module Binary
+00007fff1c590000                  4.6.127.1 Microsoft Corporation     No   CLR C:\Windows\assembly\NativeImages_v4.0.30319_64\mscorlib\88c60510e9a0b668a5a8e270dba0dfcf\mscorlib.ni.dll
+00007fff1f830000                   4.6.79.0 Microsoft Corporation     No   NAT C:\Windows\Microsoft.NET\Framework64\v4.0.30319\mscoreei.dll
+00007fff1f8d0000           10.0.10240.16384 Microsoft Corporation     No   NAT C:\Windows\System32\mscoree.dll
+
+3 module(s) listed, 74 skipped by the filters
+
+Dumps all non-Microsoft modules and save to disk
+--------------------------------------------------
+0:000> !wmodule -noms -saveto c:\temp\
+Address                      Module Version Company Name       Debug Mode Type Module Binary
+000000005f520000                        0.0 Contoso Inc.              No   NAT CapNop.dll
+000000f058540000                    1.0.0.0                           Yes  CLR VanillaService.exe
+000000f073160000                    1.0.0.0                           Yes  CLR HttpListenerBehavior.dll
+
+3 module(s) listed, 74 skipped by the filters
+```
+
 
 <a id='expression'></a>
 ## !wfrom expression syntax
