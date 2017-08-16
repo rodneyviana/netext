@@ -49,7 +49,7 @@ For example, to get the url of a HttpContext it is necessary to
 
 *Or to list all requests that are "http:" and the status code is not 200 (OK) from ALL HttpRequests:*
 
-`
+```
 !wfrom -type *.HttpContext 
   where ( ($contains(_request._url.m_String, "http:")) && (_response._statuscode != 0n200) ) 
   select $addr(), _request._url.m_String, _response._statusCode
@@ -60,7 +60,7 @@ _response._statusCode: 0n401
 calculated: 0n6802002784
 _request._url.m_String: http://rviana-serv.contoso.com:80/TestClass/Service.svc/net
 _response._statusCode: 0n401 
-`
+```
 
 It also works very well showing arrays (!wdo, !wselect and !wfrom) and providing link to the objects or showing the items value depending on the content of the array.
 
@@ -70,16 +70,16 @@ Please use netext.dll for .NET 2.0-4.5.x. There are both 32 and 64-bits versions
 
 <a id='examples'></a>
 *Examples:*
-`
+```
 .load netext
 0:000> !windex -type *.httpcontext
 
 (...)
 00000001956e5360 000007feda232488      336   1 0 System.Web.HttpContext
 0000000195702098 000007feda232488      336   1 0 System.Web.HttpContext
-`
+```
 
-`
+```
 0:000> !wselect _request._url.m_String, _response._statuscode from 0000000195702098
 System.String _request._url.m_String = 00000001559cb3a8 http://rviana-serv.contoso.com:80/TestClass/Service.svc/net
 (int32)System.Int32 _response._statuscode = c8 (0n200)
@@ -87,11 +87,11 @@ System.String _request._url.m_String = 00000001559cb3a8 http://rviana-serv.conto
 0:000> !wselect * from 000000015579ec00
 System.String Key = 000000015578c6c8 assembly
 System.Object Value = 000000015579EBD8
-`
+```
 
 _Note: !wselect does not accept expressions or conditionals but it accepts wildcard fields_
 
-`
+```
 0:000> !wdo 0000000195702098
 Address: 0000000195702098
 EEClass: 000007fed9e923b8
@@ -109,9 +109,9 @@ Inherits: System.Web.HttpContext System.Object (000007FEDA232488 000007FEEFC0737
 (...)
 007feefc06c50 System.Boolean +0118      _finishPipelineRequestCalled 1 (True)
 (...)
-`
+```
 
-`
+```
 0:000> !wdo 00000001556d1dc8
 Address: 00000001556d1dc8
 EEClass: 000007feef80eb58
@@ -124,9 +124,9 @@ Components: 2
 Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" version="1" Audio="SafeAudio" Video="SafeVideo" Image="SafeImage"/>
 [1]: 00000001556d33d8 <IPermission class="System.Security.Permissions.WebBrowserPermission, WindowsBase,
 Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" version="1" Level="Safe"/>
-`
+```
 
-`
+```
 0:000> ~*e!wstack
 Listing objects from: 0000000000284000 to 0000000000290000 from thread: 0 [21a0]
 Listing objects from: 000000000088e000 to 0000000000890000 from thread: 1 [263c]
@@ -139,7 +139,7 @@ Listing objects from: 0000000004208000 to 0000000004210000 from thread: 20 [1780
 00000001556e5490 000007feda22c148 System.Web.HttpRuntime 0 0
 (...)
 
-`
+```
 <a id='menu'></a>
 
 *List of commands*
@@ -189,7 +189,7 @@ Listing objects from: 0000000004208000 to 0000000004210000 from thread: 20 [1780
 <a id='wpe'></a>
 *!wpe - Dump Details of an Exception Object*
 
-`
+```
 Syntax:
 ---------
 !wpe <expr>
@@ -213,11 +213,11 @@ SP               IP               Function
 
 HResult: 80131509
 
-`
+```
 
 <a id='wdae></a>
 *!wdae - Dump all exceptions in the heap (you must index via !windex first)*
-`
+```
 
 
 Syntax:
@@ -301,11 +301,11 @@ IP               Function
 491 Exceptions in 13 unique type/stack combinations (duplicate types in similar stacks may be rethrows)
 
 
-`
+```
 
 <a id='wdomain'></a>
 *!wdomain - Dump domain information including name, base folder, config file and modules loaded*
-`
+```
 
 
 Syntax:
@@ -326,25 +326,25 @@ Address          Domain Name                                   Modules Base Path
 000000000153c300 /LM/W3SVC/1067026433/ROOT-1-130029361030647561    238 Base Path: C:\inetpub\wwwroot\wss\VirtualDirectories\80\ Config: web.config 
 
 
-`
+```
 
 
 <a id='wupdate'></a>
 *!wupdate - Check for new versions and compare with current. If a new version is found, it tries to open the update page*
 *If the page is not in http://netext.codeplex.com, do not download*
-`
+```
 
 
 Syntax:
 ---------
 !wuptade
 
-`
+```
 
 <a id='wver'></a>
 *!wver - Show version of the .NET framework(s) present in the process or dump. It may have more than one framework in memory*
 *It also shows the extension version*
-`
+```
 
 
 Syntax:
@@ -364,11 +364,11 @@ Runtime(s) Found: 1
 NetExt (this extension) Version: 2.0.1.5000
 
 
-`
+```
 
 <a id='wthreads'></a>
 *!wthreads - Dump thread information*
-`
+```
 
 
 Syntax:
@@ -422,12 +422,12 @@ Show all managed threads
 
 
 
-`
+```
 
 
 <a id='wkeyvalue'></a>
 *!wkeyvalue - Display pair key/value for objects that derives NameObjectCollectionBase*
-`
+```
 
 Usage: !wkeyvalue <expr>
 Where:
@@ -473,11 +473,11 @@ key=[000000016299edc8:System.Configuration.ConfigurationValue]{  { "SourceInfo":
 =====================================
 value=[000000016299ee50:System.Configuration.ConfigurationValue]{  { "SourceInfo":0000000100004720 } { "Value":https://portal.contoso.com/_layouts/collaboration/ws/webservice.asmx } { "ValueFlags":0n1 } }
 
-`
+```
 
 <a id='wcookie'></a>
 *!wcookie - Dump all cookies for all Http context objects, a single context or matching a cookie filter criteria*
-`
+```
 Usage: !wcookie [-summary] [-name <partial-name>] [-value <partial-value>]
                        [-min <expr>] <expr>
 Where:
@@ -531,11 +531,11 @@ ASP.NET_SessionId=0qtahu45hokrcs45052cn0a5
 
 ======================================================================================
 
-`
+```
 
 <a id='wruntime'></a>
 *!wruntime - Dump all active Http Runtime information*
-`
+```
 This is equivalent to this command:
 !wfrom -nospace -nofield -type System.Web.HttpRuntime where ((!_beforeFirstRequest) || _shutdownReason) "\n=========================================================================\n","Address         : ",$addr(),"\nFirst Request   : ",$tickstodatetime(_firstRequestStartTime.dateData),"\nApp Pool User   : ",_wpUserId,"\nTrust Level     : ",_trustLevel,"\nApp Domnain Id  : ",_appDomainId,"\nDebug Enabled   : ",$if(_debuggingEnabled,"True (Not recommended in production)","False"),"\nActive Requests : ",_activeRequestCount,"\nPath            : ",_appDomainAppPath,$if(_isOnUNCShare," (in a share)"," (local disk)"),"\nTemp Folder     : ",_tempDir,"\nCompiling Folder: ",_codegenDir,"\nShutdown Reason : ",$if(_shutdownReason,$enumname(_shutdownReason)+" at "+$tickstodatetime(_lastShutdownAttemptTime.dateData),"Not shutting down"),"\n\n",$if(_shutdownReason,_shutDownMessage+"n"+_shutDownStack,"")
 
@@ -581,11 +581,11 @@ HostingEnvironment caused shutdownn   at System.Environment.GetStackTrace(Except
    at System.Threading._ThreadPoolWaitCallback.PerformWaitCallback()
 
 
-`
+```
 
 <a id='wtoken'></a>
 *!wtoken - Display WIF tokens and claims*
-`
+```
 Dump all claims for a WIF Tokens in memory or if an HttpContext is specified it lists all claims for that request
 
 Usage: !wcookie [<expr>]
@@ -641,11 +641,12 @@ Value          : 0#.w|contoso\administrator
 ============================================================================================================
 (...)
 
-`
+```
 
 <a id='wdo'></a>
 *!wdo - Dump an object or array*
-`!wdo [/forcearray] [/shownull] [/noheader] [/noindex] [/mt <expr>]
+```
+!wdo [/forcearray] [/shownull] [/noheader] [/noindex] [/mt <expr>]
      [/start <expr>] [/end <expr>] <expr>
   /mt <expr> - mt,Method table for value objects (space-delimited)
   <expr> - Address,Object Address
@@ -702,10 +703,10 @@ Inherits: System.ValueType System.Object System.Collections.Hashtable+bucket (00
 400099a 000007feefc07370 2000266 System.Object +0008          val 00000001956FDDE8
 400099b 000007feefc0ecf0 2000266 System.Int32 +0010           hash_coll 6bf311c4 (0n1811091908)
 
-`
+```
 <a id='wselect'></a>
 *!wselect - select specific fields from an object or array (accepts wildcard ? and {"*"})*
-`
+```
 !wselect [mt <expr>] <field1>, ..., <fieldN> from <obj-expr> | <array-expr>
 <field1>, ..., <fieldN> List of fields to display (accepts * and ?)
                         Fields can include subfields in the format field1.subfield1.subsubfield1
@@ -761,10 +762,10 @@ Hint: You can get to the array of endpoints from a System.ServiceModel.Descripti
 0:000> !wselect endpoints.items._items from 000000015585f5c8
 System.Object[] endpoints.items._items = 000000015595FAA0
 
-`
+```
 <a id='windex'></a>
 *!windex - Index and dump managed heap types enabling tree view and save index in disk (useful for large dumps)*
-`
+```
 !windex [/quiet] [/enumtypes] [/tree] [/flush] [/short] [/ignorestate]
         [/withpointer] [/type <string>] [/fieldname <string>]
         [/fieldtype <string>] [/implement <string>] [/save <string>]
@@ -852,10 +853,10 @@ Index is up to date
 00000001556602d0 000007feefc08188 System.Threading.ThreadAbortException      136   0 0
 
 
-`
+```
 <a id='wstack'></a>
 *!wstack - Dump objects in the current thread*
-`
+```
 !wstack takes no parameter
 Due to the nature of the stack objects this approach is not deterministic.
 
@@ -881,10 +882,10 @@ Listing objects from: 0000000001069000 to 0000000001070000 from thread: 3 [22f4]
 00000001559dd128 000007feefbf62e8 System.Threading.ThreadPoolRequestQueue 0 0
 (...)
 
-`
+```
 <a id='wdict'></a>
 *!wdict - Dump items in a dictionary type*
-`
+```
 !wdict<address>
 <address> - Address of the dictionary.
 
@@ -898,10 +899,10 @@ Items   : 1
 System.__Canon key = 00000001557d2a70 CompilerVersion
 System.__Canon value = 00000001557d2aa8 v2.0
 
-`
+```
 <a id='whash'></a>
 *!whash - Dump items in a hash table*
-`
+```
 !whash <address>
 <address> - Address of the hash table.
 
@@ -916,10 +917,10 @@ Buckets : 000000015568d128
 System.Object key = 000000015568c658 utf-8
 System.Object val = 000000015568d3d8
 
-`
+```
 <a id='wgchandles'></a>
 *!wgchandles - List all rooted objects (handles) in heap*
-`
+```
 !wgchandles
 
 Example:
@@ -945,10 +946,10 @@ GCHandles
   439: 0000000195700708 poi(00000000010817f8)      120 System.Threading.OverlappedData - Invalid
 
 
-`
+```
 <a id='whttp'></a>
 *!whttp - Dump HttpContext objects*
-`
+```
 !whttp [/order] [/running] [/withthread] [/status <decimal>] [/notstatus <decimal>] [/verb <string>] [<expr>] 
 -------
  /order - If specified will show requests in chronological order and include the time stamp
@@ -1087,11 +1088,11 @@ Xml Formatted Request  : !wfrom -obj 00000001c30d2878 select $xml($rawfield(_req
 Xml Tree of Request    : !wfrom -obj 00000001c30d2878 select $xmltree($rawfield(_request._rawContent._data))
 
 
-`
+```
 
 <a id='wservice'></a>
 *!wservice - Dump all WCF Services or details about a specific service (System.ServiceModel.ServiceHost)*
-`
+```
 !wservice [<expr>]
 
 <address> - Address of the hash table.
@@ -1247,10 +1248,10 @@ Detail a service:
 	Binding            : 0000000155965c98
 
 
-`
+```
 <a id='wclass'></a>
 *!wclass - Dump the class defintion and let you set managed breakpoints *
-`
+```
 !wclass <expr>
 Where:
 	<expr> is the Method Table of the class (you can use an expression).
@@ -1365,10 +1366,10 @@ namespace System.Web.Configuration {
 }
 
 
-`
+```
 <a id='wheap'></a>
 *!wheap - Dump heap objects without indexing*
-`
+```
 !wheap [/short] [/detailsonly] [/nothrottle] [/start <expr>] [/end <expr>]
        [/type <string>] [/mt <string>]
   /short - Dump object addresses only (for .foreach processing)
@@ -1430,10 +1431,10 @@ List only object addresses for a particular type (to use with .foreach)
 00000001559e1fb0
 (...)
 
-`
+```
 <a id='wfrom'></a>
 *!wfrom - Print objects based on a condition (where) and evaluate operations on fields*
-`
+```
 !wfrom [/nofield] [/withpointer] [/type <string>]
        [/mt <string>] [/fieldname <string>] [/fieldtype <string>]
        [/implement <string>] [/obj <expr>] 
@@ -1541,10 +1542,10 @@ This example print summary all HttpContext objects in memory
 00000001956E5360	No	Running	0n401	POST	http://rviana-serv.northamerica.contoso.com:80/TestClass/Service.svc/net
 0000000195702098	No	Running	0n200	POST	http://rviana-serv.northamerica.contoso.com:80/TestClass/Service.svc/net
 
-`
+```
 <a id='weval'></a>
 *!weval - evaluates expression ad-hoc*
-`
+```
 !weval <expr1>,..,<expr2>
 
 Where Expression is a valid ad-hoc expression
@@ -1556,10 +1557,10 @@ List type name and field from an object
 calculated: System.Configuration.ConfigurationErrorsException
 _firstFilename: C:\inetpub\wwwroot\TestClass\web.config
 
-`
+```
 <a id='wconfig}
 *!wconfig - Dump all content of .config files in memory*
-`
+```
 !wconfig
 
 This is equivalent to this command:
@@ -1606,11 +1607,11 @@ Line: 0n32
 <serviceApplications applicationId="171fdc63-2115-4975-ad5f-952bf737a7d6" />
 
 
-`
+```
 <a id='expression'></a>
 *!wfrom expression syntax*
 
-`
+```
 Boolean (self-describing):
 --------------------------
 
@@ -1627,7 +1628,7 @@ Arithmetics by precedence
 --------------------------
 ( )
 ^ (power 3^2 = 9)
-`*`
+```*```
 /
 \ (module 5\2 = 1)
 +
@@ -1651,11 +1652,11 @@ Strings:
 <
 
 Examples: "abc"+"def", field1=="rodney", lastname+", "+firstname
-`
+```
 
 <a id='functions'></a>
 *Functions*
-`
+```
 The ability to use functions is the most powerful feature of the extension.
 All functions start with '$' sign.
 Functions are what enable the data mining operations on the heap.
@@ -1988,4 +1989,4 @@ calculated: 00:01:29
 
 
 
-`
+```
