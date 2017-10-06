@@ -134,36 +134,38 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>inc;$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSDK_IncludePath);C:\spirit\boost_1_46_1;C:\spirit\tinyXml</IncludePath>
+    <IncludePath>tinyXml;inc;$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSDK_IncludePath);C:\spirit\boost_1_46_1</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>inc;$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSDK_IncludePath);C:\spirit\boost_1_46_1;C:\spirit\tinyXml</IncludePath>
+    <IncludePath>tinyXml;inc;$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSDK_IncludePath);C:\spirit\boost_1_46_1</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
+    <IncludePath>tinyXml;inc;$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSDK_IncludePath);C:\spirit\boost_1_46_1</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release32|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>C:\spirit\boost_1_46_1;C:\spirit\tinyXml;inc;$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSDK_IncludePath);</IncludePath>
+    <IncludePath>tinyXml;inc;$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSDK_IncludePath);C:\spirit\boost_1_46_1</IncludePath>
     <LibraryPath>lib\$(PlatformShortName);$(VCInstallDir)lib;$(VCInstallDir)atlmfc\lib;$(WindowsSDK_LibraryPath_x86);</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release64|Win32'">
     <LinkIncremental>false</LinkIncremental>
+    <IncludePath>tinyXml;inc;$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSDK_IncludePath);C:\spirit\boost_1_46_1</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>inc;$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSDK_IncludePath);</IncludePath>
+    <IncludePath>tinyXml;inc;$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSDK_IncludePath);C:\spirit\boost_1_46_1</IncludePath>
     <LibraryPath>lib\$(PlatformShortName);;$(VCInstallDir)lib\amd64;$(VCInstallDir)atlmfc\lib\amd64;$(WindowsSDK_LibraryPath_x64);</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release32|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>inc;$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSDK_IncludePath);</IncludePath>
+    <IncludePath>tinyXml;inc;$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSDK_IncludePath);C:\spirit\boost_1_46_1</IncludePath>
     <LibraryPath>lib\$(PlatformShortName);;$(VCInstallDir)lib\amd64;$(VCInstallDir)atlmfc\lib\amd64;$(WindowsSDK_LibraryPath_x64);</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release64|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>C:\spirit\boost_1_46_1;C:\spirit\tinyXml;inc;$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSDK_IncludePath);</IncludePath>
+    <IncludePath>tinyXml;inc;$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSDK_IncludePath);C:\spirit\boost_1_46_1</IncludePath>
     <LibraryPath>lib\$(PlatformShortName);$(VCInstallDir)lib\amd64;$(VCInstallDir)atlmfc\lib\amd64;$(WindowsSDK_LibraryPath_x64)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -387,8 +389,6 @@ echo lib\$(PlatformShortName)</Command>
     <None Include="NetExt.def" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\spirit\tinyXml\tinystr.h" />
-    <ClInclude Include="..\..\..\spirit\tinyXml\tinyxml.h" />
     <ClInclude Include="boost.h" />
     <ClInclude Include="CLRHelper.h" />
     <ClInclude Include="inc\engextcpp.hpp" />
@@ -397,16 +397,14 @@ echo lib\$(PlatformShortName)</Command>
     <ClInclude Include="resource.h" />
     <ClInclude Include="selectparser.h" />
     <ClInclude Include="SpecialCases.h" />
+    <ClInclude Include="tinyXml\tinystr.h" />
+    <ClInclude Include="tinyXml\tinyxml.h" />
     <ClInclude Include="VersionInfo.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="NetExt.rc" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\spirit\tinyXml\tinystr.cpp" />
-    <ClCompile Include="..\..\..\spirit\tinyXml\tinyxml.cpp" />
-    <ClCompile Include="..\..\..\spirit\tinyXml\tinyxmlerror.cpp" />
-    <ClCompile Include="..\..\..\spirit\tinyXml\tinyxmlparser.cpp" />
     <ClCompile Include="CLRHelper.cpp" />
     <ClCompile Include="clrstack.cpp" />
     <ClCompile Include="do.cpp" />
@@ -419,6 +417,10 @@ echo lib\$(PlatformShortName)</Command>
     <ClCompile Include="selectparser.cpp" />
     <ClCompile Include="socket.cpp" />
     <ClCompile Include="SpecialCases.cpp" />
+    <ClCompile Include="tinyXml\tinystr.cpp" />
+    <ClCompile Include="tinyXml\tinyxml.cpp" />
+    <ClCompile Include="tinyXml\tinyxmlerror.cpp" />
+    <ClCompile Include="tinyXml\tinyxmlparser.cpp" />
     <ClCompile Include="wdict.cpp" />
     <ClCompile Include="wheap.cpp" />
     <ClCompile Include="whelp.cpp" />

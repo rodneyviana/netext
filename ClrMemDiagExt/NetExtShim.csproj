@@ -280,7 +280,12 @@
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>cd $(TargetDir)
-"C:\Program Files (x86)\Microsoft SDKs\Windows\v8.1A\bin\NETFX 4.5.1 Tools"\tlbexp.exe $(TargetPath) 
+@REM Change this value to point to your .NET 4.x SDk
+@SET "WindowsNETSdkDir_x86=C:\Program Files (x86)\Microsoft SDKs\Windows\v8.0A\bin\NETFX 4.0 Tools"
+@SET "WindowsNETSdkDir_x64=C:\Program Files (x86)\Microsoft SDKs\Windows\v8.0A\bin\NETFX 4.0 Tools\x64"
+
+@ECHO "%25WindowsNETSdkDir_$(PlatformName)%25\tlbexp.exe" $(TargetPath) 
+"%25WindowsNETSdkDir_$(PlatformName)%25\tlbexp.exe" $(TargetPath)
 echo xcopy /d /y $(TargetDir)*.*  $(SolutionDir)$(PlatformName)\$(ConfigurationName)\
 xcopy /d /y $(TargetDir)*.*  $(SolutionDir)$(PlatformName)\$(ConfigurationName)\
 

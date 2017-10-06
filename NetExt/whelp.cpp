@@ -1,5 +1,5 @@
-// Source Date: Wednesday, August 16, 2017 1:40:18 PM
-// Source File: D:\Onedrive\Projects\netext\NetExt\helptxt.txt
+// Source Date: Wednesday, August 16, 2017 5:12:54 PM
+// Source File: C:\Users\rviana\OneDrive\Projects\netext\NetExt\helptxt.txt
 // This file was generated. Do not modify. Modify Source File instead
 #include "netext.h"
 
@@ -133,14 +133,14 @@ EXT_COMMAND(whelp,
 		Dml("21 mscorlib_ni!System.Threading.ExecutionContext.RunInternal(System.Threading.ExecutionContext, System.Threading.ContextCallback, System.Object, Boolean)\n");
 		Dml("(...)\n");
 		Dml("\n");
-		Dml("0:000&gt; wmakesource\n");
+		Dml("0:000&gt; !wmakesource\n");
 		Dml("Module ntdll.dll is not managed. No source will be created.\n");
 		Dml("Move to the frame context in the stack where you want the code created (example .frame 3)\n");
 		Dml("\n");
 		Dml("0:000&gt; .frame 20\n");
 		Dml("20 00000000`1e08f090 00007fff`1cabaffe LoadTestClient!LoadTestClient.TestClient.DoTest(System.Object)+0xba\n");
 		Dml("\n");
-		Dml("0:000&gt; wmakesource\n");
+		Dml("0:000&gt; !wmakesource\n");
 		Dml("\n");
 		Dml("\n");
 		Dml("\n");
@@ -229,8 +229,7 @@ EXT_COMMAND(whelp,
 	}
 	if(keyword=="wxml")
 	{
-		Dml("Dump the text representation of an XML document (the order of the nodes may be different)\n");
-		Dml("\n");
+		Dml("Dump the text representation of an XML document\n");
 		Dml("<b>Syntax:</b>\n");
 		Dml("-------\n");
 		Dml(" \n");
@@ -2605,9 +2604,9 @@ EXT_COMMAND(whelp,
 	if(keyword=="license")
 	{
 		Dml("\n");
-		Dml("<b>For NetExt:<b> (https://github.com/rodneyviana/netext)\n");
+		Dml("<b>For NetExt:</b> (https://github.com/rodneyviana/netext)\n");
 		Dml("\n");
-		Dml("<b>MIT License<b>\n");
+		Dml("<b>MIT License</b>\n");
 		Dml("\n");
 		Dml("Copyright (c) 2017 Rodney Viana\n");
 		Dml("\n");
