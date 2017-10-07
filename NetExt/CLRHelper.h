@@ -131,6 +131,11 @@ public:
 std::string TypeString(CorElementType CorType);
 bool IsMinidump();
 
+bool IsValidMemory(CLRDATA_ADDRESS Address, MEMORY_BASIC_INFORMATION64& MemInfo, INT64 Size = 0);
+
+bool IsValidMemory(CLRDATA_ADDRESS Address, INT64 Size = 0);
+
+
 //GetUserString
 class ObjDetail
 {
@@ -252,10 +257,18 @@ public:
 		isValid = false;
 		if(!Address) return false; 
 
+		if(!IsValidMemory(Address, 24))
+			return false;
 		isValid = pHeap->GetObjectType(addr, &type) == S_OK;
 
 		if(!isValid) return false;
+		
+		ZeroMemory(&obj, sizeof(obj));
 		type->GetHeader(Address, &obj);
+
+		isValid = IsValidMemory(Address, obj.size);
+
+		
 		classObj.Request(obj.MethodTable);
 		return isValid;
 	}
@@ -279,6 +292,9 @@ public:
 		if(!isValid) return false;
 		obj.MethodTable = MT;
 		isValid = type->GetHeader(Address, &obj) == S_OK;
+
+		isValid = IsValidMemory(Address, obj.size);
+
 		classObj.Request(obj.MethodTable);
 		return isValid;
 	}

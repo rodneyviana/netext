@@ -102,6 +102,29 @@ bool IsMinidump()
 	return !g_ExtInstancePtr->HasFullMemBasic();
 }
 
+bool IsValidMemory(CLRDATA_ADDRESS Address, MEMORY_BASIC_INFORMATION64& MemInfo, INT64 Size)
+{
+#if _DEBUG
+	//g_ExtInstancePtr->Out("Address: %p, Base: %p, Size: %i, End: %p\n", Address, MemInfo.AllocationBase,
+	//	MemInfo.RegionSize, MemInfo.AllocationBase + MemInfo.RegionSize);
+#endif
+	if (!(Address >= MemInfo.AllocationBase))
+		return false;
+	if (0 == Size)
+	{
+		return true;
+	}
+	return IsValidMemory(Address + Size, MemInfo);
+}
+
+bool IsValidMemory(CLRDATA_ADDRESS Address, INT64 Size)
+{
+	MEMORY_BASIC_INFORMATION64 mi;
+	ZeroMemory(&mi, sizeof(mi));
+	g_ExtInstancePtr->m_Data4->QueryVirtual(Address, &mi);
+	return IsValidMemory(Address, mi, Size);
+}
+
 SimpleCache<CLRDATA_ADDRESS, vector<FieldStore>> fieldsCache;
 
 #pragma region FieldStore

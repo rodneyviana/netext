@@ -120,6 +120,7 @@ vector<ULONG> StackObj::IsInStack(CLRDATA_ADDRESS addr)
 void StackObj::DumpStackObject(bool CacheOnly)
 {
 	NT_TIB teb;
+	ZeroMemory(&teb, sizeof(teb));
 	ULONG64 tebAddr=0;
 
 	HRESULT status = g_ExtInstancePtr->m_System->GetCurrentThreadTeb(&tebAddr);
@@ -179,6 +180,15 @@ void StackObj::DumpStackObject(bool CacheOnly)
 		}
 		it++;
 	}
+#if _DEBUG
+	//g_ExtInstancePtr->Out("Start: %p, End: %p, Size: %i\n", stackEnd, stackStart, stackStart - stackEnd);
+#endif
+	if(!IsValidMemory(stackEnd, stackStart - stackEnd))
+	{
+		g_ExtInstancePtr->Err("Stack is in an unstable situation\n");
+		return;
+	}
+
 	while(stackEnd <= stackStart)
 	{
 		if(IsInterrupted())
