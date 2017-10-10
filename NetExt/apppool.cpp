@@ -42,7 +42,16 @@ EXT_COMMAND(wapppool,
 		ModuleVersion version = mod.GetVersionInfo();
 		Out("IIS Version          : %i.%i.%i.%i\n", version.Major, version.Minor, version.Build, version.Revision);
 	}
+	auto envVars = EXT_CLASS::GetProcessEnvVar();
 	Out("Full Command Line    : %S\n", NameBuffer);
+	Out("Process Account      : %S\n", EXT_CLASS::GetProcessAccount().c_str());
+	Out("Machine Name         : %S\n", GetVar(L"COMPUTERNAME").c_str());
 
+	wstring domainName = GetVar(L"USERDOMAIN");
+
+	if(domainName.size() != 0)
+	{
+		Out("Domain Name          : %S\n", domainName.c_str());
+	}
 
 }

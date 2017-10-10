@@ -585,7 +585,7 @@ public:
 	static std::wstring GetEnumString(CLRDATA_ADDRESS MethodTable, UINT64 Value, mdTypeDef Token=0);
 	static bool IsEnumType(CLRDATA_ADDRESS MT);
 	static std::string GetRawArray(CLRDATA_ADDRESS Obj);
-	static std::string GetHexArray(CLRDATA_ADDRESS Obj, bool Padded=true);
+	static std::string GetHexArray(CLRDATA_ADDRESS Obj, bool Padded=true, int Limit = 0);
 	static SVAL GetDbgVar(int DBGVar);
 	static bool SetDbgVar(int DBGVar, SVAL v);
 	static std::string ToGuid(CLRDATA_ADDRESS Addr);

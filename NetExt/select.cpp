@@ -155,7 +155,8 @@ namespace CALC
 		fupper,
 		flower,
 		fxmltree,
-		fxmldoc
+		fxmldoc,
+		fpp
 	};
 
 	struct funcDef
@@ -859,24 +860,13 @@ namespace CALC
 	void do_env()
 	{
 		SVAL s = st.top(); st.pop();
-		std::wstring peb = CA2W(EXT_CLASS::Execute("!peb").c_str());
-		std::wstring upeb = peb;
-		boost::to_upper(upeb);
-		boost::to_upper(s.strValue);
-		auto i=upeb.find(L" "+s.strValue+L"=");
-		if(i!=wstring::npos)
-		{
-			i+=s.strValue.size()+2;
-			auto k=peb.find(L"\n", i);
-			if(k!=wstring::npos)
-			{
-				std::wstring str =peb.substr(i, k-i);
-				do_stdstring(str);
-				return;
-			}
-			 
-		}
-		do_stdstring(L"");
+		auto envVars = EXT_CLASS::GetProcessEnvVar();
+
+		wstring varStr = GetVar(s.strValue);
+
+		do_stdstring(varStr);
+
+
 	}
 
 	void do_ipaddress()
@@ -1120,6 +1110,30 @@ namespace CALC
 		wstring str1 = str;
 		do_stdstring(str1);
 
+	}
+
+	void do_pp()
+	{
+		SVAL v=st.top(); st.pop();
+		
+		if(v.Value.ptr == 0)
+		{
+			do_stdstring(v.strValue);
+		}
+
+		string result;
+		if(v.IsValueType)
+		{
+			result = SpecialCases::PrettyPrint(v.Value.ptr, v.MT);
+		} else
+		{
+			result = SpecialCases::PrettyPrint(v.Value.ptr);
+		}
+
+		if(result.size() == 0)
+			do_stdstring(v.strValue);
+		else
+			do_stdstring(result);
 	}
 
 	void do_func(char const*, char const*)
@@ -1475,6 +1489,11 @@ namespace CALC
 				assert_param(1);
 				do_xmldoc();
 				break;
+			case fpp:
+				assert_param(1);
+				do_pp();
+				break;
+
 
 
 			default:
@@ -1590,6 +1609,7 @@ struct calculator : public grammar<calculator>
 				("$lower", flower)
 				("$xmltree", fxmltree)
 				("$xmldoc", fxmldoc)
+				("$pp", fpp)
 				;
 
 				escapes.add("\\a", '\a')("\\b", '\b')("\\f", '\f')("\\n", '\n')

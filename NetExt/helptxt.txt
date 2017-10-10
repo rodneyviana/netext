@@ -192,8 +192,9 @@ The types are:
 	<b>-fullpath</b> It includes the full path to the modules. Optional
 	<b>-name &lt;partial-name&gt;</b> List only modules matching the pattern (e.g -name Contoso.MyLibrary*). Optional
 	<b>-company &lt;partial-name&gt;</b> List only modules from the company in the pattern (e.g -company TailsSpin*). Optional
-	<b>-saveto &lt;folder&gt;</b>When present it will save the selected module to an existing folder (e.g. -saveto "c:\my mods\"). Optional. 
- 
+	<b>-saveto &lt;folder&gt;</b>When present it will save the selected module to an existing folder (e.g. -saveto c:\my mods\). Optional. Must be at the end.
+
+<b>Note:</b> -saveto &lt;folder&gt; must be the last parameter. Do not use quotes.
 <b>Examples:</b>
 ----------
 
@@ -209,13 +210,13 @@ Address                      Module Version Company Name       Debug Mode Type M
 
 <i>Dumps all non-Microsoft modules and save to disk</i>
 -------------------------------------------
-0:000&gt; !wmodule -noms -saveto c:\temp\
-Address                      Module Version Company Name       Debug Mode Type Module Binary
-000000005f520000                        0.0 Contoso Inc.              No   NAT CapNop.dll
-000000f058540000                    1.0.0.0                           Yes  CLR VanillaService.exe
-000000f073160000                    1.0.0.0                           Yes  CLR HttpListenerBehavior.dll
+0:000&gt; !wmodule -noms -saveto c:\modules here
+Saved 'c:\modules here\NoTrack.dll' successfully
+Saved 'c:\modules here\VanillaService.exe' successfully
+Saved 'c:\modules here\HttpListenerBehavior.dll' successfully
 
-3 module(s) listed, 74 skipped by the filters
+3 module(s) saved, 0 failed, 74 skipped by the filters
+
 
 
 
@@ -2138,17 +2139,18 @@ DOCUMENT
 <b>$tonumberstring(&lt;expr&gt;)</b> - Return the string from the numeric expression (&lt;expr&gt;)
 <b>$toformattednumberstring(&lt;expr&gt;)</b> - Return the comma separated string from the numeric expression (&lt;expr&gt;)
 <b>$tohexstring(&lt;expr&gt;)</b> - Return the hexadecimal string from the numeric expression (&lt;expr&gt;)
-*new* <b>$val(&lt;str&gt;)</b> - Return the integer representation of the string (not compatible with 0x and 0n)
-*new* <b>$strsize(&lt;str&gt;)</b> - Return the number of characters of the string
-*new* <b>$replace(&lt;str&gt; &lt;pat&gt;, &lt;new-pat&gt;)</b> - Replace a pattern in a string by another
-*new* <b>$split(&lt;str&gt; &lt;pat&gt;, &lt;index&gt;)</b> - Return the ith element of the string split by a pattern
-*new* <b>$splitsize(&lt;str&gt; &lt;pat&gt;)</b> - Return the number of elements of the string split by a pattern
-*new* <b>$ltrim(&lt;str&gt;)</b> - Remove leading spaces (left trim)
-*new* <b>$rtrim(&lt;str&gt;)</b> - Remove trailing spaces (right trim)
-*new* <b>$lpad(&lt;str&gt;, &lt;count&gt;)</b> - Add leading spaces (left pad)
-*new* <b>$rpad(&lt;str&gt;, &lt;count&gt;)</b> - Add trailing spaces (right pad)
-*new* <b>$tokenize(&lt;str&gt; &lt;index&gt;)</b> - Return the ith token from the string
-*new* <b>$regex(&lt;str&gt;, &lt;pat&gt;, &lt;replace-pat&gt;)</b> - Replace &lt;str&gt; following the regex pattern &lt;pat&gt; into &lt;replace-pat&gt; ($0 = full regex match, $1=match 1, $n=match n)
+<b>$val(&lt;str&gt;)</b> - Return the integer representation of the string (not compatible with 0x and 0n)
+<b>$strsize(&lt;str&gt;)</b> - Return the number of characters of the string
+<b>$replace(&lt;str&gt; &lt;pat&gt;, &lt;new-pat&gt;)</b> - Replace a pattern in a string by another
+<b>$split(&lt;str&gt; &lt;pat&gt;, &lt;index&gt;)</b> - Return the ith element of the string split by a pattern
+<b>$splitsize(&lt;str&gt; &lt;pat&gt;)</b> - Return the number of elements of the string split by a pattern
+<b>$ltrim(&lt;str&gt;)</b> - Remove leading spaces (left trim)
+<b>$rtrim(&lt;str&gt;)</b> - Remove trailing spaces (right trim)
+<b>$lpad(&lt;str&gt;, &lt;count&gt;)</b> - Add leading spaces (left pad)
+<b>$rpad(&lt;str&gt;, &lt;count&gt;)</b> - Add trailing spaces (right pad)
+<b>$tokenize(&lt;str&gt; &lt;index&gt;)</b> - Return the ith token from the string
+<b>$regex(&lt;str&gt;, &lt;pat&gt;, &lt;replace-pat&gt;)</b> - Replace &lt;str&gt; following the regex pattern &lt;pat&gt; into &lt;replace-pat&gt; ($0 = full regex match, $1=match 1, $n=match n)
+*new* <b>$pp(&lt;expr&gt;)</b> - Return the pretty printed version of a field or object
 
 <i>Examples</i>
 ------------
@@ -2175,8 +2177,21 @@ calculated: token3  $tokenize("token0,token1,token2,,,,,token3    token4",3)
 calculated: token4  $tokenize("token0,token1,token2,,,,,token3    token4",4)
 calculated: 000,1,2000,3,400,500 - full match: 000p1(2000)[3]x400:500 $regex("000p1(2000)[3]x400:500","(\\d+)\\D+(\\d+)\\D+(\\d+)\\D+(\\d+)\\D+(\\d+)\\D+(\\d+)","$1,$2,$3,$4,$5,$6 - full match: $0")
 
+0:000&gt; !wfrom -type System.IO.MemoryStream $pp(_buffer)
+calculated: 3c 44 69 67 65 73 74 56 61 6c 75 65 64 20 41 6c 67 6f 72 69 74 68 6d 3d 22 68 74 74 70 3a 2f 2f  &lt;DigestValued Algorithm="http:// (...more...)
+calculated: 3c 44 69 67 65 73 74 56 61 6c 75 65 64 20 41 6c 67 6f 72 69 74 68 6d 3d 22 68 74 74 70 3a 2f 2f  &lt;DigestValued Algorithm="http:// (...more...)
+calculated: 3c 44 69 67 65 73 74 56 61 6c 75 65 64 20 41 6c 67 6f 72 69 74 68 6d 3d 22 68 74 74 70 3a 2f 2f  &lt;<DigestValued Algorithm="http:// (...more...)
+calculated: 3c 44 69 67 65 73 74 56 61 6c 75 65 64 20 41 6c 67 6f 72 69 74 68 6d 3d 22 68 74 74 70 3a 2f 2f  &lt;DigestValued Algorithm="http:// (...more...)
+calculated: 3c 53 69 67 6e 65 64 49 6e 66 6f 20 78 6d 6c 6e 73 3d 22 68 74 74 70 3a 2f 2f 77 77 77 2e 77 33  &lt;SignedInfo xmlns="http://www.w3 (...more...)
+calculated: 57 86 03 0b 01 74 7e 0b 01 75 66 57 f6 02 99 2c 68 74 74 70 3a 2f 2f 73 63 68 65 6d 61 73 2e 78  W....t~..ufW...,http://schemas.x (...more...)
+calculated: 3c 53 69 67 6e 65 64 49 6e 66 6f 20 78 6d 6c 6e 73 3d 22 68 74 74 70 3a 2f 2f 77 77 77 2e 77 33  &lt;SignedInfo xmlns="http://www.w3 (...more...)
+calculated: 3c 53 69 67 6e 65 64 49 6e 66 6f 20 78 6d 6c 6e 73 3d 22 68 74 74 70 3a 2f 2f 77 77 77 2e 77 33  &lt;SignedInfo xmlns="http://www.w3 (...more...)
+
+8 Object(s) listed
+
 For more on regex syntax, see: http://msdn.microsoft.com/en-us/library/az24scfc.aspx
 NOTE: this extension is using C++ TR1 regex implementation and differences may occur
+
 
 <b>Current Object:</b>
 ------------------

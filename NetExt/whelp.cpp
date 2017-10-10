@@ -1,4 +1,4 @@
-// Source Date: Monday, October 9, 2017 4:45:02 PM
+// Source Date: Tuesday, October 10, 2017 5:55:38 PM
 // Source File: C:\Users\rviana\OneDrive\Projects\netext\NetExt\helptxt.txt
 // This file was generated. Do not modify. Modify Source File instead
 #include "netext.h"
@@ -222,8 +222,9 @@ EXT_COMMAND(whelp,
 		Dml("	<b>-fullpath</b> It includes the full path to the modules. Optional\n");
 		Dml("	<b>-name &lt;partial-name&gt;</b> List only modules matching the pattern (e.g -name Contoso.MyLibrary*). Optional\n");
 		Dml("	<b>-company &lt;partial-name&gt;</b> List only modules from the company in the pattern (e.g -company TailsSpin*). Optional\n");
-		Dml("	<b>-saveto &lt;folder&gt;</b>When present it will save the selected module to an existing folder (e.g. -saveto \"c:\\my mods\\\"). Optional. \n");
-		Dml(" \n");
+		Dml("	<b>-saveto &lt;folder&gt;</b>When present it will save the selected module to an existing folder (e.g. -saveto c:\\my mods\\). Optional. Must be at the end.\n");
+		Dml("\n");
+		Dml("<b>Note:</b> -saveto &lt;folder&gt; must be the last parameter. Do not use quotes.\n");
 		Dml("<b>Examples:</b>\n");
 		Dml("----------\n");
 		Dml("\n");
@@ -239,13 +240,13 @@ EXT_COMMAND(whelp,
 		Dml("\n");
 		Dml("<i>Dumps all non-Microsoft modules and save to disk</i>\n");
 		Dml("-------------------------------------------\n");
-		Dml("0:000&gt; !wmodule -noms -saveto c:\\temp\\\n");
-		Dml("Address                      Module Version Company Name       Debug Mode Type Module Binary\n");
-		Dml("000000005f520000                        0.0 Contoso Inc.              No   NAT CapNop.dll\n");
-		Dml("000000f058540000                    1.0.0.0                           Yes  CLR VanillaService.exe\n");
-		Dml("000000f073160000                    1.0.0.0                           Yes  CLR HttpListenerBehavior.dll\n");
+		Dml("0:000&gt; !wmodule -noms -saveto c:\\modules here\n");
+		Dml("Saved 'c:\\modules here\\NoTrack.dll' successfully\n");
+		Dml("Saved 'c:\\modules here\\VanillaService.exe' successfully\n");
+		Dml("Saved 'c:\\modules here\\HttpListenerBehavior.dll' successfully\n");
 		Dml("\n");
-		Dml("3 module(s) listed, 74 skipped by the filters\n");
+		Dml("3 module(s) saved, 0 failed, 74 skipped by the filters\n");
+		Dml("\n");
 		Dml("\n");
 		Dml("\n");
 		Dml("\n");
@@ -2252,17 +2253,18 @@ EXT_COMMAND(whelp,
 		Dml("<b>$tonumberstring(&lt;expr&gt;)</b> - Return the string from the numeric expression (&lt;expr&gt;)\n");
 		Dml("<b>$toformattednumberstring(&lt;expr&gt;)</b> - Return the comma separated string from the numeric expression (&lt;expr&gt;)\n");
 		Dml("<b>$tohexstring(&lt;expr&gt;)</b> - Return the hexadecimal string from the numeric expression (&lt;expr&gt;)\n");
-		Dml("*new* <b>$val(&lt;str&gt;)</b> - Return the integer representation of the string (not compatible with 0x and 0n)\n");
-		Dml("*new* <b>$strsize(&lt;str&gt;)</b> - Return the number of characters of the string\n");
-		Dml("*new* <b>$replace(&lt;str&gt; &lt;pat&gt;, &lt;new-pat&gt;)</b> - Replace a pattern in a string by another\n");
-		Dml("*new* <b>$split(&lt;str&gt; &lt;pat&gt;, &lt;index&gt;)</b> - Return the ith element of the string split by a pattern\n");
-		Dml("*new* <b>$splitsize(&lt;str&gt; &lt;pat&gt;)</b> - Return the number of elements of the string split by a pattern\n");
-		Dml("*new* <b>$ltrim(&lt;str&gt;)</b> - Remove leading spaces (left trim)\n");
-		Dml("*new* <b>$rtrim(&lt;str&gt;)</b> - Remove trailing spaces (right trim)\n");
-		Dml("*new* <b>$lpad(&lt;str&gt;, &lt;count&gt;)</b> - Add leading spaces (left pad)\n");
-		Dml("*new* <b>$rpad(&lt;str&gt;, &lt;count&gt;)</b> - Add trailing spaces (right pad)\n");
-		Dml("*new* <b>$tokenize(&lt;str&gt; &lt;index&gt;)</b> - Return the ith token from the string\n");
-		Dml("*new* <b>$regex(&lt;str&gt;, &lt;pat&gt;, &lt;replace-pat&gt;)</b> - Replace &lt;str&gt; following the regex pattern &lt;pat&gt; into &lt;replace-pat&gt; ($0 = full regex match, $1=match 1, $n=match n)\n");
+		Dml("<b>$val(&lt;str&gt;)</b> - Return the integer representation of the string (not compatible with 0x and 0n)\n");
+		Dml("<b>$strsize(&lt;str&gt;)</b> - Return the number of characters of the string\n");
+		Dml("<b>$replace(&lt;str&gt; &lt;pat&gt;, &lt;new-pat&gt;)</b> - Replace a pattern in a string by another\n");
+		Dml("<b>$split(&lt;str&gt; &lt;pat&gt;, &lt;index&gt;)</b> - Return the ith element of the string split by a pattern\n");
+		Dml("<b>$splitsize(&lt;str&gt; &lt;pat&gt;)</b> - Return the number of elements of the string split by a pattern\n");
+		Dml("<b>$ltrim(&lt;str&gt;)</b> - Remove leading spaces (left trim)\n");
+		Dml("<b>$rtrim(&lt;str&gt;)</b> - Remove trailing spaces (right trim)\n");
+		Dml("<b>$lpad(&lt;str&gt;, &lt;count&gt;)</b> - Add leading spaces (left pad)\n");
+		Dml("<b>$rpad(&lt;str&gt;, &lt;count&gt;)</b> - Add trailing spaces (right pad)\n");
+		Dml("<b>$tokenize(&lt;str&gt; &lt;index&gt;)</b> - Return the ith token from the string\n");
+		Dml("<b>$regex(&lt;str&gt;, &lt;pat&gt;, &lt;replace-pat&gt;)</b> - Replace &lt;str&gt; following the regex pattern &lt;pat&gt; into &lt;replace-pat&gt; ($0 = full regex match, $1=match 1, $n=match n)\n");
+		Dml("*new* <b>$pp(&lt;expr&gt;)</b> - Return the pretty printed version of a field or object\n");
 		Dml("\n");
 		Dml("<i>Examples</i>\n");
 		Dml("------------\n");
@@ -2289,8 +2291,21 @@ EXT_COMMAND(whelp,
 		Dml("calculated: token4  $tokenize(\"token0,token1,token2,,,,,token3    token4\",4)\n");
 		Dml("calculated: 000,1,2000,3,400,500 - full match: 000p1(2000)[3]x400:500 $regex(\"000p1(2000)[3]x400:500\",\"(\\\\d+)\\\\D+(\\\\d+)\\\\D+(\\\\d+)\\\\D+(\\\\d+)\\\\D+(\\\\d+)\\\\D+(\\\\d+)\",\"$1,$2,$3,$4,$5,$6 - full match: $0\")\n");
 		Dml("\n");
+		Dml("0:000&gt; !wfrom -type System.IO.MemoryStream $pp(_buffer)\n");
+		Dml("calculated: 3c 44 69 67 65 73 74 56 61 6c 75 65 64 20 41 6c 67 6f 72 69 74 68 6d 3d 22 68 74 74 70 3a 2f 2f  &lt;DigestValued Algorithm=\"http:// (...more...)\n");
+		Dml("calculated: 3c 44 69 67 65 73 74 56 61 6c 75 65 64 20 41 6c 67 6f 72 69 74 68 6d 3d 22 68 74 74 70 3a 2f 2f  &lt;DigestValued Algorithm=\"http:// (...more...)\n");
+		Dml("calculated: 3c 44 69 67 65 73 74 56 61 6c 75 65 64 20 41 6c 67 6f 72 69 74 68 6d 3d 22 68 74 74 70 3a 2f 2f  &lt;<DigestValued Algorithm=\"http:// (...more...)\n");
+		Dml("calculated: 3c 44 69 67 65 73 74 56 61 6c 75 65 64 20 41 6c 67 6f 72 69 74 68 6d 3d 22 68 74 74 70 3a 2f 2f  &lt;DigestValued Algorithm=\"http:// (...more...)\n");
+		Dml("calculated: 3c 53 69 67 6e 65 64 49 6e 66 6f 20 78 6d 6c 6e 73 3d 22 68 74 74 70 3a 2f 2f 77 77 77 2e 77 33  &lt;SignedInfo xmlns=\"http://www.w3 (...more...)\n");
+		Dml("calculated: 57 86 03 0b 01 74 7e 0b 01 75 66 57 f6 02 99 2c 68 74 74 70 3a 2f 2f 73 63 68 65 6d 61 73 2e 78  W....t~..ufW...,http://schemas.x (...more...)\n");
+		Dml("calculated: 3c 53 69 67 6e 65 64 49 6e 66 6f 20 78 6d 6c 6e 73 3d 22 68 74 74 70 3a 2f 2f 77 77 77 2e 77 33  &lt;SignedInfo xmlns=\"http://www.w3 (...more...)\n");
+		Dml("calculated: 3c 53 69 67 6e 65 64 49 6e 66 6f 20 78 6d 6c 6e 73 3d 22 68 74 74 70 3a 2f 2f 77 77 77 2e 77 33  &lt;SignedInfo xmlns=\"http://www.w3 (...more...)\n");
+		Dml("\n");
+		Dml("8 Object(s) listed\n");
+		Dml("\n");
 		Dml("For more on regex syntax, see: http://msdn.microsoft.com/en-us/library/az24scfc.aspx\n");
 		Dml("NOTE: this extension is using C++ TR1 regex implementation and differences may occur\n");
+		Dml("\n");
 		Dml("\n");
 		Dml("<b>Current Object:</b>\n");
 		Dml("------------------\n");

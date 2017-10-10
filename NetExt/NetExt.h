@@ -88,7 +88,7 @@ extern WDBGEXTS_CLR_DATA_INTERFACE Query;
 extern bool isCLRInit;
 extern WCHAR NameBuffer[MAX_CLASS_NAME];
 
-
+extern bool IsValidMemory(CLRDATA_ADDRESS Address, INT64 Size);
 
 
 //----------------------------------------------------------------------------
@@ -231,7 +231,9 @@ public:
 
 };
 
+extern std::map<std::wstring, std::wstring> varsDict;
 
+#define GetVar(x) envVars.find(x) == envVars.end() ? L"" : envVars[x]
 
 class EXT_CLASS : public ExtExtension
 {
@@ -254,6 +256,121 @@ public:
 		execContext->Execute(Command.c_str());
 		return execContext->GetTextNonNull();
 	}
+
+	static std::wstring ReadTypedUnicode(CLRDATA_ADDRESS Address)
+	{
+		if (!IsValidMemory(Address, 8 + g_ExtInstancePtr->m_PtrSize))
+		{
+			return L"";
+		}
+		USHORT realSize;
+		ExtRemoteData size(Address, sizeof(realSize));
+
+
+		ExtRemoteData stringPtr(Address + 8, g_ExtInstancePtr->m_PtrSize);
+		ZeroMemory(NameBuffer, sizeof(NameBuffer));
+
+		realSize = size.GetUshort();
+
+		if (realSize > (MAX_MTNAME - 2))
+			realSize = MAX_MTNAME - 2;
+
+		ULONG64 Addr = stringPtr.GetPtr();
+		if (!IsValidMemory(Addr, realSize))
+		{
+			return L"";
+		}
+
+		ExtRemoteData buffer(Addr, realSize);
+		buffer.ReadBuffer(NameBuffer, realSize, false);
+
+
+		std::wstring uniStr((wchar_t*)NameBuffer);
+
+		return uniStr;
+
+	}
+	static std::wstring GetProcessName()
+	{
+		ExtRemoteTyped peb("(ntdll!_PEB*)@$extin", g_ExtInstancePtr->EvalExprU64("@$peb"));
+		ExtRemoteTyped processName = peb.Field("ProcessParameters.ImagePathName");
+		return ReadTypedUnicode(processName.m_Offset);
+
+
+	}
+
+	static std::wstring GetProcessCommandLine()
+	{
+		ExtRemoteTyped peb("(ntdll!_PEB*)@$extin", g_ExtInstancePtr->EvalExprU64("@$peb"));
+		ExtRemoteTyped cmdLine = peb.Field("ProcessParameters.CommandLine");
+		return ReadTypedUnicode(cmdLine.m_Offset);
+	}
+
+
+	static std::map<std::wstring, std::wstring> GetProcessEnvVar(bool EnableCache = true)
+	{
+		if (EnableCache && varsDict.size() > 0)
+		{
+			return varsDict;
+		}
+
+		if (!EnableCache)
+		{
+			varsDict.clear();
+		}
+
+		ExtRemoteTyped peb("(ntdll!_PEB*)@$extin", g_ExtInstancePtr->EvalExprU64("@$peb"));
+		ExtRemoteTyped envVars = peb.Field("ProcessParameters.Environment");
+		ExtRemoteTyped size = peb.Field("ProcessParameters.EnvironmentSize");
+
+		
+		if (!size.m_ValidData)
+		{
+			return varsDict;
+		}
+		UINT64 totalSize = size.GetLong64();
+
+
+		ExtRemoteData data(envVars.GetPtr(), totalSize);
+		if (!IsValidMemory(data.m_Offset, totalSize))
+		{
+			return varsDict;
+		}
+		byte *buffer = (byte*)calloc(totalSize + 4, sizeof(byte));
+		data.ReadBuffer(buffer, totalSize, true);
+		
+		for (wchar_t* strArray = (wchar_t*)buffer; L'\0' != *strArray; strArray += lstrlenW(strArray) + 1)
+		{
+			std::wstring str(strArray);
+			if (str.find_first_of(L"=") != std::wstring::npos)
+				varsDict.emplace(str.substr(0, str.find_first_of(L"=")), str.substr(str.find_first_of(L"=") + 1));
+		}
+
+		free(buffer);
+
+		return varsDict;
+	}
+
+	static std::wstring GetProcessAccount()
+	{
+		auto envVars = GetProcessEnvVar();
+		auto userName = GetVar(L"USERNAME");
+		auto domainName = GetVar(L"USERDOMAIN");
+		auto computerName = GetVar(L"COMPUTERNAME");
+
+		if (domainName.size() == 0)
+		{
+			domainName = computerName;
+		}
+		
+		if (domainName.size() != 0)
+		{
+			domainName.append(L"\\");
+		}
+
+		return domainName + userName;
+	}
+
 	static Thread SessionThreads;
 	void Uninitialize();
 	EXT_COMMAND_METHOD(wver);

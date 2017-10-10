@@ -25,6 +25,8 @@ bool isCLRInit = false;
 
 bool NET2 = false;
 
+
+
 #define MIDL_DEFINE_GUID(type,name,l,w1,w2,b1,b2,b3,b4,b5,b6,b7,b8) \
         const type name = {l,w1,w2,{b1,b2,b3,b4,b5,b6,b7,b8}}
 MIDL_DEFINE_GUID(IID, IID_ClrMDExt,0x5c552ab6,0xfc09,0x4cb3,0x8e,0x36,0x22,0xfa,0x03,0xc7,0x98,0xb7);
@@ -33,6 +35,7 @@ WCHAR NameBuffer[MAX_CLASS_NAME];
 
 IUnknown* clrData = NULL;
 WDBGEXTS_CLR_DATA_INTERFACE clrInterface;
+std::map<std::wstring, std::wstring> varsDict;
  
 #if !_DEBUG
 extern "C" int _imp___vsnprintf(

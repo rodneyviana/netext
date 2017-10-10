@@ -1369,7 +1369,7 @@ EXT_COMMAND(wmodule,
 	"{noms;b,o;;Hide all modules which company attribute is Microsoft Corporation (show non-system modules)}"
 	"{order;b,o;;Sort output bu module name}"
 	"{fullpath;b,o;;Show module full path (instead of just name}"
-	"{saveto;s,o;;Save the selected modules to a folder. Optional (e.g. -saveto \"c:\\My Modulestemp\\\")}"
+	"{saveto;x,o;;Save the selected modules to a folder. Optional (e.g. -saveto c:\\My Modulestemp\\)}"
 	)
 {
 		DO_INIT_API;
