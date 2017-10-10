@@ -1,4 +1,4 @@
-// Source Date: Wednesday, August 16, 2017 5:12:54 PM
+// Source Date: Monday, October 9, 2017 4:45:02 PM
 // Source File: C:\Users\rviana\OneDrive\Projects\netext\NetExt\helptxt.txt
 // This file was generated. Do not modify. Modify Source File instead
 #include "netext.h"
@@ -42,6 +42,7 @@ EXT_COMMAND(whelp,
 		Dml("!<link cmd=\"!whelp wdomain\">wdomain</link> - Dump all Application Domains\n");
 		Dml("<b>*(new)*</b> !<link cmd=\"!whelp wmodule\">wmodule</link> - List modules based on a pattern\n");
 		Dml("<b>*(new)*</b> !<link cmd=\"!whelp wtime\">wtime</link> - Show UTC and local time\n");
+		Dml("<b>*(new)*</b> !<link cmd=\"!whelp wapppool\">wapppool</link> - Display AppPool details\n");
 		Dml("\n");
 		Dml("<b>Special</b>\n");
 		Dml("<b>-------</b>\n");
@@ -67,6 +68,29 @@ EXT_COMMAND(whelp,
 		Dml("<link cmd=\"!whelp expression\">expression</link> syntax\n");
 		Dml("<link cmd=\"!whelp functions\">functions</link> list *new functions*\n");
 		Dml("<link cmd=\"!whelp license\">license</link> see all licenses applied to this product\n");
+		Dml("\n");
+	return;
+	}
+	if(keyword=="wapppool")
+	{
+		Dml("Display information about the application pool and IIS\n");
+		Dml("\n");
+		Dml("<b>Syntax:</b>\n");
+		Dml("-------\n");
+		Dml(" \n");
+		Dml("!wapppool\n");
+		Dml("\n");
+		Dml("<b>Example:</b>\n");
+		Dml("----------\n");
+		Dml("\n");
+		Dml("<i>Display information about app pool and IIS</i>\n");
+		Dml("--------------------------------------------------\n");
+		Dml("0:000&gt; !wapppool\n");
+		Dml("\n");
+		Dml("AppPool Name         : MvcPool\n");
+		Dml("AppPool .NET Version : v4.0\n");
+		Dml("IIS Version          : 8.5.9600.16384\n");
+		Dml("Full Command Line    : c:\\windows\\system32\\inetsrv\\w3wp.exe -ap \"MvcPool\" -v \"v4.0\" -l \"webengine4.dll\" -a \\\\.\\pipe\\iisipm51f8fce9-1dfd-4089-b06e-b34792859213 -h \"C:\\inetpub\\temp\\apppools\\MvcPool\\MvcPool.config\" -w \"\" -m 0 -t 20 -ta 0\n");
 		Dml("\n");
 	return;
 	}

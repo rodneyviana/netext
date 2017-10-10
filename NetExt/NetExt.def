@@ -55,3 +55,4 @@ EXPORTS
 	wtime
 	wmodule
 	wmakesource
+	wapppool

@@ -24,6 +24,7 @@
 !||wdomain|| - Dump all Application Domains
 <b>*(new)*</b> !||wmodule|| - List modules based on a pattern
 <b>*(new)*</b> !||wtime|| - Show UTC and local time
+<b>*(new)*</b> !||wapppool|| - Display AppPool details
 
 <b>Special</b>
 <b>-------</b>
@@ -49,6 +50,26 @@
 ||expression|| syntax
 ||functions|| list *new functions*
 ||license|| see all licenses applied to this product
+
+##wapppool
+Display information about the application pool and IIS
+
+<b>Syntax:</b>
+-------
+ 
+!wapppool
+
+<b>Example:</b>
+----------
+
+<i>Display information about app pool and IIS</i>
+--------------------------------------------------
+0:000&gt; !wapppool
+
+AppPool Name         : MvcPool
+AppPool .NET Version : v4.0
+IIS Version          : 8.5.9600.16384
+Full Command Line    : c:\windows\system32\inetsrv\w3wp.exe -ap "MvcPool" -v "v4.0" -l "webengine4.dll" -a \\.\pipe\iisipm51f8fce9-1dfd-4089-b06e-b34792859213 -h "C:\inetpub\temp\apppools\MvcPool\MvcPool.config" -w "" -m 0 -t 20 -ta 0
 
 ##wmakesource
 If the current frame is managed, it will try to reflect to

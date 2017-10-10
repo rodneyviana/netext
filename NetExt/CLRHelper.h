@@ -32,6 +32,107 @@ bool GetModuleInterfaceFromModule(IMetaDataImport **MetaInterface, CLRDATA_ADDRE
 
 BOOL IsInterrupted();
 
+#pragma region NativeModule
+
+struct LANGUACODEPAGE
+{
+	unsigned int wLanguage;
+	unsigned int wCodePage;
+
+	void SetValue(byte* Bytes, int Index = 0)
+	{
+		wLanguage = Bytes[Index] + ((unsigned int)(Bytes[Index + 1]) << 8);
+		wCodePage = Bytes[Index + 2] + ((unsigned int)(Bytes[Index + 3]) << 8);
+	}
+
+	string VarQueryValue(string SubBlock)
+	{
+		char buffer[100] = { 0 };
+		sprintf_s(buffer, 100, "\\StringFileInfo\\%04x%04x\\%s", wLanguage, wCodePage, SubBlock.c_str());
+		string query(buffer);
+		return query;
+	}
+
+};
+
+struct ModuleVersion
+{
+	int Major;
+	int Minor;
+	int Build;
+	int Revision;
+};
+
+class NativeModule
+{
+
+private:
+	bool isValid;
+	ULONG Index;
+public:
+	
+	bool IsValid()
+	{
+		return isValid;
+	}
+
+	NativeModule(string ModuleName)
+	{
+		isValid = false;
+		ULONG64 addr = 0;
+
+		HRESULT hr = g_ExtInstancePtr->m_Symbols3->GetModuleByModuleName2(ModuleName.c_str(), 0, DEBUG_GETMOD_NO_UNLOADED_MODULES, &Index, &addr);
+		if (SUCCEEDED(hr))
+		{
+			isValid = true;
+
+		}
+
+	}
+
+	ModuleVersion GetVersionInfo()
+	{
+		ModuleVersion fi = { 0 };
+		ULONG size = 1000;
+		byte buffer[1000] = { 0 };
+
+		HRESULT hr = g_ExtInstancePtr->m_Symbols3->GetModuleVersionInformation(Index, 0, "\\VarFileInfo\\Translation", buffer, size, &size);
+
+		if (SUCCEEDED(hr))
+		{
+			LANGUACODEPAGE cp = { 0 };
+			cp.SetValue(buffer);
+
+			hr = g_ExtInstancePtr->m_Symbols3->GetModuleVersionInformation(Index, 0, cp.VarQueryValue("ProductVersion").c_str(), buffer, 1000, &size);
+			if (SUCCEEDED(hr))
+			{
+				string verStr((char*)&buffer);
+
+				regex reg("(\\d+).(\\d+).(\\d+).(\\d+)");
+				smatch matches;
+				if (regex_search(verStr, matches, reg))
+				{
+					fi.Major = atoi(matches[1].str().c_str());
+					fi.Minor = atoi(matches[2].str().c_str());
+					fi.Revision = atoi(matches[3].str().c_str());
+					fi.Build = atoi(matches[4].str().c_str());
+
+				}
+			}
+
+			
+		}
+		return fi;
+		
+	}
+
+
+};
+
+#pragma endregion
+
+
+
 class FieldStore
 {
 public:

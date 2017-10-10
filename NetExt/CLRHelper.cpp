@@ -104,16 +104,21 @@ bool IsMinidump()
 
 bool IsValidMemory(CLRDATA_ADDRESS Address, MEMORY_BASIC_INFORMATION64& MemInfo, INT64 Size)
 {
+
+	if (!(Address >= MemInfo.BaseAddress && Address < (MemInfo.BaseAddress + MemInfo.RegionSize)))
+	{
 #if _DEBUG
-	//g_ExtInstancePtr->Out("Address: %p, Base: %p, Size: %i, End: %p\n", Address, MemInfo.AllocationBase,
-	//	MemInfo.RegionSize, MemInfo.AllocationBase + MemInfo.RegionSize);
+		g_ExtInstancePtr->Out("Address: %p, Base: %p, Size: %i, End: %p\n", Address, MemInfo.AllocationBase,
+			MemInfo.RegionSize, MemInfo.AllocationBase + MemInfo.RegionSize);
 #endif
-	if (!(Address >= MemInfo.AllocationBase))
 		return false;
+	}
 	if (0 == Size)
 	{
 		return true;
 	}
+	ZeroMemory(&MemInfo, sizeof(MemInfo));
+	g_ExtInstancePtr->m_Data4->QueryVirtual(Address + Size, &MemInfo);
 	return IsValidMemory(Address + Size, MemInfo);
 }
 

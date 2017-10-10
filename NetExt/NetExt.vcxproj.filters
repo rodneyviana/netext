@@ -36,12 +36,6 @@
     <ClInclude Include="boost.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\spirit\tinyXml\tinystr.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\spirit\tinyXml\tinyxml.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="selectparser.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -80,18 +74,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="CLRHelper.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\spirit\tinyXml\tinystr.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\spirit\tinyXml\tinyxml.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\spirit\tinyXml\tinyxmlerror.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\spirit\tinyXml\tinyxmlparser.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="wselect.cpp">
@@ -143,6 +125,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="tinyXml\tinyxmlparser.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="apppool.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
