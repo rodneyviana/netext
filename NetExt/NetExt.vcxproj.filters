@@ -130,6 +130,9 @@
     <ClCompile Include="apppool.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="sqlcommand.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Text Include="helptxt.txt" />

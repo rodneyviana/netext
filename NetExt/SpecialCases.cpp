@@ -724,7 +724,7 @@ std::string SpecialCases::PrettyPrint(CLRDATA_ADDRESS Address, CLRDATA_ADDRESS M
 	else
 	{
 		SVAL v = GetBoxedValue(Address);
-		if(v.IsValid)
+		if(v.IsValid && v.strValue.size() != 0)
 			return CW2A(v.strValue.c_str());
 		obj.Request(Address);
 	}
@@ -759,6 +759,11 @@ std::string SpecialCases::PrettyPrint(CLRDATA_ADDRESS Address, CLRDATA_ADDRESS M
 	if(methName == L"System.Net.IPEndPoint" || methName == L"System.Net.IPAddress")
 	{
 		return CW2A(SpecialCases::IPAddress(Address).c_str());
+	}
+
+	if(methName == L"System.DBNull")
+	{
+		return "NULL";
 	}
 
 	if(obj.IsArray())
@@ -938,6 +943,9 @@ void SpecialCases::DumpArray(CLRDATA_ADDRESS Address, CLRDATA_ADDRESS MethodTabl
 		std::wstring vl = ObjDetail::ValueString(dummyField, itemAddr, true, itemAddr);
 		if(eType == ELEMENT_TYPE_VALUETYPE)
 		{
+			string pretty = SpecialCases::PrettyPrint(itemAddr, pObj->InnerMT());
+			if(pretty.size() > 0)
+				vl.assign(CA2W(pretty.c_str()));
 			g_ExtInstancePtr->Dml("<link cmd=\"!wdo -mt %p %p\">%S</link>",pObj->InnerMT(), itemAddr,
 				vl.c_str());
 		} else

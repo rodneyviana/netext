@@ -70,6 +70,9 @@ AppPool Name         : MvcPool
 AppPool .NET Version : v4.0
 IIS Version          : 8.5.9600.16384
 Full Command Line    : c:\windows\system32\inetsrv\w3wp.exe -ap "MvcPool" -v "v4.0" -l "webengine4.dll" -a \\.\pipe\iisipm51f8fce9-1dfd-4089-b06e-b34792859213 -h "C:\inetpub\temp\apppools\MvcPool\MvcPool.config" -w "" -m 0 -t 20 -ta 0
+Process Account      : CONTOSO\SPFarmAdmin
+Machine Name         : CONTOSOWFE001
+Domain Name          : CONTOSO
 
 ##wmakesource
 If the current frame is managed, it will try to reflect to
@@ -278,7 +281,7 @@ Dump the text representation of an XML document
 
 ##wupdate
 Check for new versions and compare with current. If a new version is found, it tries to open the update page
-If the page is not in http://netext.codeplex.com, do not download
+If the page is not in https://github.com/rodneyviana/netext/tree/master/Binaries, do not download
 
 <b>Syntax:</b>
 ---------

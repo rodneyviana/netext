@@ -56,3 +56,5 @@ EXPORTS
 	wmodule
 	wmakesource
 	wapppool
+	wsql
+	wvar

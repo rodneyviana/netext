@@ -408,6 +408,8 @@ public:
 	EXT_COMMAND_METHOD(wmodule);
 	EXT_COMMAND_METHOD(wmakesource);
 	EXT_COMMAND_METHOD(wapppool);
+	EXT_COMMAND_METHOD(wsql);
+	EXT_COMMAND_METHOD(wvar);
 	regex_constants::syntax_option_type GetFlavor(const string& flavor);
 	std::ostringstream regexmatch(const string& Target, const string& Pattern, bool CaseSensitive, const string& Flavor, bool Run, const string& Format);
 	std::ostringstream EXT_CLASS::regexsearch(const string& Target, const string& Pattern, bool Not, bool CaseSensitive, const string& Flavor);

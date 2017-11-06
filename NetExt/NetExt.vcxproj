@@ -418,6 +418,7 @@ echo lib\$(PlatformShortName)</Command>
     <ClCompile Include="selectparser.cpp" />
     <ClCompile Include="socket.cpp" />
     <ClCompile Include="SpecialCases.cpp" />
+    <ClCompile Include="sqlcommand.cpp" />
     <ClCompile Include="tinyXml\tinystr.cpp" />
     <ClCompile Include="tinyXml\tinyxml.cpp" />
     <ClCompile Include="tinyXml\tinyxmlerror.cpp" />

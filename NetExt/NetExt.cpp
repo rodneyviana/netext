@@ -754,3 +754,11 @@ EXT_COMMAND(wpe,
     }   
     pHeap->DumpException(addr);   
 }  
+
+
+EXT_COMMAND(wvar,
+			"Dump Environment Variables. Use '!whelp wvar' for detailed help",
+		      "{;s,o;;variable,Variable Pattern}")  
+
+{ 
+}

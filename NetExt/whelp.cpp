@@ -1,4 +1,4 @@
-// Source Date: Tuesday, October 10, 2017 5:55:38 PM
+// Source Date: Tuesday, October 10, 2017 6:32:21 PM
 // Source File: C:\Users\rviana\OneDrive\Projects\netext\NetExt\helptxt.txt
 // This file was generated. Do not modify. Modify Source File instead
 #include "netext.h"
@@ -91,6 +91,9 @@ EXT_COMMAND(whelp,
 		Dml("AppPool .NET Version : v4.0\n");
 		Dml("IIS Version          : 8.5.9600.16384\n");
 		Dml("Full Command Line    : c:\\windows\\system32\\inetsrv\\w3wp.exe -ap \"MvcPool\" -v \"v4.0\" -l \"webengine4.dll\" -a \\\\.\\pipe\\iisipm51f8fce9-1dfd-4089-b06e-b34792859213 -h \"C:\\inetpub\\temp\\apppools\\MvcPool\\MvcPool.config\" -w \"\" -m 0 -t 20 -ta 0\n");
+		Dml("Process Account      : CONTOSO\\SPFarmAdmin\n");
+		Dml("Machine Name         : CONTOSOWFE001\n");
+		Dml("Domain Name          : CONTOSO\n");
 		Dml("\n");
 	return;
 	}
@@ -314,7 +317,7 @@ EXT_COMMAND(whelp,
 	if(keyword=="wupdate")
 	{
 		Dml("Check for new versions and compare with current. If a new version is found, it tries to open the update page\n");
-		Dml("If the page is not in http://netext.codeplex.com, do not download\n");
+		Dml("If the page is not in https://github.com/rodneyviana/netext/tree/master/Binaries, do not download\n");
 		Dml("\n");
 		Dml("<b>Syntax:</b>\n");
 		Dml("---------\n");
