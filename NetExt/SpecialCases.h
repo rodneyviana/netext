@@ -648,13 +648,17 @@ inline void PrintArrayIndex(CLRDATA_ADDRESS Address, int Start, int Rank)
 		g_ExtInstancePtr->Out("[%u]: ", Start);
 		return;
 	}
+	ObjDetail obj(Address);
+	if(!obj.IsValid())
+		return;
+	
 	DWORD bound=1;
 	vector<DWORD> idx;
 	for(int i=Rank-1;i>=0;i--)
 	{
 		//g_ExtInstancePtr->Out("%p\n", Address+sizeof(void*)*3+i*sizeof(DWORD));
-		ExtRemoteData ptr(Address+sizeof(void*)*3+i*sizeof(DWORD), sizeof(DWORD));
-		DWORD f = ptr.GetUlong();
+		ExtRemoteData ptr(Address+sizeof(void*)*(2+(IsCorObj(obj.InnerComponentType()) ? 1 : 0))+i*sizeof(ULONG), sizeof(ULONG));
+		ULONG f = ptr.GetUlong();
 
 		idx.push_back((Start % (bound* (f == 0 ? 1 : f))) / bound);
 		bound *= f;
@@ -674,9 +678,13 @@ inline void PrintArrayIndex(CLRDATA_ADDRESS Address, int Start, int Rank)
 
 inline DWORD GetBound(CLRDATA_ADDRESS Address, int Rank, int Dimension)
 {
+
 		if(Dimension>=Rank) return 0;
-		ExtRemoteData ptr(Address+sizeof(void*)*3+Dimension*sizeof(DWORD), sizeof(DWORD));
-		DWORD f = ptr.GetUlong();
+		ObjDetail obj(Address);
+		if(!obj.IsValid())
+			return 0;
+		ExtRemoteData ptr(Address+sizeof(void*)*(2+(IsCorObj(obj.InnerComponentType()) ? 1 : 0))+Dimension*sizeof(ULONG), sizeof(ULONG));
+		ULONG f = ptr.GetUlong();
 		return f;
 }
 
@@ -686,11 +694,14 @@ inline void PrintArrayBounds(CLRDATA_ADDRESS Address, int Rank)
 	{
 		return;
 	}
+	ObjDetail obj(Address);
+	if(!obj.IsValid())
+		return;
 	g_ExtInstancePtr->Out("( ");
 
 	for(int i=0;i<Rank;i++)
 	{
-		ExtRemoteData ptr(Address+sizeof(void*)*3+i*sizeof(DWORD), sizeof(DWORD));
+		ExtRemoteData ptr(Address+sizeof(void*)*(2+(IsCorObj(obj.InnerComponentType()) ? 1 : 0))+i*sizeof(ULONG), sizeof(ULONG));
 		DWORD f = ptr.GetUlong();
 		g_ExtInstancePtr->Out("%u ", f);
 	}

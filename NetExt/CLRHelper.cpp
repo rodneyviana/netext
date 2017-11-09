@@ -102,9 +102,15 @@ bool IsMinidump()
 	return !g_ExtInstancePtr->HasFullMemBasic();
 }
 
+//#ifndef _WIN64
+//bool IsValidMemory(CLRDATA_ADDRESS Address, MEMORY_BASIC_INFORMATION32& MemInfo, INT64 Size)
+//#else
 bool IsValidMemory(CLRDATA_ADDRESS Address, MEMORY_BASIC_INFORMATION64& MemInfo, INT64 Size)
+//#endif
 {
-
+	if(IsMinidump())
+		return true;
+	
 	if (!(Address >= MemInfo.BaseAddress && Address < (MemInfo.BaseAddress + MemInfo.RegionSize)))
 	{
 #if _DEBUG
@@ -118,15 +124,22 @@ bool IsValidMemory(CLRDATA_ADDRESS Address, MEMORY_BASIC_INFORMATION64& MemInfo,
 		return true;
 	}
 	ZeroMemory(&MemInfo, sizeof(MemInfo));
-	g_ExtInstancePtr->m_Data4->QueryVirtual(Address + Size, &MemInfo);
+	HRESULT hr = g_ExtInstancePtr->m_Data4->QueryVirtual(Address + Size, &MemInfo);
+	if(hr != S_OK)
+		return true; // Not supported, so return true;
 	return IsValidMemory(Address + Size, MemInfo);
 }
 
 bool IsValidMemory(CLRDATA_ADDRESS Address, INT64 Size)
 {
+//#ifndef _WIN64
+//	MEMORY_BASIC_INFORMATION32 mi;
+//#else
 	MEMORY_BASIC_INFORMATION64 mi;
+//#endif
 	ZeroMemory(&mi, sizeof(mi));
-	g_ExtInstancePtr->m_Data4->QueryVirtual(Address, &mi);
+	if(g_ExtInstancePtr->m_Data4->QueryVirtual(Address, &mi) != S_OK)
+		return true; // this will save any situation when the dump does not support it
 	return IsValidMemory(Address, mi, Size);
 }
 

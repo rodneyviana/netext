@@ -137,7 +137,7 @@ EXT_COMMAND(wdo,
 	{
 		Out("Instance Fields: %i\n", obj.InstanceFieldsCount());
 		Out("Static Fields: %i\n", obj.StaticFieldsCount());
-		Out("Total Fields: %i\n", obj.InstanceFieldsCount()+obj.InstanceFieldsCount());
+		Out("Total Fields: %i\n", obj.InstanceFieldsCount()+obj.StaticFieldsCount());
 		Out("Heap/Generation: %i/%i\n", obj.Heap(), obj.Gen());
 		Out("Module: %p", obj.Module());
 		if(obj.Module() == 0)
