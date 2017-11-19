@@ -1429,3 +1429,90 @@ EXT_COMMAND(wmakesource,
 		};
 
 }
+
+EXT_COMMAND(wconcurrentdict,
+	"Dump ConcurrentDictionary. Use '!whelp wconcurrentdict' for detailed help",
+	"{;e,r;;Address,ConcurrentDictionary Address}")
+{
+	INIT_API();
+
+	CLRDATA_ADDRESS addr = GetUnnamedArgU64(0);
+	ObjDetail obj_detail(addr);
+
+	if (!obj_detail.IsValid() ||
+		!obj_detail.classObj.Implement(L"System.Collections.Concurrent.ConcurrentDictionary*"))
+	{
+		Out("Object at %p is invalid or not of type [System.Collections.Concurrent.ConcurrentDictionary]\n", addr);
+		return;
+	}
+
+	std::vector<std::string> fields;
+	const std::string field("m_tables");
+	fields.push_back(field);
+	varMap fields_map;
+	DumpFields(addr, fields, 0, &fields_map);
+
+	CLRDATA_ADDRESS tablesAddr = fields_map[field].Value.ptr;
+	if (tablesAddr == NULL)
+	{
+		Out("Empty ConcurrentDictionary\n");
+		return;
+	}
+
+	fields.clear();
+	fields_map.clear();
+	fields.push_back("m_buckets");
+	fields.push_back("m_countPerLock");
+	DumpFields(tablesAddr, fields, 0, &fields_map);
+
+	CLRDATA_ADDRESS countPerLockAddr = fields_map["m_countPerLock"].Value.ptr;
+	ObjDetail countPerLocks(countPerLockAddr);
+	if (!countPerLocks.IsValid())
+	{
+		Out("ConcurrentDictionary consistency compromised\n");
+		return;
+	}
+
+	int count = 0;
+	for (int i = 0; i < countPerLocks.NumComponents(); ++i)
+	{
+		ExtRemoteData rm(countPerLocks.DataPtr() + i * countPerLocks.InnerComponentSize(), sizeof(int));
+		int current = rm.GetLong();
+		count += current;
+	}
+
+	Out("Items   : %i\n", count);
+
+	CLRDATA_ADDRESS bucketsAddr = fields_map["m_buckets"].Value.ptr;
+
+	if (bucketsAddr == NULL)
+	{
+		Out("Empty ConcurrentDictionary\n");
+		return;
+	}
+
+	ObjDetail buckets(bucketsAddr);
+	if (!buckets.IsValid())
+	{
+		Out("ConcurrentDictionary consistency compromised\n");
+		return;
+	}
+
+	auto mt = buckets.MethodTable();
+
+	std::vector<CLRDATA_ADDRESS> addresses;
+	SpecialCases::EnumArray(bucketsAddr, buckets.MethodTable(), nullptr, &addresses);
+
+	for (const auto& address : addresses)
+	{
+		if (address == 0)
+			continue;
+
+		fields.clear();
+		fields_map.clear();
+		fields.push_back("m_key");
+		fields.push_back("m_value");
+
+		DumpFields(address, fields, mt);
+	}
+}

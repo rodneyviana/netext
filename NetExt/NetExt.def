@@ -58,3 +58,4 @@ EXPORTS
 	wapppool
 	wsql
 	wvar
+	wconcurrentdict
