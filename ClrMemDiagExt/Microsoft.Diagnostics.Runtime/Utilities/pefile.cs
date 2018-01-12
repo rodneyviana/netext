@@ -72,7 +72,7 @@ namespace Microsoft.Diagnostics.Runtime.Utilities
             _stream = stream;
             _headerBuff = buffer;
             Header = header;
-            if (Header.PEHeaderSize > _headerBuff.Length)
+            if (header != null && header.PEHeaderSize > _headerBuff.Length)
                 throw new InvalidOperationException("Bad PE Header in " + filePath);
         }
         /// <summary>
@@ -94,11 +94,16 @@ namespace Microsoft.Diagnostics.Runtime.Utilities
             pdbAge = 0;
             bool ret = false;
 
+            if (Header == null)
+                return false;
+
             if (Header.DebugDirectory.VirtualAddress != 0)
             {
                 var buff = AllocBuff();
                 var debugEntries = (IMAGE_DEBUG_DIRECTORY*)FetchRVA(Header.DebugDirectory.VirtualAddress, Header.DebugDirectory.Size, buff);
-                Debug.Assert(Header.DebugDirectory.Size % sizeof(IMAGE_DEBUG_DIRECTORY) == 0);
+                if (Header.DebugDirectory.Size % sizeof(IMAGE_DEBUG_DIRECTORY) != 0)
+                    return false;
+
                 int debugCount = Header.DebugDirectory.Size / sizeof(IMAGE_DEBUG_DIRECTORY);
                 for (int i = 0; i < debugCount; i++)
                 {
@@ -133,19 +138,59 @@ namespace Microsoft.Diagnostics.Runtime.Utilities
         {
             get
             {
-                if (_pdb == null)
-                {
-                    string pdbName;
-                    Guid pdbGuid;
-                    int pdbAge;
-
-                    if (GetPdbSignature(out pdbName, out pdbGuid, out pdbAge))
-                        _pdb = new PdbInfo(pdbName, pdbGuid, pdbAge);
-                }
+                string pdbName;
+                Guid pdbGuid;
+                int pdbAge;
+                if (_pdb == null && GetPdbSignature(out pdbName, out pdbGuid, out pdbAge))
+                    _pdb = new PdbInfo(pdbName, pdbGuid, pdbAge);
 
                 return _pdb;
             }
         }
+        internal static bool TryGetIndexProperties(string filename, out int timestamp, out int filesize)
+        {
+            try
+            {
+                using (PEFile pefile = new PEFile(filename))
+                {
+                    var header = pefile.Header;
+                    timestamp = header.TimeDateStampSec;
+                    filesize = (int)header.SizeOfImage;
+                    return true;
+                }
+            }
+            catch
+            {
+                timestamp = 0;
+                filesize = 0;
+                return false;
+            }
+        }
+
+        internal static bool TryGetIndexProperties(Stream stream, bool virt, out int timestamp, out int filesize)
+        {
+            try
+            {
+                using (PEFile pefile = new PEFile(stream, virt))
+                {
+                    var header = pefile.Header;
+                    timestamp = header.TimeDateStampSec;
+                    filesize = (int)header.SizeOfImage;
+                    return true;
+                }
+            }
+            catch
+            {
+                timestamp = 0;
+                filesize = 0;
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Whether this object has been disposed.
+        /// </summary>
+        public bool Disposed { get; private set; }
 
         /// <summary>
         /// Gets the File Version Information that is stored as a resource in the PE file.  (This is what the
@@ -198,10 +243,12 @@ namespace Microsoft.Diagnostics.Runtime.Utilities
         public void Dispose()
         {
             // This method can only be called once on a given object.  
-            _stream.Close();
+            _stream.Dispose();
             _headerBuff.Dispose();
             if (_freeBuff != null)
                 _freeBuff.Dispose();
+
+            Disposed = true;
         }
 
         // TODO make public?
@@ -248,7 +295,7 @@ namespace Microsoft.Diagnostics.Runtime.Utilities
 
     /// <summary>
     /// A PEHeader is a reader of the data at the begining of a PEFile.    If the header bytes of a 
-    /// PEFile are read or mapped into memory, this class can parse it when given a poitner to it. 
+    /// PEFile are read or mapped into memory, this class can parse it when given a pointer to it.
     /// It can read both 32 and 64 bit PE files.  
     /// </summary>
     public unsafe sealed class PEHeader
@@ -289,6 +336,8 @@ namespace Microsoft.Diagnostics.Runtime.Utilities
 
         private PEHeader(PEBuffer buffer, bool virt)
         {
+            _virt = virt;
+
             byte* ptr = buffer.Fetch(0, 0x300);
             _dosHeader = (IMAGE_DOS_HEADER*)ptr;
             _ntHeader = (IMAGE_NT_HEADERS*)((byte*)ptr + _dosHeader->e_lfanew);
@@ -556,7 +605,7 @@ namespace Microsoft.Diagnostics.Runtime.Utilities
         {
             if (idx >= NumberOfRvaAndSizes)
                 return new IMAGE_DATA_DIRECTORY();
-            return ntDirectories[idx];
+            return NTDirectories[idx];
         }
         /// <summary>
         /// Return the data directory for DLL Exports see PE file spec for more
@@ -645,7 +694,7 @@ namespace Microsoft.Diagnostics.Runtime.Utilities
 
         private IMAGE_OPTIONAL_HEADER32* OptionalHeader32 { get { return (IMAGE_OPTIONAL_HEADER32*)(((byte*)_ntHeader) + sizeof(IMAGE_NT_HEADERS)); } }
         private IMAGE_OPTIONAL_HEADER64* OptionalHeader64 { get { return (IMAGE_OPTIONAL_HEADER64*)(((byte*)_ntHeader) + sizeof(IMAGE_NT_HEADERS)); } }
-        private IMAGE_DATA_DIRECTORY* ntDirectories
+        private IMAGE_DATA_DIRECTORY* NTDirectories
         {
             get
             {
@@ -744,7 +793,7 @@ namespace Microsoft.Diagnostics.Runtime.Utilities
             if (fileVersionIdx >= 0)
             {
                 int valIdx = fileVersionIdx + fileVersionKey.Length;
-                for (;;)
+                for (; ;)
                 {
                     valIdx++;
                     if (valIdx >= dataAsString.Length)
@@ -777,6 +826,13 @@ namespace Microsoft.Diagnostics.Runtime.Utilities
             _stream = stream;
             GetBuffer(buffSize);
         }
+
+        ~PEBuffer()
+        {
+            if (_pinningHandle.IsAllocated)
+                _pinningHandle.Free();
+        }
+
         public byte* Fetch(int filePos, int size)
         {
             if (size > _buff.Length)
@@ -801,11 +857,17 @@ namespace Microsoft.Diagnostics.Runtime.Utilities
         public int Length { get { return _buffLen; } }
         public void Dispose()
         {
-            _pinningHandle.Free();
+            if (_pinningHandle.IsAllocated)
+                _pinningHandle.Free();
+
+            GC.SuppressFinalize(this);
         }
         #region private
         private void GetBuffer(int buffSize)
         {
+            if (_pinningHandle.IsAllocated)
+                _pinningHandle.Free();
+
             _buff = new byte[buffSize];
             _pinningHandle = GCHandle.Alloc(_buff, GCHandleType.Pinned);
             fixed (byte* ptr = _buff)

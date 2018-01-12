@@ -1,30 +1,56 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+using Microsoft.Diagnostics.Runtime.Utilities.Pdb;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices;
+using System.Net;
 using System.Text;
-
-#pragma warning disable 1591
-#pragma warning disable 0067
+using System.Runtime.InteropServices;
 
 namespace Microsoft.Diagnostics.Runtime.Utilities
 {
-    public class SymbolLocator
+    /// <summary>
+    /// This class is a general purpose symbol locator and binary locator.
+    /// </summary>
+    public abstract partial class SymbolLocator
     {
-        private List<SymPathElement> _symbolElements = new List<SymPathElement>();
-        private Dictionary<BinaryEntry, string> _binCache = new Dictionary<BinaryEntry, string>();
-        private Dictionary<PdbEntry, string> _pdbCache = new Dictionary<PdbEntry, string>();
-        private Dictionary<string, SymbolModule> _moduleCache = new Dictionary<string, SymbolModule>(StringComparer.OrdinalIgnoreCase);
-        private Dictionary<string, PEFile> _pefileCache = new Dictionary<string, PEFile>(StringComparer.OrdinalIgnoreCase);
-        private string _symbolPath;
-        private string _symbolCache;
         private static string[] s_microsoftSymbolServers = { "http://msdl.microsoft.com/download/symbols", "http://referencesource.microsoft.com/symbols" };
 
+        /// <summary>
+        /// The raw symbol path.  You should probably use the SymbolPath property instead.
+        /// </summary>
+        protected volatile string _symbolPath;
+        /// <summary>
+        /// The raw symbol cache.  You should probably use the SymbolCache property instead.
+        /// </summary>
+        /// 
+        protected volatile string _symbolCache;
+
+        protected int _timeOut = 60000;
+        /// <summary>
+        /// The timeout (in milliseconds) used when contacting each individual server.  This is not a total timeout for the entire
+        /// symbol server operation.
+        /// </summary>
+        public int Timeout { get { return _timeOut; } set { _timeOut = value; } }
+
+        /// <summary>
+        /// A set of pdbs that we did not find when requested.  This set is SymbolLocator specific (not global
+        /// like successful downloads) and is cleared when we change the symbol path or cache.
+        /// </summary>
+        internal volatile HashSet<PdbEntry> _missingPdbs = new HashSet<PdbEntry>();
+
+        /// <summary>
+        /// A set of files that we did not find when requested.  This set is SymbolLocator specific (not global
+        /// like successful downloads) and is cleared when we change the symbol path or cache.
+        /// </summary>
+        internal volatile HashSet<FileEntry> _missingFiles = new HashSet<FileEntry>();
+
+        /// <summary>
+        /// Constructor.
+        /// </summary>
         public SymbolLocator()
         {
             var sympath = _NT_SYMBOL_PATH;
@@ -33,31 +59,6 @@ namespace Microsoft.Diagnostics.Runtime.Utilities
 
             SymbolPath = sympath;
         }
-
-        /// <summary>
-        /// This allows you to set the _NT_SYMBOL_PATH as a string.  
-        /// </summary>
-        public static string _NT_SYMBOL_PATH
-        {
-            get
-            {
-                var ret = Environment.GetEnvironmentVariable("_NT_SYMBOL_PATH");
-                return ret ?? "";
-            }
-            set
-            {
-                Environment.SetEnvironmentVariable("_NT_SYMBOL_PATH", value);
-            }
-        }
-
-        public static string[] MicrosoftSymbolServers
-        {
-            get
-            {
-                return s_microsoftSymbolServers;
-            }
-        }
-
 
         /// <summary>
         /// Return the string representing a symbol path for the 'standard' microsoft symbol servers.   
@@ -77,44 +78,52 @@ namespace Microsoft.Diagnostics.Runtime.Utilities
 
                     result.Append("SRV*");
                     result.Append(path);
+                    first = false;
                 }
 
                 return result.ToString();
             }
         }
 
-        public string SymbolPath
+        /// <summary>
+        /// Retrieves a list of the default Microsoft symbol servers.
+        /// </summary>
+        public static string[] MicrosoftSymbolServers
         {
             get
             {
-                return _symbolPath ?? "";
+                return s_microsoftSymbolServers;
             }
+        }
 
+        /// <summary>
+        /// This property gets and sets the global _NT_SYMBOL_PATH environment variable.
+        /// This is the global setting for symbol paths on a computer.
+        /// </summary>
+        public static string _NT_SYMBOL_PATH
+        {
+            get
+            {
+                var ret = Environment.GetEnvironmentVariable("_NT_SYMBOL_PATH");
+                return ret ?? "";
+            }
             set
             {
-                _symbolElements = null;
-                _symbolPath = (value ?? "").Trim();
+                Environment.SetEnvironmentVariable("_NT_SYMBOL_PATH", value);
             }
         }
 
-
-        private List<SymPathElement> SymbolElements
-        {
-            get
-            {
-                if (_symbolElements == null)
-                    _symbolElements = SymPathElement.GetElements(_symbolPath);
-
-                return _symbolElements;
-            }
-        }
-
+        /// <summary>
+        /// Gets or sets the local symbol file cache.  This is the location that
+        /// all symbol files are downloaded to on your computer.
+        /// </summary>
         public string SymbolCache
         {
             get
             {
-                if (!string.IsNullOrEmpty(_symbolCache))
-                    return _symbolCache;
+                var cache = _symbolCache;
+                if (!string.IsNullOrEmpty(cache))
+                    return cache;
 
                 string tmp = Path.GetTempPath();
                 if (string.IsNullOrEmpty(tmp))
@@ -125,82 +134,371 @@ namespace Microsoft.Diagnostics.Runtime.Utilities
             set
             {
                 _symbolCache = value;
-                if (!string.IsNullOrEmpty(_symbolCache))
-                    Directory.CreateDirectory(_symbolCache);
+                if (!string.IsNullOrEmpty(value))
+                    Directory.CreateDirectory(value);
+
+                SymbolPathOrCacheChanged();
             }
         }
 
-        public void ClearResultCache()
+        /// <summary>
+        /// Gets or sets the SymbolPath this object uses to attempt to find PDBs and binaries.
+        /// </summary>
+        public string SymbolPath
         {
-            _binCache.Clear();
+            get
+            {
+                return _symbolPath ?? "";
+            }
+
+            set
+            {
+                _symbolPath = (value ?? "").Trim();
+
+                SymbolPathOrCacheChanged();
+            }
         }
 
-        public delegate void FindPdbHandler(SymbolLocator sender, FindPdbEventArgs args);
-        public delegate void FindBinaryHandler(SymbolLocator sender, FindBinaryEventArgs args);
-        public delegate void CopyFileHandler(SymbolLocator sender, CopyFileEventArgs args);
-        public delegate void ValidateBinaryHandler(SymbolLocator sender, ValidateBinaryEventArgs args);
-
-        public event FindBinaryHandler SearchForBinary;
-        public event FindPdbHandler SearchForPdb;
-        public event CopyFileHandler CopyFile;
-        public event ValidateBinaryHandler ValidateBinary;
-
-
+        /// <summary>
+        /// Attempts to locate a binary via the symbol server.  This function will then copy the file
+        /// locally to the symbol cache and return the location of the local file on disk.
+        /// </summary>
+        /// <param name="fileName">The filename that the binary is indexed under.</param>
+        /// <param name="buildTimeStamp">The build timestamp the binary is indexed under.</param>
+        /// <param name="imageSize">The image size the binary is indexed under.</param>
+        /// <param name="checkProperties">Whether or not to validate the properties of the binary after download.</param>
+        /// <returns>A full path on disk (local) of where the binary was copied to, null if it was not found.</returns>
         public string FindBinary(string fileName, uint buildTimeStamp, uint imageSize, bool checkProperties = true)
         {
             return FindBinary(fileName, (int)buildTimeStamp, (int)imageSize, checkProperties);
         }
 
-        public string FindBinary(string fileName, int buildTimeStamp, int imageSize, bool checkProperties = true)
+        /// <summary>
+        /// Attempts to locate a binary via the symbol server.  This function will then copy the file
+        /// locally to the symbol cache and return the location of the local file on disk.
+        /// </summary>
+        /// <param name="fileName">The filename that the binary is indexed under.</param>
+        /// <param name="buildTimeStamp">The build timestamp the binary is indexed under.</param>
+        /// <param name="imageSize">The image size the binary is indexed under.</param>
+        /// <param name="checkProperties">Whether or not to validate the properties of the binary after download.</param>
+        /// <returns>A full path on disk (local) of where the binary was copied to, null if it was not found.</returns>
+        public abstract string FindBinary(string fileName, int buildTimeStamp, int imageSize, bool checkProperties = true);
+
+        /// <summary>
+        /// Attempts to locate a binary via the symbol server.  This function will then copy the file
+        /// locally to the symbol cache and return the location of the local file on disk.
+        /// </summary>
+        /// <param name="module">The module to locate.</param>
+        /// <param name="checkProperties">Whether or not to validate the properties of the binary after download.</param>
+        /// <returns>A full path on disk (local) of where the binary was copied to, null if it was not found.</returns>
+        public string FindBinary(ModuleInfo module, bool checkProperties = true)
         {
-            string fullPath = fileName;
-            fileName = Path.GetFileName(fullPath).ToLower();
+            return FindBinary(module.FileName, module.TimeStamp, module.FileSize, checkProperties);
+        }
 
-            BinaryEntry entry = new BinaryEntry(fileName, buildTimeStamp, imageSize);
-            string result;
-            if (_binCache.TryGetValue(entry, out result))
+        /// <summary>
+        /// Attempts to locate a dac via the symbol server.  This function will then copy the file
+        /// locally to the symbol cache and return the location of the local file on disk.  Note that
+        /// the dac should not validate if the properties of the file match the one it was indexed under.
+        /// </summary>
+        /// <param name="dac">The dac to locate.</param>
+        /// <returns>A full path on disk (local) of where the binary was copied to, null if it was not found.</returns>
+        public string FindBinary(DacInfo dac)
+        {
+            return FindBinary(dac, false);
+        }
+
+        /// <summary>
+        /// Attempts to locate the pdb for a given module.
+        /// </summary>
+        /// <param name="module">The module to locate the pdb for.</param>
+        /// <returns>A full path on disk (local) of where the pdb was copied to.</returns>
+        public string FindPdb(ModuleInfo module)
+        {
+            if (module == null)
+                throw new ArgumentNullException("module");
+
+            PdbInfo pdb = module.Pdb;
+            if (pdb == null)
+                return null;
+
+            return FindPdb(pdb);
+        }
+
+        /// <summary>
+        /// Attempts to locate the pdb for a given module.
+        /// </summary>
+        /// <param name="pdb">The pdb to locate.</param>
+        /// <returns>A full path on disk (local) of where the pdb was copied to.</returns>
+        public string FindPdb(PdbInfo pdb)
+        {
+            if (pdb == null)
+                throw new ArgumentNullException("pdb");
+
+            return FindPdb(pdb.FileName, pdb.Guid, pdb.Revision);
+        }
+
+        /// <summary>
+        /// Attempts to locate a pdb based on its name, guid, and revision number.
+        /// </summary>
+        /// <param name="pdbName">The name the pdb is indexed under.</param>
+        /// <param name="pdbIndexGuid">The guid the pdb is indexed under.</param>
+        /// <param name="pdbIndexAge">The age of the pdb.</param>
+        /// <returns>A full path on disk (local) of where the pdb was copied to.</returns>
+        public abstract string FindPdb(string pdbName, Guid pdbIndexGuid, int pdbIndexAge);
+
+        /// <summary>
+        /// Validates whether a pdb on disk matches the given Guid/revision.
+        /// </summary>
+        /// <param name="pdbName"></param>
+        /// <param name="guid"></param>
+        /// <param name="age"></param>
+        /// <returns></returns>
+        protected virtual bool ValidatePdb(string pdbName, Guid guid, int age)
+        {
+            try
             {
-                Debug.Assert(result != null);
-                if (File.Exists(result))
-                    return result;
+                Guid fileGuid;
+                int fileAge;
+                PdbReader.GetPdbProperties(pdbName, out fileGuid, out fileAge);
+                return guid == fileGuid && age == fileAge;
+            }
+            catch (IOException)
+            {
+                return false;
+            }
+        }
 
-                _binCache.Remove(entry);
+        /// <summary>
+        /// Validates whether a file on disk matches the properties we expect.
+        /// </summary>
+        /// <param name="fullPath">The full path on disk of a PEImage to inspect.</param>
+        /// <param name="buildTimeStamp">The build timestamp we expect to match.</param>
+        /// <param name="imageSize">The build image size we expect to match.</param>
+        /// <param name="checkProperties">Whether we should actually validate the imagesize/timestamp or not.</param>
+        /// <returns></returns>
+        protected virtual bool ValidateBinary(string fullPath, int buildTimeStamp, int imageSize, bool checkProperties)
+        {
+            if (string.IsNullOrEmpty(fullPath))
+                return false;
+
+            if (File.Exists(fullPath))
+            {
+                if (!checkProperties)
+                {
+                    return true;
+                }
+
+                try
+                {
+                    using (PEFile pefile = new PEFile(fullPath))
+                    {
+                        var header = pefile.Header;
+                        if (!checkProperties || (header.TimeDateStampSec == buildTimeStamp && header.SizeOfImage == imageSize))
+                        {
+                            return true;
+                        }
+                        else
+                        {
+                            Trace("Rejected file '{0}' because file size and time stamp did not match.", fullPath);
+                        }
+                    }
+                }
+                catch (Exception e)
+                {
+                    Trace("Encountered exception {0} while attempting to inspect file '{1}'.", e.GetType().Name, fullPath);
+                }
             }
 
-            // First ask any file locator handlers to find it.
-            FindBinaryHandler evt = SearchForBinary;
-            if (evt != null)
+            return false;
+        }
+
+        /// <summary>
+        /// Copies a given stream to a file.
+        /// </summary>
+        /// <param name="input">The stream of data to copy.</param>
+        /// <param name="fullSrcPath">The original source location of "stream".  This may be a URL or null.</param>
+        /// <param name="fullDestPath">The full destination path to copy the file to.</param>
+        /// <param name="size">A hint as to the length of the stream.  This may be 0 or negative if the length is unknown.</param>
+        /// <returns>True if the method successfully copied the file, false otherwise.</returns>
+        protected virtual void CopyStreamToFile(Stream input, string fullSrcPath, string fullDestPath, long size)
+        {
+            Debug.Assert(input != null);
+
+            try
             {
-                FindBinaryEventArgs args = new FindBinaryEventArgs(fullPath, buildTimeStamp, imageSize);
-                foreach (FindBinaryHandler handler in evt.GetInvocationList())
+                FileInfo fi = new FileInfo(fullDestPath);
+                if (fi.Exists && fi.Length == size)
+                    return;
+
+                string folder = Path.GetDirectoryName(fullDestPath);
+                Directory.CreateDirectory(folder);
+
+                FileStream file = null;
+                try
                 {
-                    handler(this, args);
+                    file = new FileStream(fullDestPath, FileMode.OpenOrCreate);
+                    byte[] buffer = new byte[2048];
+                    int read;
+                    while ((read = input.Read(buffer, 0, buffer.Length)) > 0)
+                        file.Write(buffer, 0, read);
+                }
+                finally
+                {
+                    if (file != null)
+                        file.Dispose();
+                }
+            }
+            catch (Exception e)
+            {
+                try
+                {
+                    if (File.Exists(fullDestPath))
+                        File.Delete(fullDestPath);
+                }
+                catch
+                {
+                    // We ignore errors of this nature.
+                }
 
-                    if (!string.IsNullOrEmpty(args.Result))
+                Trace("Encountered an error while attempting to copy '{0} to '{1}': {2}", fullSrcPath, fullDestPath, e.Message);
+            }
+        }
+
+        /// <summary>
+        /// Writes diagnostic messages about symbol loading to System.Diagnostics.Trace.  Figuring out symbol issues can be tricky,
+        /// so if you override methods in SymbolLocator, be sure to trace the information here.
+        /// </summary>
+        /// <param name="fmt"></param>
+        /// <param name="args"></param>
+        protected static void Trace(string fmt, params object[] args)
+        {
+            if (args != null && args.Length > 0)
+                fmt = string.Format(fmt, args);
+
+            System.Diagnostics.Trace.WriteLine(fmt, "Microsoft.Diagnostics.Runtime.SymbolLocator");
+        }
+
+        /// <summary>
+        /// Called when changing the symbol file path or cache.
+        /// </summary>
+        protected virtual void SymbolPathOrCacheChanged()
+        {
+            _missingPdbs.Clear();
+            _missingFiles.Clear();
+        }
+
+        internal virtual void PrefetchBinary(string name, int timestamp, int imagesize)
+        {
+        }
+    }
+
+
+    /// <summary>
+    /// Default implementation of a symbol locator.
+    /// </summary>
+    public partial class DefaultSymbolLocator : SymbolLocator
+    {
+        /// <summary>
+        /// Default implementation of finding a pdb.
+        /// </summary>
+        /// <param name="pdbName">The name the pdb is indexed under.</param>
+        /// <param name="pdbIndexGuid">The guid the pdb is indexed under.</param>
+        /// <param name="pdbIndexAge">The age of the pdb.</param>
+        /// <returns>A full path on disk (local) of where the pdb was copied to.</returns>
+        public override string FindPdb(string pdbName, Guid pdbIndexGuid, int pdbIndexAge)
+        {
+            if (string.IsNullOrEmpty(pdbName))
+                return null;
+
+            string pdbSimpleName = Path.GetFileName(pdbName);
+            if (pdbName != pdbSimpleName)
+            {
+                if (ValidatePdb(pdbName, pdbIndexGuid, pdbIndexAge))
+                    return pdbName;
+            }
+
+            // Check to see if it's already cached.
+            PdbEntry entry = new PdbEntry(pdbSimpleName, pdbIndexGuid, pdbIndexAge);
+            string result = GetPdbEntry(entry);
+            if (result != null)
+                return result;
+
+            var missingPdbs = _missingPdbs;
+            if (IsMissing(missingPdbs, entry))
+                return null;
+
+            string pdbIndexPath = GetIndexPath(pdbSimpleName, pdbIndexGuid, pdbIndexAge);
+            foreach (SymPathElement element in SymPathElement.GetElements(SymbolPath))
+            {
+                if (element.IsSymServer)
+                {
+                    string targetPath = TryGetFileFromServer(element.Target, pdbIndexPath, element.Cache ?? SymbolCache);
+                    if (targetPath != null)
                     {
-                        if (CheckPathOnDisk(args.Result, buildTimeStamp, imageSize, checkProperties))
-                        {
-                            WriteLine("Custom handler returned path '{0}' for file {1}.", args.Result, fileName);
-                            _binCache[entry] = args.Result;
-                            return args.Result;
-                        }
-
-                        WriteLine("Search for file {0} returned rejected file {1}.", fullPath, args.Result);
-                        args.Result = null;
+                        Trace("Found pdb {0} from server '{1}' on path '{2}'.  Copied to '{3}'.", pdbSimpleName, element.Target, pdbIndexPath, targetPath);
+                        SetPdbEntry(missingPdbs, entry, targetPath);
+                        return targetPath;
+                    }
+                    else
+                    {
+                        Trace("No matching pdb found on server '{0}' on path '{1}'.", element.Target, pdbIndexPath);
+                    }
+                }
+                else
+                {
+                    string fullPath = Path.Combine(element.Target, pdbSimpleName);
+                    if (ValidatePdb(fullPath, pdbIndexGuid, pdbIndexAge))
+                    {
+                        Trace(String.Format("Found pdb '{0}' at '{1}'.", pdbSimpleName, fullPath));
+                        SetPdbEntry(missingPdbs, entry, fullPath);
+                        return fullPath;
+                    }
+                    else
+                    {
+                        Trace(String.Format("Mismatched pdb found at '{0}'.", fullPath));
                     }
                 }
             }
 
-            // Test to see if the file is on disk.
-            if (CheckPathOnDisk(fullPath, buildTimeStamp, imageSize, checkProperties))
-            {
-                _binCache[entry] = result;
+            SetPdbEntry(missingPdbs, entry, null);
+            return null;
+        }
+
+        /// <summary>
+        /// Attempts to locate a binary via the symbol server.  This function will then copy the file
+        /// locally to the symbol cache and return the location of the local file on disk.
+        /// </summary>
+        /// <param name="fileName">The filename that the binary is indexed under.</param>
+        /// <param name="buildTimeStamp">The build timestamp the binary is indexed under.</param>
+        /// <param name="imageSize">The image size the binary is indexed under.</param>
+        /// <param name="checkProperties">Whether or not to validate the properties of the binary after download.</param>
+        /// <returns>A full path on disk (local) of where the binary was copied to, null if it was not found.</returns>
+        public override string FindBinary(string fileName, int buildTimeStamp, int imageSize, bool checkProperties = true)
+        {
+            string fullPath = fileName;
+            fileName = Path.GetFileName(fullPath).ToLower();
+
+            // First see if we already have the result cached.
+            FileEntry entry = new FileEntry(fileName, buildTimeStamp, imageSize);
+            string result = GetFileEntry(entry);
+            if (result != null)
                 return result;
+
+            var missingFiles = _missingFiles;
+            if (IsMissing(missingFiles, entry))
+                return null;
+
+            // Test to see if the file is on disk.
+            if (ValidateBinary(fullPath, buildTimeStamp, imageSize, checkProperties))
+            {
+                SetFileEntry(missingFiles, entry, fullPath);
+                return fullPath;
             }
 
             // Finally, check the symbol paths.
             string exeIndexPath = null;
-            foreach (SymPathElement element in SymbolElements)
+            foreach (SymPathElement element in SymPathElement.GetElements(SymbolPath))
             {
                 if (element.IsSymServer)
                 {
@@ -208,24 +506,31 @@ namespace Microsoft.Diagnostics.Runtime.Utilities
                         exeIndexPath = GetIndexPath(fileName, buildTimeStamp, imageSize);
 
                     string target = TryGetFileFromServer(element.Target, exeIndexPath, element.Cache ?? SymbolCache);
-                    if (CheckPathOnDisk(target, buildTimeStamp, imageSize, checkProperties))
+                    if (target == null)
                     {
-                        _binCache[entry] = target;
+                        Trace(String.Format("Server '{0}' did not have file '{1}' with timestamp={2:x} and filesize={3:x}.",
+                            element.Target, Path.GetFileName(fileName), buildTimeStamp,imageSize));
+                    }
+                    else if (ValidateBinary(target, buildTimeStamp, imageSize, checkProperties))
+                    {
+                        Trace(String.Format("Found '{0}' on server '{1}'.  Copied to '{2}'.", fileName, element.Target, target));
+                        SetFileEntry(missingFiles, entry, target);
                         return target;
                     }
                 }
                 else
                 {
                     string filePath = Path.Combine(element.Target, fileName);
-                    if (CheckPathOnDisk(filePath, buildTimeStamp, imageSize, checkProperties))
+                    if (ValidateBinary(filePath, buildTimeStamp, imageSize, checkProperties))
                     {
-                        _binCache[entry] = filePath;
+                        Trace(String.Format("Found '{0}' at '{1}'.", fileName, filePath));
+                        SetFileEntry(missingFiles, entry, filePath);
                         return filePath;
                     }
                 }
             }
 
-            // Found nothing.
+            SetFileEntry(missingFiles, entry, null);
             return null;
         }
 
@@ -238,162 +543,12 @@ namespace Microsoft.Diagnostics.Runtime.Utilities
         {
             return pdbSimpleName + @"\" + pdbIndexGuid.ToString().Replace("-", "") + pdbIndexAge.ToString("x") + @"\" + pdbSimpleName;
         }
-        public string GetCachedLocation(PdbInfo pdb)
-        {
-            return Path.Combine(SymbolCache, GetIndexPath(Path.GetFileName(pdb.FileName), pdb.Guid, pdb.Revision));
-        }
-
-        public string GetCachedLocation(ModuleInfo module)
-        {
-            string filename = module.FileName;
-            uint timestamp = module.TimeStamp;
-            uint imagesize = module.FileSize;
-            return GetCachedLocation(filename, timestamp, imagesize);
-        }
-
-        public string GetCachedLocation(string filename, uint timestamp, uint imagesize)
-        {
-            return Path.Combine(SymbolCache, GetIndexPath(filename, (int)timestamp, (int)imagesize));
-        }
-
-        internal SymbolModule LoadPdb(string pdbPath)
-        {
-            if (string.IsNullOrEmpty(pdbPath))
-                return null;
-
-            SymbolModule result;
-            if (_moduleCache.TryGetValue(pdbPath, out result))
-            {
-                // TODO:  Add dispose on SymbolModule
-                //if (!result.Disposed)
-
-                return result;
-            }
-
-            result = new SymbolModule(new SymbolReader(null, null), pdbPath);
-            _moduleCache[pdbPath] = result;
-
-            return result;
-        }
-
-        internal SymbolModule LoadPdb(ModuleInfo module)
-        {
-            var pdb = module.Pdb;
-            return LoadPdb(pdb.FileName, pdb.Guid, pdb.Revision);
-        }
-
-        internal SymbolModule LoadPdb(string pdbName, Guid pdbIndexGuid, int pdbIndexAge)
-        {
-            // TODO: Should we not cache the result of this?
-            string pdb = FindPdb(pdbName, pdbIndexGuid, pdbIndexAge);
-            return LoadPdb(pdb);
-        }
-
-        public string FindPdb(ModuleInfo module)
-        {
-            return FindPdb(module.Pdb);
-        }
-
-        public string FindPdb(PdbInfo pdb)
-        {
-            return FindPdb(pdb.FileName, pdb.Guid, pdb.Revision);
-        }
-
-        public string FindPdb(string pdbName, Guid pdbIndexGuid, int pdbIndexAge)
-        {
-            if (string.IsNullOrEmpty(pdbName))
-                return null;
-
-            string pdbSimpleName = Path.GetFileName(pdbName);
-            if (pdbName != pdbSimpleName)
-            {
-                if (PdbMatches(pdbName, pdbIndexGuid, pdbIndexAge))
-                    return pdbName;
-            }
-
-            PdbEntry entry = new PdbEntry(pdbSimpleName, pdbIndexGuid, pdbIndexAge);
-            string result = null;
-            if (_pdbCache.TryGetValue(entry, out result))
-                return result;
-
-
-            string pdbIndexPath = null;
-            foreach (SymPathElement element in SymbolElements)
-            {
-                if (element.IsSymServer)
-                {
-                    if (pdbIndexPath == null)
-                        pdbIndexPath = GetIndexPath(pdbSimpleName, pdbIndexGuid, pdbIndexAge);
-
-                    string targetPath = TryGetFileFromServer(element.Target, pdbIndexPath, element.Cache ?? SymbolCache);
-                    if (targetPath != null)
-                    {
-                        WriteLine("Found pdb {0} from server '{1}' on path '{2}'.  Copied to '{3}'.", pdbSimpleName, element.Target, pdbIndexPath, targetPath);
-                        _pdbCache[entry] = targetPath;
-                        return targetPath;
-                    }
-                    else
-                    {
-                        WriteLine("No matching pdb found on server '{0}' on path '{1}'.", element.Target, pdbIndexPath);
-                    }
-                }
-                else
-                {
-                    string fullPath = Path.Combine(element.Target, pdbSimpleName);
-                    if (PdbMatches(fullPath, pdbIndexGuid, pdbIndexAge))
-                    {
-                        _pdbCache[entry] = fullPath;
-                        return fullPath;
-                    }
-                }
-            }
-
-            return null;
-        }
-
-        public static bool PdbMatches(string filePath, Guid pdbIndexGuid, int revision)
-        {
-            if (File.Exists(filePath))
-            {
-                Dia2Lib.IDiaDataSource source = null;
-                Dia2Lib.IDiaSession session = null;
-                try
-                {
-                    source = DiaLoader.GetDiaSourceObject();
-                    source.loadDataFromPdb(filePath);
-                    source.openSession(out session);
-
-                    if (pdbIndexGuid == session.globalScope.guid && (uint)revision == session.globalScope.age)
-                    {
-                        return true;
-                    }
-                }
-                catch (Exception)
-                {
-                }
-                finally
-                {
-                    if (source != null)
-                        Marshal.ReleaseComObject(source);
-
-                    if (session != null)
-                        Marshal.ReleaseComObject(session);
-                }
-            }
-
-            return false;
-        }
 
         private string TryGetFileFromServer(string urlForServer, string fileIndexPath, string cache)
         {
             Debug.Assert(!string.IsNullOrEmpty(cache));
             if (String.IsNullOrEmpty(urlForServer))
                 return null;
-
-            // Just try to fetch the file directly
-            var ret = GetPhysicalFileFromServer(urlForServer, fileIndexPath, cache);
-            if (ret != null)
-                return ret;
 
             var targetPath = Path.Combine(cache, fileIndexPath);
 
@@ -410,7 +565,7 @@ namespace Microsoft.Diagnostics.Runtime.Utilities
                 }
                 catch (Exception e)
                 {
-                    WriteLine("Exception encountered while expanding file '{0}': {1}", compressedFilePath, e.Message);
+                    Trace("Exception encountered while expanding file '{0}': {1}", compressedFilePath, e.Message);
                 }
                 finally
                 {
@@ -418,6 +573,11 @@ namespace Microsoft.Diagnostics.Runtime.Utilities
                         File.Delete(compressedFilePath);
                 }
             }
+
+            // Just try to fetch the file directly
+            var ret = GetPhysicalFileFromServer(urlForServer, fileIndexPath, cache);
+            if (ret != null)
+                return ret;
 
             // See if we have a file that tells us to redirect elsewhere. 
             var filePtrSigPath = Path.Combine(Path.GetDirectoryName(fileIndexPath), "file.ptr");
@@ -441,7 +601,7 @@ namespace Microsoft.Diagnostics.Runtime.Utilities
             }
             else
             {
-                WriteLine("Error resolving file.ptr: content '{0}' from '{1}.", filePtrData, filePtrSigPath);
+                Trace("Error resolving file.ptr: content '{0}' from '{1}.", filePtrData, filePtrSigPath);
             }
 
             return null;
@@ -453,375 +613,74 @@ namespace Microsoft.Diagnostics.Runtime.Utilities
                 return null;
 
             var fullDestPath = Path.Combine(symbolCacheDir, pdbIndexPath);
-            if (!File.Exists(fullDestPath))
-            {
-                if (serverPath.StartsWith("http:"))
-                {
-                    var fullUri = serverPath + "/" + pdbIndexPath.Replace('\\', '/');
-                    try
-                    {
-                        var req = (System.Net.HttpWebRequest)System.Net.HttpWebRequest.Create(fullUri);
-                        req.UserAgent = "Microsoft-Symbol-Server/6.13.0009.1140";
-                        var response = req.GetResponse();
-                        using (var fromStream = response.GetResponseStream())
-                        {
-                            if (returnContents)
-                            {
-                                TextReader reader = new StreamReader(fromStream);
-                                return reader.ReadToEnd();
-                            }
+            if (File.Exists(fullDestPath))
+                return fullDestPath;
 
-                            CopyStreamToFile(fromStream, fullUri, fullDestPath, response.ContentLength);
-                        }
-                    }
-                    catch (Exception e)
+            if (serverPath.StartsWith("http:"))
+            {
+                var fullUri = serverPath + "/" + pdbIndexPath.Replace('\\', '/');
+                try
+                {
+                    var req = (System.Net.HttpWebRequest)System.Net.HttpWebRequest.Create(fullUri);
+                    req.UserAgent = "Microsoft-Symbol-Server/6.13.0009.1140";
+                    req.Timeout = Timeout;
+                    var response = req.GetResponse();
+                    using (var fromStream = response.GetResponseStream())
                     {
-                        WriteLine(LogLevel.Diagnostic, "Probe of {0} failed: {1}", fullUri, e.Message);
-                        return null;
+                        if (returnContents)
+                        {
+                            TextReader reader = new StreamReader(fromStream);
+                            return reader.ReadToEnd();
+                        }
+
+                        CopyStreamToFile(fromStream, fullUri, fullDestPath, response.ContentLength);
+                        return fullDestPath;
                     }
                 }
-                else
+                catch (WebException)
                 {
-                    var fullSrcPath = Path.Combine(serverPath, pdbIndexPath);
-                    if (!File.Exists(fullSrcPath))
-                        return null;
-
-                    if (returnContents)
-                    {
-                        try
-                        {
-                            return File.ReadAllText(fullSrcPath);
-                        }
-                        catch
-                        {
-                            return "";
-                        }
-                    }
-
-                    using (FileStream fs = File.OpenRead(fullSrcPath))
-                        CopyStreamToFile(fs, fullSrcPath, fullDestPath, fs.Length);
+                    // A timeout or 404.
+                    return null;
+                }
+                catch (Exception e)
+                {
+                    Trace("Probe of {0} failed: {1}", fullUri, e.Message);
+                    return null;
                 }
             }
             else
             {
-                WriteLine("Found file {0} in cache.", fullDestPath);
-            }
+                var fullSrcPath = Path.Combine(serverPath, pdbIndexPath);
+                if (!File.Exists(fullSrcPath))
+                    return null;
 
-            return fullDestPath;
-        }
-
-        private bool CopyStreamToFile(Stream stream, string fullSrcPath, string fullDestPath, long size)
-        {
-            Debug.Assert(stream != null);
-
-            var evt = CopyFile;
-            if (evt != null)
-            {
-                CopyFileEventArgs args = new CopyFileEventArgs(fullSrcPath, fullDestPath, stream, size);
-
-                foreach (CopyFileHandler func in evt.GetInvocationList())
+                if (returnContents)
                 {
-                    func(this, args);
-
-                    if (args.IsCancelled)
-                        return false;
-                    else if (args.IsComplete)
-                        return File.Exists(fullDestPath);
-                }
-            }
-
-            try
-            {
-                FileInfo fi = new FileInfo(fullDestPath);
-                if (fi.Exists && fi.Length == size)
-                    return true;
-
-                string folder = Path.GetDirectoryName(fullDestPath);
-                Directory.CreateDirectory(folder);
-
-                FileStream file = null;
-                try
-                {
-                    file = new FileStream(fullDestPath, FileMode.OpenOrCreate);
-                    byte[] buffer = new byte[2048];
-                    int read;
-                    while ((read = stream.Read(buffer, 0, buffer.Length)) > 0)
-                        file.Write(buffer, 0, read);
-                }
-                catch (IOException)
-                {
-                    return false;
-                }
-                finally
-                {
-                    if (file != null)
-                        file.Dispose();
-                }
-
-                return true;
-            }
-            catch (Exception e)
-            {
-                SafeDeleteFile(fullDestPath);
-
-                WriteLine("Encountered an error while attempting to copy '{0} to '{1}': {2}", fullSrcPath, fullDestPath, e.Message);
-                return false;
-            }
-        }
-
-        private static void SafeDeleteFile(string fullDestPath)
-        {
-            try
-            {
-                if (File.Exists(fullDestPath))
-                    File.Delete(fullDestPath);
-            }
-            catch
-            {
-                // We will ignore errors of this nature.
-            }
-        }
-
-        public string DownloadBinary(ModuleInfo module, bool checkProperties = true)
-        {
-            return DownloadBinary(module.FileName, module.TimeStamp, module.FileSize, checkProperties);
-        }
-
-        public string DownloadBinary(DacInfo dac)
-        {
-            return DownloadBinary(dac, false);
-        }
-
-        public string DownloadBinary(string fileName, uint buildTimeStamp, uint imageSize, bool checkProperties = true)
-        {
-            return FindBinary(fileName, (int)buildTimeStamp, (int)imageSize, checkProperties);
-        }
-
-        public PEFile LoadBinary(string fileName, uint buildTimeStamp, uint imageSize, bool checkProperties = true)
-        {
-            string result = FindBinary(fileName, buildTimeStamp, imageSize, checkProperties);
-            return LoadBinary(result);
-        }
-
-        public PEFile LoadBinary(string fileName)
-        {
-            if (string.IsNullOrEmpty(fileName))
-                return null;
-
-            PEFile result;
-            if (_pefileCache.TryGetValue(fileName, out result))
-            {
-                // TODO: Add .Disposed property.
-                //if (!result.Disposed)
-                return result;
-            }
-
-            try
-            {
-                result = new PEFile(fileName);
-                _pefileCache[fileName] = result;
-            }
-            catch
-            {
-                WriteLine("Failed to load PEFile '{0}'.", fileName);
-            }
-
-            return result;
-        }
-
-
-        private bool CheckPathOnDisk(string fullPath, int buildTimeStamp, int imageSize, bool checkProperties)
-        {
-            if (string.IsNullOrEmpty(fullPath))
-                return false;
-
-            if (File.Exists(fullPath))
-            {
-                var evt = ValidateBinary;
-                if (evt != null)
-                {
-                    var args = new ValidateBinaryEventArgs(fullPath, buildTimeStamp, imageSize, checkProperties);
-
-                    foreach (ValidateBinaryHandler func in evt.GetInvocationList())
+                    try
                     {
-                        func(this, args);
-
-                        if (args.Rejected)
-                            return false;
-
-                        if (args.Accepted)
-                            return true;
+                        return File.ReadAllText(fullSrcPath);
+                    }
+                    catch
+                    {
+                        return "";
                     }
                 }
 
-                if (!checkProperties)
-                {
-                    WriteLine("Found '{0}' for file {1}.", fullPath, Path.GetFileName(fullPath));
-                    return true;
-                }
+                using (FileStream fs = File.OpenRead(fullSrcPath))
+                    CopyStreamToFile(fs, fullSrcPath, fullDestPath, fs.Length);
 
-                try
-                {
-                    using (PEFile pefile = new PEFile(fullPath))
-                    {
-                        var header = pefile.Header;
-                        if (!checkProperties || (header.TimeDateStampSec == buildTimeStamp && header.SizeOfImage == imageSize))
-                        {
-                            WriteLine("Found '{0}' for file {1}.", fullPath, Path.GetFileName(fullPath));
-                            return true;
-                        }
-                        else
-                        {
-                            WriteLine("Rejected file '{0}' because file size and time stamp did not match.", fullPath);
-                        }
-                    }
-                }
-                catch (Exception e)
-                {
-                    WriteLine("Encountered exception {0} while attempting to inspect file '{1}'.", e.GetType().Name, fullPath);
-                }
+                return fullDestPath;
             }
-
-            return false;
-        }
-
-        public enum LogLevel
-        {
-            Normal,
-            Diagnostic
-        }
-
-        private void WriteLine(LogLevel level, string fmt, params object[] args)
-        {
-            // todo here-
-            //Console.WriteLine(fmt, args);
-        }
-
-        private void WriteLine(string fmt, params object[] args)
-        {
-            WriteLine(LogLevel.Normal, fmt, args);
         }
     }
 
-    public class FindPdbEventArgs
-    {
-        internal FindPdbEventArgs(string filename, Guid guid, int revision)
-        {
-            FileName = filename;
-            Guid = guid;
-            Revision = revision;
-        }
-
-        public string FileName { get; private set; }
-        public Guid Guid { get; private set; }
-        public int Revision { get; private set; }
-
-        public string Result { get; set; }
-    }
-
-
-    /// <summary>
-    /// Arguments given when ClrMD attempts to locate a binary file.
-    /// </summary>
-    public class FindBinaryEventArgs
-    {
-        internal FindBinaryEventArgs(string fileName, int timeStamp, int fileSize)
-        {
-            FileName = fileName;
-            TimeStamp = timeStamp;
-            FileSize = fileSize;
-        }
-
-        /// <summary>
-        /// The name of the file we are attempting to locate.  Note this property may be a full
-        /// path on disk or a simple file name.  A full path on disk should be treated as a hint
-        /// as to where to look for the file.
-        /// </summary>
-        public string FileName { get; private set; }
-
-        /// <summary>
-        /// The time stamp of the file we are attempting to locate.
-        /// </summary>
-        public int TimeStamp { get; private set; }
-
-        /// <summary>
-        /// The file size of the file we are attempting to locate.
-        /// </summary>
-        public int FileSize { get; private set; }
-
-        /// <summary>
-        /// If you located the file, fill this property with the full path on disk of where to find it.
-        /// Note that this must be a local, accessable path and not a URL.
-        /// </summary>
-        public string Result { get; set; }
-    }
-
-    public class ValidateBinaryEventArgs
-    {
-        public string File { get; private set; }
-        public int FileSize { get; private set; }
-        public int TimeStamp { get; private set; }
-        public bool ValidateProperties { get; private set; }
-
-        public bool Rejected { get; private set; }
-        public bool Accepted { get; private set; }
-
-        public void Reject()
-        {
-            Rejected = true;
-        }
-
-        public void Accept()
-        {
-            Accepted = true;
-        }
-
-        public ValidateBinaryEventArgs(string fileName, int timestamp, int fileSize, bool validate)
-        {
-            File = fileName;
-            FileSize = fileSize;
-            TimeStamp = timestamp;
-            ValidateProperties = validate;
-        }
-    }
-
-    public class CopyFileEventArgs
-    {
-        public string Source { get; private set; }
-        public string Destination { get; private set; }
-        public Stream Stream { get; private set; }
-        public long Size { get; private set; }
-
-        public bool IsCancelled { get; private set; }
-
-        public bool IsComplete { get; private set; }
-
-        public void Cancel()
-        {
-            IsCancelled = true;
-        }
-
-        public void Complete()
-        {
-            IsComplete = true;
-        }
-
-        public CopyFileEventArgs(string src, string dst, Stream stream, long size)
-        {
-            Source = src;
-            Destination = dst;
-            Stream = stream;
-            Size = size;
-        }
-    }
-
-    internal struct BinaryEntry : IEquatable<BinaryEntry>
+    internal struct FileEntry : IEquatable<FileEntry>
     {
         public string FileName;
         public int TimeStamp;
         public int FileSize;
 
-        public BinaryEntry(string filename, int timestamp, int filesize)
+        public FileEntry(string filename, int timestamp, int filesize)
         {
             FileName = filename;
             TimeStamp = timestamp;
@@ -835,14 +694,15 @@ namespace Microsoft.Diagnostics.Runtime.Utilities
 
         public override bool Equals(object obj)
         {
-            return obj is BinaryEntry && Equals((BinaryEntry)obj);
+            return obj is FileEntry && Equals((FileEntry)obj);
         }
 
-        public bool Equals(BinaryEntry other)
+        public bool Equals(FileEntry other)
         {
             return FileName.Equals(other.FileName, StringComparison.OrdinalIgnoreCase) && TimeStamp == other.TimeStamp && FileSize == other.FileSize;
         }
     }
+
     internal struct PdbEntry : IEquatable<PdbEntry>
     {
         public string FileName;
@@ -869,6 +729,56 @@ namespace Microsoft.Diagnostics.Runtime.Utilities
         public bool Equals(PdbEntry other)
         {
             return Revision == other.Revision && FileName.Equals(other.FileName, StringComparison.OrdinalIgnoreCase) && Guid == other.Guid;
+        }
+    }
+
+    internal class FileLoader : ICorDebug.ICLRDebuggingLibraryProvider
+    {
+        private Dictionary<string, PEFile> _pefileCache = new Dictionary<string, PEFile>(StringComparer.OrdinalIgnoreCase);
+        private DataTarget _dataTarget;
+        
+        public FileLoader(DataTarget dt)
+        {
+            _dataTarget = dt;
+        }
+
+        public PEFile LoadPEFile(string fileName)
+        {
+            if (string.IsNullOrEmpty(fileName))
+                return null;
+            PEFile result;
+            if (_pefileCache.TryGetValue(fileName, out result))
+            {
+                if (!result.Disposed)
+                    return result;
+
+                _pefileCache.Remove(fileName);
+            }
+
+            try
+            {
+                result = new PEFile(fileName);
+                _pefileCache[fileName] = result;
+            }
+            catch
+            {
+                result = null;
+            }
+
+            return result;
+        }
+
+        public int ProvideLibrary([In, MarshalAs(UnmanagedType.LPWStr)] string fileName, int timestamp, int sizeOfImage, out IntPtr hModule)
+        {
+            string result = _dataTarget.SymbolLocator.FindBinary(fileName, timestamp, sizeOfImage, false);
+            if (result == null)
+            {
+                hModule = IntPtr.Zero;
+                return -1;
+            }
+
+            hModule = NativeMethods.LoadLibrary(result);
+            return 0;
         }
     }
 }

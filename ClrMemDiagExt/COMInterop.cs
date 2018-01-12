@@ -1118,7 +1118,7 @@ namespace NetExt.Shim
             if (m_field == null)
                 return HRESULTS.S_OK;
 
-            object value = m_field.GetFieldValue((ClrAppDomain)appDomain);
+            object value = m_field.GetValue((ClrAppDomain)appDomain);
             ppValue = new MDValue(value, m_field.ElementType);
             return HRESULTS.S_OK;
         }
@@ -1187,7 +1187,7 @@ namespace NetExt.Shim
             ppValue = null;
             if (m_field == null)
                 return HRESULTS.E_FAIL;
-            object value = m_field.GetFieldValue((ClrAppDomain)appDomain, (ClrThread)thread);
+            object value = m_field.GetValue((ClrAppDomain)appDomain, (ClrThread)thread);
             ppValue = new MDValue(value, m_field.ElementType);
             return HRESULTS.S_OK;
         }
@@ -1197,7 +1197,7 @@ namespace NetExt.Shim
             pAddress = 0;
             if (m_field == null)
                 return HRESULTS.E_FAIL;
-            pAddress = m_field.GetFieldAddress((ClrAppDomain)appDomain, (ClrThread)thread);
+            pAddress = m_field.GetAddress((ClrAppDomain)appDomain, (ClrThread)thread);
             return HRESULTS.S_OK;
         }
     }
@@ -1264,7 +1264,7 @@ namespace NetExt.Shim
             ppValue = null;
             if (m_field == null)
                 return HRESULTS.E_FAIL;
-            object value = m_field.GetFieldValue(objRef, interior != 0);
+            object value = m_field.GetValue(objRef, interior != 0);
             ppValue = new MDValue(value, m_field.ElementType);
             return HRESULTS.S_OK;
         }
@@ -1325,7 +1325,7 @@ namespace NetExt.Shim
             if (objRef != 0)
             {
                 typeData.size = m_type.GetSize(objRef);
-                if(!m_type.IsObjectReference || !m_type.Heap.GetRuntime().ReadPointer(objRef, out typeData.MethodTable))
+                if(!m_type.IsObjectReference || !m_type.Heap.Runtime.ReadPointer(objRef, out typeData.MethodTable))
                     typeData.MethodTable = HeapStatItem.GetMTOfType(m_type);
                 var seg = m_type.Heap.GetSegmentByAddress(objRef);
                 if (seg != null)
@@ -1340,7 +1340,7 @@ namespace NetExt.Shim
                 }
                 typeData.isCCW = m_type.IsCCW(objRef);
                 typeData.isRCW = m_type.IsRCW(objRef);
-                typeData.appDomain = AdHoc.GetDomainFromMT(m_type.Heap.GetRuntime(), typeData.MethodTable);
+                typeData.appDomain = AdHoc.GetDomainFromMT(m_type.Heap.Runtime, typeData.MethodTable);
             }
             else
             {
@@ -1383,11 +1383,11 @@ namespace NetExt.Shim
                 if (objRef != 0)
                 {
                     
-                    ulong[] arrayData = AdHoc.GetArrayData(m_type.Heap.GetRuntime(), objRef);
-                    if (m_type.ArrayComponentType == null)
+                    ulong[] arrayData = AdHoc.GetArrayData(m_type.Heap.Runtime, objRef);
+                    if (m_type.ComponentType == null)
                         typeData.arrayCorType = (int)arrayData[AdHoc.ARRAYCORTYPE];
                     else
-                        typeData.arrayCorType = (int)m_type.ArrayComponentType.ElementType;
+                        typeData.arrayCorType = (int)m_type.ComponentType.ElementType;
                     typeData.arrayElementMT = arrayData[AdHoc.ARRAYELEMENTMT];
                     typeData.arrayStart = arrayData[AdHoc.ARRAYSTART];
 
@@ -1398,7 +1398,7 @@ namespace NetExt.Shim
             typeData.isArray = m_type.IsArray;
             typeData.isGeneric = m_type.Name.Contains('<') && m_type.Name.Contains('>') && m_type.Name[0] != '<';
             typeData.isString = m_type.IsString;
-            typeData.EEClass = AdHoc.GetEEFromMT(m_type.Heap.GetRuntime(), typeData.MethodTable);
+            typeData.EEClass = AdHoc.GetEEFromMT(m_type.Heap.Runtime, typeData.MethodTable);
             typeData.isValueType = m_type.IsValueClass;
             typeData.module = m_type.Module.ImageBase;
             typeData.assembly = m_type.Module.AssemblyId;
@@ -1495,7 +1495,7 @@ namespace NetExt.Shim
 
         public int GetArrayComponentType(out IMDType ppArrayComponentType)
         {
-            ppArrayComponentType = Construct(m_type.ArrayComponentType);
+            ppArrayComponentType = Construct(m_type.ComponentType);
             return HRESULTS.S_OK;
         }
 
@@ -1649,9 +1649,9 @@ namespace NetExt.Shim
                     ClrThreadStaticField threadStat = fields[index].BackField as ClrThreadStaticField;
                     if (threadStat != null)
                     {
-                        foreach (var thread in m_type.Heap.GetRuntime().Threads)
+                        foreach (var thread in m_type.Heap.Runtime.Threads)
                         {
-                            foreach (var domain in AdHoc.GetDomains(m_type.Heap.GetRuntime()))
+                            foreach (var domain in AdHoc.GetDomains(m_type.Heap.Runtime))
                             {
                                 try
                                 {
@@ -1682,17 +1682,17 @@ namespace NetExt.Shim
                             m_type.Heap.ReadPointer(obj, out mt);
                         if(mt==0)
                             mt = HeapStatItem.GetMTOfType(m_type);
-                        ulong domainAddr = AdHoc.GetDomainFromMT(m_type.Heap.GetRuntime(), mt);
+                        ulong domainAddr = AdHoc.GetDomainFromMT(m_type.Heap.Runtime, mt);
                         if (domainAddr != 0)
                         {
-                            domain = AdHoc.GetDomainByAddress(m_type.Heap.GetRuntime(), domainAddr);
+                            domain = AdHoc.GetDomainByAddress(m_type.Heap.Runtime, domainAddr);
                             if (domain != null)
                             {
                                 address = stat.GetAddress(domain);
                                 if (address != 0)
                                     return HRESULTS.S_OK;
                             }
-                            foreach(var d in AdHoc.GetDomains(m_type.Heap.GetRuntime()))
+                            foreach(var d in AdHoc.GetDomains(m_type.Heap.Runtime))
                             {
                                 address = stat.GetAddress(d);
                                 if (address != 0)
@@ -1768,11 +1768,11 @@ namespace NetExt.Shim
                     field.ElementType == ClrElementType.Float ||
                     field.ElementType == ClrElementType.Double)
                 {
-                    fields[i].value = field.GetFieldAddress(obj, interior != 0);
+                    fields[i].value = field.GetAddress(obj, interior != 0);
                 }
                 else
                 {
-                    object value = field.GetFieldValue(obj, interior != 0);
+                    object value = field.GetValue(obj, interior != 0);
 
                     if (value == null)
                     {
@@ -1852,7 +1852,7 @@ namespace NetExt.Shim
         public int GetArrayElementValue(ulong objRef, int index, out IMDValue ppValue)
         {
             object value = m_type.GetArrayElementValue(objRef, index);
-            ClrElementType elementType = m_type.ArrayComponentType != null ? m_type.ArrayComponentType.ElementType : ClrElementType.Unknown;
+            ClrElementType elementType = m_type.ComponentType != null ? m_type.ComponentType.ElementType : ClrElementType.Unknown;
             ppValue = new MDValue(value, elementType);
             return HRESULTS.S_OK;
         }
@@ -2050,7 +2050,7 @@ namespace NetExt.Shim
                 Exports.WriteDmlLine("<link cmd=\"!wpe {0:%p}\">{0:%p}</link> {1} {2}</link>", exception.Inner.Address,
                     exception.Inner.Type.Name.Replace("<", "&lt;").Replace(">", "&gt;"), exception.Inner.Message);
             Exports.WriteLine("Stack:");
-            Exports.WriteLine("{0}", DumpStack(exception.StackTrace, m_heap.GetRuntime().PointerSize));
+            Exports.WriteLine("{0}", DumpStack(exception.StackTrace, m_heap.Runtime.PointerSize));
             Exports.WriteLine("HResult: {0:x4}", exception.HResult);
             Exports.WriteLine("");
             return HRESULTS.S_OK;
@@ -2067,7 +2067,7 @@ namespace NetExt.Shim
                 {
                     if (Exports.isInterrupted())
                         return HRESULTS.E_FAIL;
-                    string key = String.Format("{0}\0{1}\0{2}", ex.Type.Name, ex.Message, DumpStack(ex.StackTrace, m_heap.GetRuntime().PointerSize, true));
+                    string key = String.Format("{0}\0{1}\0{2}", ex.Type.Name, ex.Message, DumpStack(ex.StackTrace, m_heap.Runtime.PointerSize, true));
                     if (!allExceptions.ContainsKey(key))
                     {
                         allExceptions[key] = new List<ulong>();
@@ -2129,7 +2129,7 @@ namespace NetExt.Shim
         private static HeapCache cache = null;
         public void InitializeCache()
         {
-            cache = new HeapCache(m_heap.GetRuntime());
+            cache = new HeapCache(m_heap.Runtime);
         }
         public StringBuilder PrintAttribute(ulong Address)
         {
@@ -2666,7 +2666,7 @@ namespace NetExt.Shim
                     categories[handle.HandleType.ToString()] = 0;
                 }
                 categories[handle.HandleType.ToString()]++;
-                ClrType obj = m_runtime.GetHeap().GetObjectType(handle.Object);
+                ClrType obj = m_runtime.Heap.GetObjectType(handle.Object);
 
                 if (
                     (String.IsNullOrEmpty(filterByType) || handle.HandleType.ToString().ToLowerInvariant().Contains(filterByType.ToLowerInvariant()))
@@ -2822,10 +2822,11 @@ namespace NetExt.Shim
 
         public int GetHeap(out IMDHeap ppHeap)
         {
+            isFlushedCalled = false;
             ppHeap = null;
             if (m_runtime == null)
                 return HRESULTS.E_FAIL;
-            ppHeap = new MDHeap(m_runtime.GetHeap());
+            ppHeap = new MDHeap(m_runtime.Heap);
             return HRESULTS.S_OK;
         }
 
@@ -2852,7 +2853,7 @@ namespace NetExt.Shim
             ppEnum = null;
             if (m_runtime == null)
                 return HRESULTS.E_FAIL;
-            ppEnum = new MDObjectEnum(new List<ulong>(m_runtime.EnumerateFinalizerQueue()));
+            ppEnum = new MDObjectEnum(new List<ulong>(m_runtime.EnumerateFinalizerQueueObjectAddresses()));
             return HRESULTS.S_OK;
         }
 
@@ -2997,7 +2998,7 @@ namespace NetExt.Shim
             pLocation = null;
             if (m_info == null)
                 return HRESULTS.E_FAIL;
-            pLocation = m_info.TryGetDacLocation();
+            pLocation = m_info.LocalMatchingDac;
             return HRESULTS.S_OK;
         } 
 
@@ -3081,7 +3082,8 @@ namespace NetExt.Shim
             ppRuntime = null;
             if (m_target == null || m_target.ClrVersions == null)
                 return HRESULTS.E_FAIL;
-            ppRuntime = new MDRuntime(m_target.CreateRuntime(dacLocation));
+            
+            ppRuntime = new MDRuntime(m_target.ClrVersions.Single().CreateRuntime(dacLocation));
             return HRESULTS.S_OK;
         }
 
@@ -3090,7 +3092,7 @@ namespace NetExt.Shim
             ppRuntime = null;
             if (m_target == null || m_target.ClrVersions == null)
                 return HRESULTS.E_FAIL;
-            ppRuntime = new MDRuntime(m_target.CreateRuntime(ixCLRProcess));
+            ppRuntime = new MDRuntime(m_target.ClrVersions.Single().CreateRuntime(ixCLRProcess));
             return HRESULTS.S_OK;
         }
 

@@ -1,9 +1,7 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-using System;
 using System.Collections.Generic;
-using Address = System.UInt64;
 
 namespace Microsoft.Diagnostics.Runtime.Desktop
 {
@@ -82,7 +80,7 @@ namespace Microsoft.Diagnostics.Runtime.Desktop
 
         private IEnumerable<ulong> EnumerateManagedThreadpoolObjects()
         {
-            _heap = _runtime.GetHeap();
+            _heap = _runtime.Heap;
 
             ClrModule mscorlib = GetMscorlib();
             if (mscorlib != null)
@@ -103,14 +101,13 @@ namespace Microsoft.Diagnostics.Runtime.Desktop
                                 continue;
 
                             ulong queueHead;
-                            ClrType queueHeadType;
                             do
                             {
+                                ClrType queueHeadType, nodesType;
+                                ulong nodes;
                                 if (!GetFieldObject(workQueueType, workQueue, "queueHead", out queueHeadType, out queueHead))
                                     break;
 
-                                ulong nodes;
-                                ClrType nodesType;
                                 if (GetFieldObject(queueHeadType, queueHead, "nodes", out nodesType, out nodes) && nodesType.IsArray)
                                 {
                                     int len = nodesType.GetArrayLength(nodes);
@@ -146,8 +143,8 @@ namespace Microsoft.Diagnostics.Runtime.Desktop
                             if (threadQueueType == null)
                                 continue;
 
-                            ulong outerArray = 0;
-                            ClrType outerArrayType = null;
+                            ClrType outerArrayType;
+                            ulong outerArray;
                             if (!GetFieldObject(threadQueueType, threadQueue.Value, "m_array", out outerArrayType, out outerArray) || !outerArrayType.IsArray)
                                 continue;
 
@@ -161,9 +158,8 @@ namespace Microsoft.Diagnostics.Runtime.Desktop
                                 ClrType entryType = _heap.GetObjectType(entry);
                                 if (entryType == null)
                                     continue;
-
-                                ulong array;
                                 ClrType arrayType;
+                                ulong array;
                                 if (!GetFieldObject(entryType, entry, "m_array", out arrayType, out array) || !arrayType.IsArray)
                                     continue;
 
@@ -183,12 +179,12 @@ namespace Microsoft.Diagnostics.Runtime.Desktop
 
         private ClrModule GetMscorlib()
         {
-            foreach (ClrModule module in _runtime.EnumerateModules())
+            foreach (ClrModule module in _runtime.Modules)
                 if (module.AssemblyName.Contains("mscorlib.dll"))
                     return module;
 
             // Uh oh, this shouldn't have happened.  Let's look more carefully (slowly).
-            foreach (ClrModule module in _runtime.EnumerateModules())
+            foreach (ClrModule module in _runtime.Modules)
                 if (module.AssemblyName.ToLower().Contains("mscorlib"))
                     return module;
 
@@ -242,7 +238,7 @@ namespace Microsoft.Diagnostics.Runtime.Desktop
     internal class DesktopManagedWorkItem : ManagedWorkItem
     {
         private ClrType _type;
-        private Address _addr;
+        private ulong _addr;
 
         public DesktopManagedWorkItem(ClrType type, ulong addr)
         {
@@ -250,7 +246,7 @@ namespace Microsoft.Diagnostics.Runtime.Desktop
             _addr = addr;
         }
 
-        public override Address Object
+        public override ulong Object
         {
             get { return _addr; }
         }
@@ -309,12 +305,12 @@ namespace Microsoft.Diagnostics.Runtime.Desktop
             get { return _kind; }
         }
 
-        public override Address Callback
+        public override ulong Callback
         {
             get { return _callback; }
         }
 
-        public override Address Data
+        public override ulong Data
         {
             get { return _data; }
         }

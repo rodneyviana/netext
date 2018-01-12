@@ -169,7 +169,7 @@ namespace ProofOfConcept
                 WriteLine("Version: {0}.{1}.{2}.{3} from {4}", version.Version.Major, version.Version.Minor, version.Version.Patch, version.Version.Revision, version.DacInfo.FileName);
                 latest = version;
             }
-            m_runtime = dataTarget.CreateRuntime(latest.TryDownloadDac());
+            m_runtime = dataTarget.ClrVersions.Single().CreateRuntime(latest.LocalMatchingDac);
             ulong strMT, arrMT, freeMT = 0;
             AdHoc.GetCommonMT(m_runtime, out strMT, out arrMT, out freeMT);
 
@@ -204,8 +204,8 @@ namespace ProofOfConcept
 
             WriteLine("==================");
             WriteLine("Heap(s): {0}  GC Server Mode: {1}", m_runtime.HeapCount, m_runtime.ServerGC);
-            m_heap = m_runtime.GetHeap();
-            heapObjs = m_heap.EnumerateObjects().GetEnumerator();
+            m_heap = m_runtime.Heap;
+            heapObjs = m_heap.EnumerateObjectAddresses().GetEnumerator();
             count = 0;
 
 
@@ -499,7 +499,7 @@ namespace ProofOfConcept
                 {
                     if (IsInterrupted())
                         return;
-                    string key = String.Format("{0}\0{1}\0{2}", ex.Type.Name, ex.Message, DumpStack(ex.StackTrace, m_heap.GetRuntime().PointerSize, true));
+                    string key = String.Format("{0}\0{1}\0{2}", ex.Type.Name, ex.Message, DumpStack(ex.StackTrace, m_heap.Runtime.PointerSize, true));
                     if (!allExceptions.ContainsKey(key))
                     {
                         allExceptions[key] = new List<ulong>();
