@@ -44,26 +44,7 @@ void GetRegs(RegsMap& Regs, int WordSize = sizeof(void*))
 	}
 }
 
-//----------------------------------------------------------------------------
-//
-// mt extension command.
-//
-// This command displays the MethodTable of a .NET object
-//
-// The argument string means:
-//
-//   {;          - No name for the first argument.
-//   e,          - The argument is an expression.
-//   o,          - The argument is optional.
-//   ;			 - There is no argument's default expression
-//   Object;     - The argument's short description is "Object".
-//   Object address - The argument's long description.
-//   }           - No further arguments.
-//
-// This extension has a single, optional argument that
-// is an expression for the PEB address.
-//
-//----------------------------------------------------------------------------
+
 
 EXT_COMMAND(wstack,
             "Dump stack objects. Use '!whelp wstack' for detailed help",

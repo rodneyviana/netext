@@ -23,6 +23,11 @@ using System.Net;
 using System.Text.RegularExpressions;
 using System.Diagnostics;
 using System.IO;
+using System.Reflection;
+using System.Threading;
+using System.Windows;
+using System.Windows.Interop;
+using System.Windows.Threading;
 
 namespace NetExt.Shim
 {
@@ -176,6 +181,7 @@ namespace NetExt.Shim
         }
 
         private static string netExtPath = null;
+        private static bool isInit = false;
 
         [DllExport(CallingConvention = CallingConvention.Cdecl)]
         public static void CreateFromIDebugClient([MarshalAs(UnmanagedType.LPWStr)]string DllPath, [MarshalAs((UnmanagedType)25)] Object iDebugClient,
@@ -188,10 +194,15 @@ namespace NetExt.Shim
             if(String.IsNullOrEmpty(netExtPath))
             {
                 netExtPath = DllPath[DllPath.Length - 1] != '\\' ? DllPath + "\\" : DllPath;
+
+            }
+
+            if (!isInit)
+            {
                 AppDomain.CurrentDomain.UnhandledException += ad_UnhandledException;
                 AppDomain.CurrentDomain.AssemblyResolve += ad_AssemblyResolve;
             }
-#if _DEBUG
+#if DEBUG
             WriteLine("Base folder = {0}\n", path);
 #endif
             
@@ -199,6 +210,7 @@ namespace NetExt.Shim
             try
             {
                 CLRMDActivator clrMD = new CLRMDActivator();
+                DebugApi.INIT_API(iDebugClient);
                 if (clrMD.CreateFromIDebugClient(iDebugClient, out ppTarget) != HRESULTS.S_OK)
                     throw new Exception("Unable to create activator");
             }
@@ -215,43 +227,77 @@ namespace NetExt.Shim
 
         static System.Reflection.Assembly ad_AssemblyResolve(object sender, ResolveEventArgs args)
         {
+
             lock (_lock)
             {
-                if (args.Name.Contains("Microsoft.Diagnostics.Runtime"))
+                if (args.Name.ToLower().Contains("icsharpcode.avalonedit"))
                 {
-                    string assembly = String.Format("{0}{1}.dll", netExtPath, args.Name.Substring(0, args.Name.IndexOf(",")));
-#if DEBUG
-                    WriteLine("Trying to load: {0}", assembly);
-#endif
-                    return System.Reflection.Assembly.LoadFrom(assembly);
-                }
-#if _DEBUG
-                else
-                {
+                    /*
+                    string codeBase = Assembly.GetExecutingAssembly().CodeBase;
+                    Debug.WriteLine("CodeBase: {0}", codeBase);
+                    UriBuilder uri = new UriBuilder(codeBase);
 
-                    WriteLine("Trying to load: {0}", args.Name);
-                }
+                    string path = Path.GetDirectoryName(Uri.UnescapeDataString(uri.Path));
+                    Debug.WriteLine("Path: {0}", path);
+
+                     */
+
+                    //Debug.WriteLine(Assembly.GetExecutingAssembly().CodeBase);
+                    string fileName = args.Name.Split(',')[0];
+                    MDTarget.CopyTools();
+                    //
+                    // Sorry, files were not created
+                    //
+                    if (MDTarget.ToolsPath == null)
+                    {
+                        Exports.WriteLine("Unable to expand DLL for source window");
+                        return null;
+                    }
+                    string fullPath = Path.Combine(MDTarget.ToolsPath, fileName + ".dll");
+#if DEBUG
+                    Exports.WriteLine("Full Path {0}\n", fullPath);
 #endif
-            }
+                    return Assembly.LoadFile(fullPath);
+                }
+                return null;
+                /*
+                                if (args.Name.Contains("Microsoft.Diagnostics.Runtime"))
+                                {
+                                    string assembly = String.Format("{0}{1}.dll", netExtPath, args.Name.Substring(0, args.Name.IndexOf(",")));
+                #if DEBUG
+                                    WriteLine("Trying to load: {0}", assembly);
+                #endif
+                                    return System.Reflection.Assembly.LoadFrom(assembly);
+                                }
+                #if _DEBUG
+                                else
+                                {
+
+                                    WriteLine("Trying to load: {0}", args.Name);
+                                }
+                #endif
+                            }
             
-            return null;
+                            return null;
+                 */
+            }
         }
 
         static void ad_UnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
-            if (e.IsTerminating)
+            if (e != null && e.IsTerminating)
             {
-                WriteLine("\nFatal Exception in NetExtShim");
+                Exports.WriteLine("\nFatal Exception in NetExtShim");
             }
             if(e != null && e.ExceptionObject != null)
             {
-                WriteLine("\nUnhandled exception in NetExtShim: {0}",e.ExceptionObject.GetType().ToString());
+                Exports.WriteLine("\nUnhandled exception in NetExtShim: {0}",e.ExceptionObject.GetType().ToString());
 
                 Exception ex = e.ExceptionObject as Exception;
                 if (ex != null)
                 {
-                    WriteLine("Message : {0}", ex.Message);
-                    WriteLine("at {0}", ex.StackTrace);
+                    Exports.WriteLine("Message : {0}", ex.Message);
+                    Exports.WriteLine("at {0}", ex.StackTrace);
                 }
             }
         }
@@ -3410,13 +3456,14 @@ namespace NetExt.Shim
 
         private static bool isExeCreated = false;
         private static string toolsPath = null;
-
+        public static string ToolsPath { get { return toolsPath; } }
         public static void CopyTools()
         {
             if (!isExeCreated)
             {
-
-                DebugApi.WriteDmlLine("Expanding tools...");
+#if DEBUG
+                Exports.WriteLine("Expanding tools...");
+#endif
                 toolsPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
 
                 try
@@ -3431,12 +3478,12 @@ namespace NetExt.Shim
                 }
                 isExeCreated = true;
                 string[] files = new string[] { "ICSharpCode_Decompiler", "ICSharpCode_NRefactory", "ICSharpCode_NRefactory_CSharp",
-                    "ILSpy.exe", "Mono_Cecil", "Mono_Cecil_Pdb", "PdbRestorer.exe", "PdbRestorer_Engine" };
+                    "ILSpy.exe", "Mono_Cecil", "Mono_Cecil_Pdb", "PdbRestorer.exe", "PdbRestorer_Engine", "ICSharpCode_AvalonEdit" };
 
                 for (int i = 0; i < files.Length; i++)
                 {
                     string file = files[i].Replace('_', '.');
-                    if (!file.EndsWith(".exe"))
+                    if (!file.EndsWith(".exe") && !file.EndsWith(".xml"))
                         file += ".dll";
                     try
                     {
@@ -3451,6 +3498,7 @@ namespace NetExt.Shim
                     {
                         Exports.WriteLine("Failed to copy tool {0}", file);
                         Exports.WriteLine("Error: {0}: {1}", ex.GetType(), ex.Message);
+                        isExeCreated = false;
                     }
 
                 }
@@ -3522,6 +3570,115 @@ namespace NetExt.Shim
                 DebugApi.AddToSourcePath(symFolder);
                 DebugApi.AddToSymPath(symFolder);
                 DebugApi.IgnoreSymbolMismatch();
+            }
+            ulong context = DebugApi.AddressFromScope;
+            OpenSource(context);
+            return HRESULTS.S_OK;
+        }
+
+        public int OpenSource(ulong Address)
+        {
+            if (Address == 0)
+                return HRESULTS.E_FAIL;
+                
+            DEBUG_STACK_FRAME nativeFrame = new DEBUG_STACK_FRAME();
+            nativeFrame.InstructionOffset = Address;
+            StackFrame frame = new StackFrame(nativeFrame);
+            if (frame.ManagedModule == null)
+            {
+                Exports.WriteLine("No valid managed code at {0:%p}", nativeFrame.InstructionOffset);
+                return HRESULTS.E_FAIL;
+            }
+            FileAndLineNumber sourceInfo = frame.ManagedSourceLocation;
+
+            if (String.IsNullOrEmpty(sourceInfo.File))
+            {
+                Exports.WriteLine("No source file for managed code at {0:%p}", nativeFrame.InstructionOffset);
+                return HRESULTS.E_FAIL;
+            }
+            string filePath = DebugApi.GetSourcePath(sourceInfo.File, frame.ManagedModule.ImageBase);
+
+            if (String.IsNullOrEmpty(filePath))
+            {
+                Exports.WriteLine("Unable to resolve local path for file  {0}", sourceInfo.File);
+                return HRESULTS.E_FAIL;
+            }
+
+
+            if (!SourceWindow.HasInstance)
+            {
+                Thread td = new Thread(delegate(object Parameter)
+                {
+                    IntPtr hwd = Process.GetCurrentProcess().MainWindowHandle;
+                    Application app = new Application();
+
+                    object[] pars = Parameter as object[];
+                    SourceWindow wnd = SourceWindow.GetInstance(); //
+                    WindowInteropHelper helper = new WindowInteropHelper(wnd);
+                    helper.Owner = hwd;
+                    wnd.LoadFile((string)pars[0]);
+                    if ((int)pars[1] > 0)
+                        wnd.HighLightLine((string)pars[0], (int)pars[1]);
+
+
+                    app.Run(wnd);
+
+
+                });
+                td.SetApartmentState(ApartmentState.STA);
+                object[] parameters = new object[2];
+                parameters[0] = filePath;
+                parameters[1] = sourceInfo.Line;
+                td.Start(parameters);
+                // Wait for a maximum of 1 second
+                for (int i = 0; i < 100; i++)
+                {
+                    Thread.Sleep(10); // Wait until it is rendered for the first time
+                    if (SourceWindow.HasDocument)
+                    {
+                        Application.Current.Dispatcher.Invoke(new Action(() =>
+                        {
+                            SourceWindow wnd = SourceWindow.GetInstance();
+                            wnd.Show();
+                            wnd.LoadFile(filePath);
+                            if (sourceInfo.Line > 0)
+                                wnd.HighLightLine(filePath, sourceInfo.Line);
+                        }), DispatcherPriority.ContextIdle);
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                Application.Current.Dispatcher.Invoke(new Action(() =>
+                {
+                    SourceWindow wnd = SourceWindow.GetInstance();
+                    wnd.Show();
+                    wnd.LoadFile(filePath);
+                    if (sourceInfo.Line > 0)
+                        wnd.HighLightLine(filePath, sourceInfo.Line);
+                }), DispatcherPriority.ContextIdle);
+
+            }
+
+
+            return HRESULTS.S_OK;
+
+
+        }
+
+        public int DumpMixedStack()
+        {
+            string childSP = "Child-SP".PadRight((int)m_target.PointerSize * 2 + 1);
+            string retAddr = "RetAddr".PadRight((int)m_target.PointerSize * 2 + 1);
+
+            Exports.WriteLine("{0}{1} Call Site", childSP, retAddr);
+            foreach (StackFrame frame in DebugApi.StackTrace)
+            {
+                Exports.WriteDml("<link cmd=\".frame {0x}\">{0:x2}</link> ", frame.FrameNumber);
+                Exports.Write(frame.ToString());
+                Exports.WriteDml("{0}", frame.SourceLocation.ToString(true));
+                Exports.WriteLine("");
             }
             return HRESULTS.S_OK;
         }

@@ -360,7 +360,7 @@ namespace NetExt.Shim
             if (IsDml)
             {
                 if(IsManaged)
-                    return String.Format("[<link cmd=\"!opensource 0x{0:x}\">{1}</link> @ {2}]", Address, File, Line);
+                    return String.Format("[<link cmd=\"!wopensource 0x{0:x}\">{1}</link> @ {2}]", Address, File, Line);
                 return String.Format("[<link cmd=\".open -a {0:x}\">{1}</link> @ {2}]", Address, File, Line);
             }
             return String.Format("[{0} @ {1}]", File, Line);
@@ -446,11 +446,13 @@ namespace NetExt.Shim
             FileAndLineNumber nearest = new FileAndLineNumber();
 
 
-
+            if (function == null || function.SequencePoints == null)
+                return nearest;
             foreach (PdbSequencePointCollection sequenceCollection in function.SequencePoints)
 
             {
-
+                if (sequenceCollection == null || sequenceCollection.Lines == null)
+                    continue;
                 foreach (PdbSequencePoint point in sequenceCollection.Lines)
 
                 {
@@ -496,24 +498,26 @@ namespace NetExt.Shim
 
                 int last = -1;
 
-                foreach (ILToNativeMap item in MethodDesc.ILOffsetMap)
-
+                if (MethodDesc != null && MethodDesc.ILOffsetMap != null)
                 {
+                    foreach (ILToNativeMap item in MethodDesc.ILOffsetMap)
+                    {
 
-                    if (item.StartAddress > ip)
+                        if (item.StartAddress > ip)
 
-                        return last;
-
-
-
-                    if (ip <= item.EndAddress)
-
-                        return item.ILOffset;
+                            return last;
 
 
 
-                    last = item.ILOffset;
+                        if (ip <= item.EndAddress)
 
+                            return item.ILOffset;
+
+
+
+                        last = item.ILOffset;
+
+                    }
                 }
 
 
@@ -2072,7 +2076,21 @@ kernel32!KUSER_SHARED_DATA
             }
         }
 
+        public static ulong AddressFromScope
+        {
+            get
+            {
+                DEBUG_STACK_FRAME stackFrame;
+                IDebugSymbols4 symbols = (IDebugSymbols4)Client;
+                ulong IP;
 
+                if (symbols.GetScope(out IP, out stackFrame, IntPtr.Zero, 0) != 0)
+                {
+                    return 0; // Unable to get context
+                }
+                return IP;
+            }
+        }
 
         public static Module ModuleFromScope
         {
@@ -2087,20 +2105,13 @@ kernel32!KUSER_SHARED_DATA
                 {
                     StackFrame frame = new StackFrame(stackFrame);
 
-                    Module mod = new Module(frame.Symbol.Split('!')[0]);
-                    /*
+                    var manMod = frame.ManagedModule;
+                    Module mod;
+                    if (manMod == null)
+                        mod = new Module(frame.Symbol.Split('!')[0]);
+                    else
+                        mod = new Module(manMod.ImageBase);
 
-                    StringBuilder modName = new StringBuilder(1500);
-                    uint size;
-                    ulong displ;
-                    if (symbols.GetNameByOffset(IP, modName, 1500, out size, out displ) != 0)
-                    {
-                        return null;
-                    }
-                    Module mod = new Module(modName.ToString().Split('!')[0]);
-                    if (mod.BaseAddress == 0)
-                        return null;
-                    */
                     return mod;
                 }
                 return null;
@@ -2578,5 +2589,14 @@ kernel32!KUSER_SHARED_DATA
 
         #endregion
 
+
+        internal static void INIT_API(object DebugClient)
+        {
+            if (DebugApi.client == null)
+            {
+                DebugApi.client = (IDebugClient5)DebugClient;
+                DebugApi.control = (IDebugControl6)DebugApi.client;
+            }
+        }
     }
 }

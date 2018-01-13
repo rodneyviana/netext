@@ -63,6 +63,16 @@ namespace NetExt.Shim.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Byte[].
         /// </summary>
+        internal static byte[] ICSharpCode_AvalonEdit {
+            get {
+                object obj = ResourceManager.GetObject("ICSharpCode_AvalonEdit", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Byte[].
+        /// </summary>
         internal static byte[] ICSharpCode_Decompiler {
             get {
                 object obj = ResourceManager.GetObject("ICSharpCode_Decompiler", resourceCulture);

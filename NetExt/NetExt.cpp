@@ -658,6 +658,16 @@ EXT_COMMAND(wdomain,
 	pRuntime->DumpDomains();
 }
 
+EXT_COMMAND(wopensource,
+			"Open the managed source code based on IP. Use '!whelp wopensource' for detailed help",
+			"{;e,r;;Address,IP Address}")
+
+{
+	DO_INIT_API;
+	CLRDATA_ADDRESS addr = GetUnnamedArgU64(0);
+	pTarget->OpenSource(addr);
+}
+
 EXT_COMMAND(wthreads,
 			"Dump Managed Threads. Use '!whelp wthreads' for detailed help",
 			"{{custom}}")

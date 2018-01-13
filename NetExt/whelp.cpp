@@ -1,4 +1,4 @@
-// Source Date: Tuesday, October 10, 2017 6:32:21 PM
+// Source Date: Friday, January 12, 2018 6:39:59 PM
 // Source File: C:\Users\rviana\OneDrive\Projects\netext\NetExt\helptxt.txt
 // This file was generated. Do not modify. Modify Source File instead
 #include "netext.h"
@@ -35,14 +35,15 @@ EXT_COMMAND(whelp,
 		Dml("\n");
 		Dml("<b>Process commands</b>\n");
 		Dml("<b>----------------</b>\n");
-		Dml("!<link cmd=\"!whelp wclrstack\">wclrstack</link> - Dump current stack trace (only managed thread)\n");
+		Dml("!<link cmd=\"!whelp wclrstack\">wclrstack</link> - Dump current thread's stack trace (only managed thread)\n");
 		Dml("!<link cmd=\"!whelp wthreads\">wthreads</link> - show all managed threads\n");
 		Dml("!<link cmd=\"!whelp wver\">wver</link> - Show CLR version and extension version\n");
 		Dml("!<link cmd=\"!whelp wupdate\">wupdate</link> - Check for update\n");
 		Dml("!<link cmd=\"!whelp wdomain\">wdomain</link> - Dump all Application Domains\n");
-		Dml("<b>*(new)*</b> !<link cmd=\"!whelp wmodule\">wmodule</link> - List modules based on a pattern\n");
-		Dml("<b>*(new)*</b> !<link cmd=\"!whelp wtime\">wtime</link> - Show UTC and local time\n");
-		Dml("<b>*(new)*</b> !<link cmd=\"!whelp wapppool\">wapppool</link> - Display AppPool details\n");
+		Dml("!<link cmd=\"!whelp wmodule\">wmodule</link> - List modules based on a pattern\n");
+		Dml("!<link cmd=\"!whelp wtime\">wtime</link> - Show UTC and local time\n");
+		Dml("!<link cmd=\"!whelp wapppool\">wapppool</link> - Display AppPool details\n");
+		Dml("<b>*(new)*</b> !<link cmd=\"!whelp wk\">wk</link> - Dump current thread's stack trace in mixed mode (native and managed)\n");
 		Dml("\n");
 		Dml("<b>Special</b>\n");
 		Dml("<b>-------</b>\n");
@@ -59,8 +60,9 @@ EXT_COMMAND(whelp,
 		Dml("!<link cmd=\"!whelp wtoken\">wtoken</link> - Display WIF tokens and cookies\n");
 		Dml("!<link cmd=\"!whelp wclass\">wclass</link> - Dump classs layout and let you set breakpoint\n");
 		Dml("!<link cmd=\"!whelp wsocket\">wsocket</link> - Dump socket information\n");
-		Dml("<b>*(new)*</b> !<link cmd=\"!whelp wxml\">wxml</link> - Dump a XML document\n");
-		Dml("<b>*(new)*</b> !<link cmd=\"!whelp wmakesource\">wmakesource</link> - It tries to reflect the current frame into source code\n");
+		Dml("!<link cmd=\"!whelp wxml\">wxml</link> - Dump a XML document\n");
+		Dml("!<link cmd=\"!whelp wmakesource\">wmakesource</link> - It tries to reflect the current frame into source code\n");
+		Dml("<b>*(new)*</b> !<link cmd=\"!whelp wopensource\">wopensource</link> - Open source file based on the IP provided\n");
 		Dml("\n");
 		Dml("<b>Misc</b>\n");
 		Dml("<b>----</b>\n");

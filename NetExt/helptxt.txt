@@ -17,14 +17,15 @@
 
 <b>Process commands</b>
 <b>----------------</b>
-!||wclrstack|| - Dump current stack trace (only managed thread)
+!||wclrstack|| - Dump current thread's stack trace (only managed thread)
 !||wthreads|| - show all managed threads
 !||wver|| - Show CLR version and extension version
 !||wupdate|| - Check for update
 !||wdomain|| - Dump all Application Domains
-<b>*(new)*</b> !||wmodule|| - List modules based on a pattern
-<b>*(new)*</b> !||wtime|| - Show UTC and local time
-<b>*(new)*</b> !||wapppool|| - Display AppPool details
+!||wmodule|| - List modules based on a pattern
+!||wtime|| - Show UTC and local time
+!||wapppool|| - Display AppPool details
+<b>*(new)*</b> !||wk|| - Dump current thread's stack trace in mixed mode (native and managed)
 
 <b>Special</b>
 <b>-------</b>
@@ -41,8 +42,9 @@
 !||wtoken|| - Display WIF tokens and cookies
 !||wclass|| - Dump classs layout and let you set breakpoint
 !||wsocket|| - Dump socket information
-<b>*(new)*</b> !||wxml|| - Dump a XML document
-<b>*(new)*</b> !||wmakesource|| - It tries to reflect the current frame into source code
+!||wxml|| - Dump a XML document
+!||wmakesource|| - It tries to reflect the current frame into source code
+<b>*(new)*</b> !||wopensource|| - Open source file based on the IP provided
 
 <b>Misc</b>
 <b>----</b>
