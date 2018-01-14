@@ -19,6 +19,7 @@ EXT_COMMAND(wclrstack,
 	"Dump current stack trace. Use !whelp wclrstack for more help",
 	"{{custom}}")
 {
+	
 	//
 	// To resolve a problem in live targets
 	//
@@ -29,6 +30,7 @@ EXT_COMMAND(wclrstack,
 		if(flushed == 0)
 			pRuntime->Flush();
 	}
+	
 	DO_INIT_API;
 	using namespace NetExtShim;
 

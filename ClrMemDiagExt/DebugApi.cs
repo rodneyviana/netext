@@ -552,11 +552,15 @@ namespace NetExt.Shim
                     SymbolLocator locator = DebugApi.Runtime.DataTarget.SymbolLocator;
                     locator.SymbolPath = DebugApi.SymPath;
                     string pdbPath = locator.FindPdb(info);
+                    try
+                    {
+                        if (pdbPath != null)
 
-                    if (pdbPath != null)
-
-                        reader = new PdbReader(pdbPath);
-
+                            reader = new PdbReader(pdbPath);
+                    } catch(Exception ex)
+                    {
+                        Exports.WriteLine("Error: {0}", ex.ToString());
+                    }
 
 
                     s_pdbReaders[info] = reader;

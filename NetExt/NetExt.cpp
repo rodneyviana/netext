@@ -370,8 +370,18 @@ HRESULT INIT_API()
 		pRuntime->IsFlush(&isFlushed);
 		if(isFlushed != 0)
 		{
+			if(clrData == NULL)
+			{
+				g_ExtInstancePtr->Out("ERROR: Unable to create Runtime after flush\r");
+				isCLRInit = false;
+			}
+			pRuntime = NULL;
 			pHeap = NULL; // release previous
-			pRuntime->GetHeap(&pHeap);
+			HRESULT	hr=pTarget->CreateRuntimeFromIXCLR(clrData, &pRuntime);
+			
+			EXITPOINTEXT("Unable to create runtime\nTry running .cordll -l");
+			hr = pRuntime->GetHeap(&pHeap);
+			EXITPOINTEXT("Unable to create heap\nTry running .cordll -l");
 		}
 	}
 	if(isCLRInit)
