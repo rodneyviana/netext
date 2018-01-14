@@ -8,7 +8,7 @@
 #include "CLRHelper.h"
 
 #include <memory>
-#include "CLRHelper.h"
+#include "SpecialCases.h"
 
 typedef std::map<std::string, CLRDATA_ADDRESS> RegsMap;
 
@@ -146,8 +146,13 @@ void StackObj::DumpStackObject(bool CacheOnly)
 			ObjDetail obj(addr);
 			if(obj.IsValid() && h>=0 && g>=0)
 			{
+				string pp;
 				if(!CacheOnly) g_ExtInstancePtr->Dml("<link cmd=\"!wdo %p\">%s=%p</link> %p %3i %2i %10u %S", addr, it->first.c_str(), addr, obj.MethodTable(), h, g, obj.Size(), obj.TypeName().c_str() );
-				if(obj.IsString() && !CacheOnly) g_ExtInstancePtr->Out(" %S", obj.String().c_str());
+				if(!CacheOnly)
+				{
+					pp = SpecialCases::PrettyPrint(obj.Address());
+				}
+				if(pp.size() > 0 && !CacheOnly) g_ExtInstancePtr->Out(" %s", pp.c_str());
 				if(!CacheOnly) g_ExtInstancePtr->Out("\n");
 
 				if(uniques.find(addr)==uniques.end())
@@ -179,6 +184,7 @@ void StackObj::DumpStackObject(bool CacheOnly)
 		{
 			if(uniques.find(addr)==uniques.end())
 			{
+				string pp;
 				if(CacheOnly) StackCache[addr].push_back(tid);
 
 				uniques[addr]=NULL;
@@ -187,7 +193,11 @@ void StackObj::DumpStackObject(bool CacheOnly)
 				if(obj.IsValid()  && h>=0 && g>=0)
 				{
 					if(!CacheOnly) g_ExtInstancePtr->Dml("<link cmd=\"!wdo %p\">%p</link> %p %3i %2i %10u %S", addr, addr, obj.MethodTable(), h, g, obj.Size(), obj.TypeName().c_str() );
-					if(obj.IsString() && !CacheOnly) g_ExtInstancePtr->Out(" %S", obj.String().c_str());
+				if(!CacheOnly)
+				{
+					pp = SpecialCases::PrettyPrint(obj.Address());
+				}
+				if(pp.size() > 0 && !CacheOnly) g_ExtInstancePtr->Out(" %s", pp.c_str());
 					if(!CacheOnly) g_ExtInstancePtr->Out("\n");
 					count++;
 					size+=obj.Size();

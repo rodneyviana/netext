@@ -3675,7 +3675,7 @@ namespace NetExt.Shim
             Exports.WriteLine("{0}{1} Call Site", childSP, retAddr);
             foreach (StackFrame frame in DebugApi.StackTrace)
             {
-                Exports.WriteDml("<link cmd=\".frame {0x}\">{0:x2}</link> ", frame.FrameNumber);
+                Exports.WriteDml("<link cmd=\".frame {0:x2}\">{0:x2}</link> ", frame.FrameNumber);
                 Exports.Write(frame.ToString());
                 Exports.WriteDml("{0}", frame.SourceLocation.ToString(true));
                 Exports.WriteLine("");
