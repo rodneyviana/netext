@@ -632,9 +632,13 @@ std::string SpecialCases::GetHexArray(CLRDATA_ADDRESS Obj, bool Padded, int Limi
 			if(!IsValidMemory(ptr.m_Offset))
 			{
 				if(Padded)
+				{
 					result.append("?? ");
+				}
 				else
+				{
 					result.append("??");
+				}
 				if(Limit != 0)
 					bytes += '?';
 			} else

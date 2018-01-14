@@ -119,6 +119,8 @@ namespace NetExt.HeapCacheUtil
             if (Address == 0)
                 return;
             object thread = RunMethod(Runtime, "GetThread", Address);
+            if (thread == null)
+                return;
             AllocContextPtr = (ulong)GetMember(thread, "AllocPtr");
             AllocContextLimit = (ulong)GetMember(thread, "AllocLimit");
         }
@@ -147,7 +149,7 @@ namespace NetExt.HeapCacheUtil
         public static ClrType GetTypeFromEE(ClrRuntime Runtime, ulong EEClass)
         {
             ClrHeap heap = Runtime.Heap;
-            ClrType type = null;
+            //ClrType type = null;
             ulong mt = heap.GetMethodTableByEEClass(EEClass);
             if (mt == 0)
                 return null;
@@ -270,6 +272,9 @@ namespace NetExt.HeapCacheUtil
 
         public static ulong GetEEFromMT(ClrRuntime Runtime, ulong MethodTable)
         {
+            return Runtime.Heap.GetEEClassByMethodTable(MethodTable);
+
+            /*
             object obj = RunMethod(Runtime, "GetMethodTableData", MethodTable);
             if (obj == null)
                 return 0;
@@ -277,6 +282,7 @@ namespace NetExt.HeapCacheUtil
             if (EEClass == null)
                 return 0;
             return (ulong)EEClass;
+             */
         }
         public const int ARRAYSTART = 0;
         public const int ARRAYELEMENTMT = 1;
@@ -372,8 +378,10 @@ namespace NetExt.HeapCacheUtil
 
         public static void GetSystemAndSharedAddress(ClrRuntime Runtime, out ulong AppDomainSystem, out ulong AppDomainShared)
         {
-            AppDomainSystem = 0;
-            AppDomainShared = 0;
+
+            AppDomainSystem = Runtime.SystemDomain.Address;
+            AppDomainShared = Runtime.SharedDomain.Address;
+            /*
             object store = RunMethod(Runtime, "GetAppDomainStoreData");
             object system = GetMember(store, "SharedDomain") as ulong?;
             object shared = GetMember(store, "SystemDomain") as ulong?;
@@ -381,7 +389,7 @@ namespace NetExt.HeapCacheUtil
                 AppDomainShared = (ulong)shared;
             if (system != null)
                 AppDomainSystem = (ulong)system;
-
+            */
         }
 
         public static ulong GetDomainFromMT(ClrRuntime Runtime, ulong MethodTable)
@@ -431,10 +439,14 @@ namespace NetExt.HeapCacheUtil
 
         public static ClrAppDomain GetDomainByAddress(ClrRuntime Runtime, ulong Address)
         {
+            var domain = GetDomains(Runtime).First(t => t.Address == Address);
+            return domain;
+            /*
             if (Address == 0)
                 return null;
             ClrAppDomain domain = RunMethod(Runtime, "InitDomain", Address) as ClrAppDomain;
             return domain;
+             */
         }
 
         public static object GetMember(object Source, string Field /*, Type castType=null */)
@@ -643,6 +655,8 @@ namespace NetExt.HeapCacheUtil
         {
             if (Type == null)
                 return 0UL;
+            return Type.MethodTable;
+            /*
             object temp = AdHoc.GetMember(Type, "_handle");
 
             if (temp as ulong? == null)
@@ -652,6 +666,7 @@ namespace NetExt.HeapCacheUtil
                     return 0; ;
             }
             return (ulong)temp;
+            */
         }
 
         internal HeapStatItem(string Name, HeapCache Cache)
