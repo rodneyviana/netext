@@ -53,6 +53,110 @@
 ||functions|| list *new functions*
 ||license|| see all licenses applied to this product
 
+##wopensource
+Open a window with the source code and selected line mapped to a managed code address
+
+<b>Syntax:</b>
+-------
+ 
+!wopensource &lt;address&gt;
+
+<b>Where:</b>
+&lt;address&gt; - is the expression of the address of native code
+
+* Note: if the source path is not configured correctly or the source code is not available, the code will not be displayed
+
+<b>Example:</b>
+----------
+
+<i>Open source code for SampleClass1.CPUHog</i>
+--------------------------------------------------
+
+0:016&gt; !wk
+Child-SP         RetAddr           Call Site
+00 0000007befffc5f0 00007ffbf1ef5a03 ConceptNetConsole1!ConceptNetConsole1.SampleClass1.CPUHog(System.Object)+0x14[C:\Projects\ConceptNetConsole1\ConceptNetConsole1\Program.cs @ 261]
+01 0000007befffc630 00007ffbf1ef589d clr!CallDescrWorkerInternal+0x83
+02 0000007befffc670 00007ffbf1f3324f clr!CallDescrWorkerWithHandler+0x4e
+03 0000007befffc6d0 00007ffbf1f986bd clr!DispatchCallDebuggerWrapper+0x1f
+04 0000007befffc790 00007ffbf1f98df2 clr!DispatchCall+0x79
+05 0000007befffcaa0 00007ffbf1f9b0ab clr!CrossDomainChannel::MarshalAndCall_Wrapper+0x2c5
+06 0000007befffcb90 00007ffbf1f9a5bb clr!MakeCallWithAppDomainTransition+0xef
+07 0000007befffe910 00007ffbf1f9af5c clr!CrossDomainChannel::MarshalAndCall+0x620
+08 0000007befffe950 00007ffbf1f9aef7 clr!CrossDomainChannel::ExecuteCrossDomainCall+0x50
+09 0000007befffe980 00007ffbf1f9add7 clr!CrossDomainChannel::CheckCrossDomainCall+0xb7
+0a 0000007befffeb80 00007ffbf1ef4925 clr!TransparentProxyStubWorker+0xb8
+0b 0000007befffec40 00007ffbe8414740 clr!TransparentProxyStub_CrossContext+0x55
+0c 0000007befffed10 00007ffbe84145d4 mscorlib!System.Threading.ExecutionContext.RunInternal(System.Threading.ExecutionContext, System.Threading.ContextCallback, System.Object, Boolean)+0x160[f:\dd\ndp\clr\src\BCL\system\threading\executioncontext.cs @ 960]
+0d 0000007befffed40 00007ffbe841f120 mscorlib!System.Threading.ExecutionContext.Run(System.Threading.ExecutionContext, System.Threading.ContextCallback, System.Object, Boolean)+0x14[f:\dd\ndp\clr\src\BCL\system\threading\executioncontext.cs @ 902]
+0e 0000007befffed80 00007ffbe841f73e mscorlib!System.Threading.QueueUserWorkItemCallback.System.Threading.IThreadPoolWorkItem.ExecuteWorkItem()+0x70[f:\dd\ndp\clr\src\BCL\system\threading\threadpool.cs @ 1252]
+0f 0000007befffee20 00007ffbf1ef5a03 mscorlib!System.Threading.ThreadPoolWorkQueue.Dispatch()+0x14e[f:\dd\ndp\clr\src\BCL\system\threading\threadpool.cs @ 864]
+10 0000007befffee60 00007ffbf1ef589d clr!CallDescrWorkerInternal+0x83
+11 0000007befffeea0 00007ffbf1ef5fa5 clr!CallDescrWorkerWithHandler+0x4e
+12 0000007befffefa0 00007ffbf1efb6f9 clr!MethodDescCallSite::CallTargetWorker+0xf8
+13 0000007beffff090 00007ffbf1ef6751 clr!QueueUserWorkItemManagedCallback+0x2a
+14 0000007beffff0d0 00007ffbf1ef66cc clr!ManagedThreadBase_DispatchInner+0x39
+15 0000007beffff1d0 00007ffbf1ef660a clr!ManagedThreadBase_DispatchMiddle+0x6c
+16 0000007beffff260 00007ffbf1ef678b clr!ManagedThreadBase_DispatchOuter+0x75
+17 0000007beffff2c0 00007ffbf1efb660 clr!ManagedThreadBase_FullTransitionWithAD+0x2f
+18 0000007beffff440 00007ffbf1ef7648 clr!ManagedPerAppDomainTPCount::DispatchWorkItem+0xa0
+19 0000007beffff470 00007ffbf1ef7525 clr!ThreadpoolMgr::ExecuteWorkRequest+0x64
+1a 0000007beffff510 00007ffbf20b222f clr!ThreadpoolMgr::WorkerThreadStart+0xf5
+1b 0000007beffffa50 00007ffc267b1fe4 clr!Thread::intermediateThreadProc+0x86
+1c 0000007beffffa80 00007ffc28d1ef91 kernel32!BaseThreadInitThunk+0x14
+1d 0000007beffffad0 0000000000000000 ntdll!RtlUserThreadStart+0x21
+
+0:016&gt; <b>!wopensource 0x7ffb92954ba4</b>
+
+##wk
+Dump mixed mode stack trace showing managed and native stack trace. If the source code information is available it also shows the source code location.
+
+<b>Syntax:</b>
+-------
+ 
+!wk
+
+<b>Example:</b>
+----------
+
+<i>Dump a managed thread native and managed frames</i>
+--------------------------------------------------
+
+0:016&gt; !wk
+Child-SP         RetAddr           Call Site
+00 0000007befffc5f0 00007ffbf1ef5a03 ConceptNetConsole1!ConceptNetConsole1.SampleClass1.CPUHog(System.Object)+0x14[C:\Projects\ConceptNetConsole1\ConceptNetConsole1\Program.cs @ 261]
+01 0000007befffc630 00007ffbf1ef589d clr!CallDescrWorkerInternal+0x83
+02 0000007befffc670 00007ffbf1f3324f clr!CallDescrWorkerWithHandler+0x4e
+03 0000007befffc6d0 00007ffbf1f986bd clr!DispatchCallDebuggerWrapper+0x1f
+04 0000007befffc790 00007ffbf1f98df2 clr!DispatchCall+0x79
+05 0000007befffcaa0 00007ffbf1f9b0ab clr!CrossDomainChannel::MarshalAndCall_Wrapper+0x2c5
+06 0000007befffcb90 00007ffbf1f9a5bb clr!MakeCallWithAppDomainTransition+0xef
+07 0000007befffe910 00007ffbf1f9af5c clr!CrossDomainChannel::MarshalAndCall+0x620
+08 0000007befffe950 00007ffbf1f9aef7 clr!CrossDomainChannel::ExecuteCrossDomainCall+0x50
+09 0000007befffe980 00007ffbf1f9add7 clr!CrossDomainChannel::CheckCrossDomainCall+0xb7
+0a 0000007befffeb80 00007ffbf1ef4925 clr!TransparentProxyStubWorker+0xb8
+0b 0000007befffec40 00007ffbe8414740 clr!TransparentProxyStub_CrossContext+0x55
+0c 0000007befffed10 00007ffbe84145d4 mscorlib!System.Threading.ExecutionContext.RunInternal(System.Threading.ExecutionContext, System.Threading.ContextCallback, System.Object, Boolean)+0x160[f:\dd\ndp\clr\src\BCL\system\threading\executioncontext.cs @ 960]
+0d 0000007befffed40 00007ffbe841f120 mscorlib!System.Threading.ExecutionContext.Run(System.Threading.ExecutionContext, System.Threading.ContextCallback, System.Object, Boolean)+0x14[f:\dd\ndp\clr\src\BCL\system\threading\executioncontext.cs @ 902]
+0e 0000007befffed80 00007ffbe841f73e mscorlib!System.Threading.QueueUserWorkItemCallback.System.Threading.IThreadPoolWorkItem.ExecuteWorkItem()+0x70[f:\dd\ndp\clr\src\BCL\system\threading\threadpool.cs @ 1252]
+0f 0000007befffee20 00007ffbf1ef5a03 mscorlib!System.Threading.ThreadPoolWorkQueue.Dispatch()+0x14e[f:\dd\ndp\clr\src\BCL\system\threading\threadpool.cs @ 864]
+10 0000007befffee60 00007ffbf1ef589d clr!CallDescrWorkerInternal+0x83
+11 0000007befffeea0 00007ffbf1ef5fa5 clr!CallDescrWorkerWithHandler+0x4e
+12 0000007befffefa0 00007ffbf1efb6f9 clr!MethodDescCallSite::CallTargetWorker+0xf8
+13 0000007beffff090 00007ffbf1ef6751 clr!QueueUserWorkItemManagedCallback+0x2a
+14 0000007beffff0d0 00007ffbf1ef66cc clr!ManagedThreadBase_DispatchInner+0x39
+15 0000007beffff1d0 00007ffbf1ef660a clr!ManagedThreadBase_DispatchMiddle+0x6c
+16 0000007beffff260 00007ffbf1ef678b clr!ManagedThreadBase_DispatchOuter+0x75
+17 0000007beffff2c0 00007ffbf1efb660 clr!ManagedThreadBase_FullTransitionWithAD+0x2f
+18 0000007beffff440 00007ffbf1ef7648 clr!ManagedPerAppDomainTPCount::DispatchWorkItem+0xa0
+19 0000007beffff470 00007ffbf1ef7525 clr!ThreadpoolMgr::ExecuteWorkRequest+0x64
+1a 0000007beffff510 00007ffbf20b222f clr!ThreadpoolMgr::WorkerThreadStart+0xf5
+1b 0000007beffffa50 00007ffc267b1fe4 clr!Thread::intermediateThreadProc+0x86
+1c 0000007beffffa80 00007ffc28d1ef91 kernel32!BaseThreadInitThunk+0x14
+1d 0000007beffffad0 0000000000000000 ntdll!RtlUserThreadStart+0x21
+
+
+
+
 ##wapppool
 Display information about the application pool and IIS
 
@@ -99,7 +203,7 @@ This command leverages ILSpy and PdbRestorer (special thanks to Marek Pokorny
 
 <i>Reflect and create symbol for a frame</i>
 --------------------------------------------------
-0:000&gt; kc
+0:000&gt; !wk
 
  # Call Site
 00 ntdll!ZwWaitForSingleObject
@@ -2185,7 +2289,7 @@ calculated: 000,1,2000,3,400,500 - full match: 000p1(2000)[3]x400:500 $regex("00
 0:000&gt; !wfrom -type System.IO.MemoryStream $pp(_buffer)
 calculated: 3c 44 69 67 65 73 74 56 61 6c 75 65 64 20 41 6c 67 6f 72 69 74 68 6d 3d 22 68 74 74 70 3a 2f 2f  &lt;DigestValued Algorithm="http:// (...more...)
 calculated: 3c 44 69 67 65 73 74 56 61 6c 75 65 64 20 41 6c 67 6f 72 69 74 68 6d 3d 22 68 74 74 70 3a 2f 2f  &lt;DigestValued Algorithm="http:// (...more...)
-calculated: 3c 44 69 67 65 73 74 56 61 6c 75 65 64 20 41 6c 67 6f 72 69 74 68 6d 3d 22 68 74 74 70 3a 2f 2f  &lt;<DigestValued Algorithm="http:// (...more...)
+calculated: 3c 44 69 67 65 73 74 56 61 6c 75 65 64 20 41 6c 67 6f 72 69 74 68 6d 3d 22 68 74 74 70 3a 2f 2f  &lt;DigestValued Algorithm="http:// (...more...)
 calculated: 3c 44 69 67 65 73 74 56 61 6c 75 65 64 20 41 6c 67 6f 72 69 74 68 6d 3d 22 68 74 74 70 3a 2f 2f  &lt;DigestValued Algorithm="http:// (...more...)
 calculated: 3c 53 69 67 6e 65 64 49 6e 66 6f 20 78 6d 6c 6e 73 3d 22 68 74 74 70 3a 2f 2f 77 77 77 2e 77 33  &lt;SignedInfo xmlns="http://www.w3 (...more...)
 calculated: 57 86 03 0b 01 74 7e 0b 01 75 66 57 f6 02 99 2c 68 74 74 70 3a 2f 2f 73 63 68 65 6d 61 73 2e 78  W....t~..ufW...,http://schemas.x (...more...)

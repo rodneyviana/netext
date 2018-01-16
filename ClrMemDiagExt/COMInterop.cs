@@ -3672,7 +3672,7 @@ namespace NetExt.Shim
             string childSP = "Child-SP".PadRight((int)m_target.PointerSize * 2 + 1);
             string retAddr = "RetAddr".PadRight((int)m_target.PointerSize * 2 + 1);
 
-            Exports.WriteLine("{0}{1} Call Site", childSP, retAddr);
+            Exports.WriteLine("## {0}{1} Call Site", childSP, retAddr);
             foreach (StackFrame frame in DebugApi.StackTrace)
             {
                 Exports.WriteDml("<link cmd=\".frame {0:x2}\">{0:x2}</link> ", frame.FrameNumber);

@@ -468,7 +468,7 @@ namespace NetExt.Shim
                         nearest.Line = (int)point.LineBegin;
 
                     }
-
+                    distance = dist;
                 }
 
             }
@@ -494,7 +494,7 @@ namespace NetExt.Shim
             get
             {
 
-                ulong ip = frame.FrameOffset;
+                ulong ip = frame.InstructionOffset;
 
                 int last = -1;
 
