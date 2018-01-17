@@ -430,19 +430,6 @@ namespace Microsoft.Diagnostics.Runtime.Interop
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public struct MEMORY_BASIC_INFORMATION32
-    {
-        public UInt32 BaseAddress;
-        public UInt32 AllocationBase;
-        public PAGE AllocationProtect;
-        public UInt32 __alignment1;
-        public UInt32 RegionSize;
-        public MEM State;
-        public PAGE Protect;
-        public MEM Type;
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
     public struct MEMORY_BASIC_INFORMATION64
     {
         public UInt64 BaseAddress;
@@ -1054,6 +1041,12 @@ namespace Microsoft.Diagnostics.Runtime.Interop
     }
 
     [StructLayout(LayoutKind.Sequential)]
+    public struct DEBUG_LAST_EVENT_INFO_EXIT_PROCESS
+    {
+        public uint ExitCode;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
     public struct DEBUG_LAST_EVENT_INFO_LOAD_MODULE
     {
         public ulong Base;
@@ -1071,5 +1064,33 @@ namespace Microsoft.Diagnostics.Runtime.Interop
     {
         public uint Error;
         public uint Level;
+    }
+
+    [StructLayout(LayoutKind.Explicit)]
+    public struct DEBUG_LAST_EVENT_INFO
+    {
+        [FieldOffset(0)]
+        public DEBUG_LAST_EVENT_INFO_BREAKPOINT Breakpoint;
+        [FieldOffset(0)]
+        public DEBUG_LAST_EVENT_INFO_EXCEPTION Exception;
+        [FieldOffset(0)]
+        public DEBUG_LAST_EVENT_INFO_EXIT_THREAD ExitThread;
+        [FieldOffset(0)]
+        public DEBUG_LAST_EVENT_INFO_EXIT_PROCESS ExitProcess;
+        [FieldOffset(0)]
+        public DEBUG_LAST_EVENT_INFO_LOAD_MODULE LoadModule;
+        [FieldOffset(0)]
+        public DEBUG_LAST_EVENT_INFO_UNLOAD_MODULE UnloadModule;
+        [FieldOffset(0)]
+        public DEBUG_LAST_EVENT_INFO_SYSTEM_ERROR SystemError;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct DEBUG_EVENT_CONTEXT
+    {
+        public uint Size;
+        public uint ProcessEngineId;
+        public uint ThreadEngineId;
+        public uint FrameEngineId;
     }
 }

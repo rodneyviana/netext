@@ -23,6 +23,11 @@ using System.Net;
 using System.Text.RegularExpressions;
 using System.Diagnostics;
 using System.IO;
+using System.Reflection;
+using System.Threading;
+using System.Windows;
+using System.Windows.Interop;
+using System.Windows.Threading;
 
 namespace NetExt.Shim
 {
@@ -176,6 +181,7 @@ namespace NetExt.Shim
         }
 
         private static string netExtPath = null;
+        private static bool isInit = false;
 
         [DllExport(CallingConvention = CallingConvention.Cdecl)]
         public static void CreateFromIDebugClient([MarshalAs(UnmanagedType.LPWStr)]string DllPath, [MarshalAs((UnmanagedType)25)] Object iDebugClient,
@@ -188,10 +194,15 @@ namespace NetExt.Shim
             if(String.IsNullOrEmpty(netExtPath))
             {
                 netExtPath = DllPath[DllPath.Length - 1] != '\\' ? DllPath + "\\" : DllPath;
+
+            }
+
+            if (!isInit)
+            {
                 AppDomain.CurrentDomain.UnhandledException += ad_UnhandledException;
                 AppDomain.CurrentDomain.AssemblyResolve += ad_AssemblyResolve;
             }
-#if _DEBUG
+#if DEBUG
             WriteLine("Base folder = {0}\n", path);
 #endif
             
@@ -199,6 +210,7 @@ namespace NetExt.Shim
             try
             {
                 CLRMDActivator clrMD = new CLRMDActivator();
+                DebugApi.INIT_API(iDebugClient);
                 if (clrMD.CreateFromIDebugClient(iDebugClient, out ppTarget) != HRESULTS.S_OK)
                     throw new Exception("Unable to create activator");
             }
@@ -215,43 +227,77 @@ namespace NetExt.Shim
 
         static System.Reflection.Assembly ad_AssemblyResolve(object sender, ResolveEventArgs args)
         {
+
             lock (_lock)
             {
-                if (args.Name.Contains("Microsoft.Diagnostics.Runtime"))
+                if (args.Name.ToLower().Contains("icsharpcode.avalonedit"))
                 {
-                    string assembly = String.Format("{0}{1}.dll", netExtPath, args.Name.Substring(0, args.Name.IndexOf(",")));
-#if DEBUG
-                    WriteLine("Trying to load: {0}", assembly);
-#endif
-                    return System.Reflection.Assembly.LoadFrom(assembly);
-                }
-#if _DEBUG
-                else
-                {
+                    /*
+                    string codeBase = Assembly.GetExecutingAssembly().CodeBase;
+                    Debug.WriteLine("CodeBase: {0}", codeBase);
+                    UriBuilder uri = new UriBuilder(codeBase);
 
-                    WriteLine("Trying to load: {0}", args.Name);
-                }
+                    string path = Path.GetDirectoryName(Uri.UnescapeDataString(uri.Path));
+                    Debug.WriteLine("Path: {0}", path);
+
+                     */
+
+                    //Debug.WriteLine(Assembly.GetExecutingAssembly().CodeBase);
+                    string fileName = args.Name.Split(',')[0];
+                    MDTarget.CopyTools();
+                    //
+                    // Sorry, files were not created
+                    //
+                    if (MDTarget.ToolsPath == null)
+                    {
+                        Exports.WriteLine("Unable to expand DLL for source window");
+                        return null;
+                    }
+                    string fullPath = Path.Combine(MDTarget.ToolsPath, fileName + ".dll");
+#if DEBUG
+                    Exports.WriteLine("Full Path {0}\n", fullPath);
 #endif
-            }
+                    return Assembly.LoadFile(fullPath);
+                }
+                return null;
+                /*
+                                if (args.Name.Contains("Microsoft.Diagnostics.Runtime"))
+                                {
+                                    string assembly = String.Format("{0}{1}.dll", netExtPath, args.Name.Substring(0, args.Name.IndexOf(",")));
+                #if DEBUG
+                                    WriteLine("Trying to load: {0}", assembly);
+                #endif
+                                    return System.Reflection.Assembly.LoadFrom(assembly);
+                                }
+                #if _DEBUG
+                                else
+                                {
+
+                                    WriteLine("Trying to load: {0}", args.Name);
+                                }
+                #endif
+                            }
             
-            return null;
+                            return null;
+                 */
+            }
         }
 
         static void ad_UnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
-            if (e.IsTerminating)
+            if (e != null && e.IsTerminating)
             {
-                WriteLine("\nFatal Exception in NetExtShim");
+                Exports.WriteLine("\nFatal Exception in NetExtShim");
             }
             if(e != null && e.ExceptionObject != null)
             {
-                WriteLine("\nUnhandled exception in NetExtShim: {0}",e.ExceptionObject.GetType().ToString());
+                Exports.WriteLine("\nUnhandled exception in NetExtShim: {0}",e.ExceptionObject.GetType().ToString());
 
                 Exception ex = e.ExceptionObject as Exception;
                 if (ex != null)
                 {
-                    WriteLine("Message : {0}", ex.Message);
-                    WriteLine("at {0}", ex.StackTrace);
+                    Exports.WriteLine("Message : {0}", ex.Message);
+                    Exports.WriteLine("at {0}", ex.StackTrace);
                 }
             }
         }
@@ -1118,7 +1164,7 @@ namespace NetExt.Shim
             if (m_field == null)
                 return HRESULTS.S_OK;
 
-            object value = m_field.GetFieldValue((ClrAppDomain)appDomain);
+            object value = m_field.GetValue((ClrAppDomain)appDomain);
             ppValue = new MDValue(value, m_field.ElementType);
             return HRESULTS.S_OK;
         }
@@ -1187,7 +1233,7 @@ namespace NetExt.Shim
             ppValue = null;
             if (m_field == null)
                 return HRESULTS.E_FAIL;
-            object value = m_field.GetFieldValue((ClrAppDomain)appDomain, (ClrThread)thread);
+            object value = m_field.GetValue((ClrAppDomain)appDomain, (ClrThread)thread);
             ppValue = new MDValue(value, m_field.ElementType);
             return HRESULTS.S_OK;
         }
@@ -1197,7 +1243,7 @@ namespace NetExt.Shim
             pAddress = 0;
             if (m_field == null)
                 return HRESULTS.E_FAIL;
-            pAddress = m_field.GetFieldAddress((ClrAppDomain)appDomain, (ClrThread)thread);
+            pAddress = m_field.GetAddress((ClrAppDomain)appDomain, (ClrThread)thread);
             return HRESULTS.S_OK;
         }
     }
@@ -1264,7 +1310,7 @@ namespace NetExt.Shim
             ppValue = null;
             if (m_field == null)
                 return HRESULTS.E_FAIL;
-            object value = m_field.GetFieldValue(objRef, interior != 0);
+            object value = m_field.GetValue(objRef, interior != 0);
             ppValue = new MDValue(value, m_field.ElementType);
             return HRESULTS.S_OK;
         }
@@ -1325,7 +1371,7 @@ namespace NetExt.Shim
             if (objRef != 0)
             {
                 typeData.size = m_type.GetSize(objRef);
-                if(!m_type.IsObjectReference || !m_type.Heap.GetRuntime().ReadPointer(objRef, out typeData.MethodTable))
+                if(!m_type.IsObjectReference || !m_type.Heap.Runtime.ReadPointer(objRef, out typeData.MethodTable))
                     typeData.MethodTable = HeapStatItem.GetMTOfType(m_type);
                 var seg = m_type.Heap.GetSegmentByAddress(objRef);
                 if (seg != null)
@@ -1340,7 +1386,7 @@ namespace NetExt.Shim
                 }
                 typeData.isCCW = m_type.IsCCW(objRef);
                 typeData.isRCW = m_type.IsRCW(objRef);
-                typeData.appDomain = AdHoc.GetDomainFromMT(m_type.Heap.GetRuntime(), typeData.MethodTable);
+                typeData.appDomain = AdHoc.GetDomainFromMT(m_type.Heap.Runtime, typeData.MethodTable);
             }
             else
             {
@@ -1383,11 +1429,11 @@ namespace NetExt.Shim
                 if (objRef != 0)
                 {
                     
-                    ulong[] arrayData = AdHoc.GetArrayData(m_type.Heap.GetRuntime(), objRef);
-                    if (m_type.ArrayComponentType == null)
+                    ulong[] arrayData = AdHoc.GetArrayData(m_type.Heap.Runtime, objRef);
+                    if (m_type.ComponentType == null)
                         typeData.arrayCorType = (int)arrayData[AdHoc.ARRAYCORTYPE];
                     else
-                        typeData.arrayCorType = (int)m_type.ArrayComponentType.ElementType;
+                        typeData.arrayCorType = (int)m_type.ComponentType.ElementType;
                     typeData.arrayElementMT = arrayData[AdHoc.ARRAYELEMENTMT];
                     typeData.arrayStart = arrayData[AdHoc.ARRAYSTART];
 
@@ -1398,7 +1444,7 @@ namespace NetExt.Shim
             typeData.isArray = m_type.IsArray;
             typeData.isGeneric = m_type.Name.Contains('<') && m_type.Name.Contains('>') && m_type.Name[0] != '<';
             typeData.isString = m_type.IsString;
-            typeData.EEClass = AdHoc.GetEEFromMT(m_type.Heap.GetRuntime(), typeData.MethodTable);
+            typeData.EEClass = AdHoc.GetEEFromMT(m_type.Heap.Runtime, typeData.MethodTable);
             typeData.isValueType = m_type.IsValueClass;
             typeData.module = m_type.Module.ImageBase;
             typeData.assembly = m_type.Module.AssemblyId;
@@ -1495,7 +1541,7 @@ namespace NetExt.Shim
 
         public int GetArrayComponentType(out IMDType ppArrayComponentType)
         {
-            ppArrayComponentType = Construct(m_type.ArrayComponentType);
+            ppArrayComponentType = Construct(m_type.ComponentType);
             return HRESULTS.S_OK;
         }
 
@@ -1649,9 +1695,9 @@ namespace NetExt.Shim
                     ClrThreadStaticField threadStat = fields[index].BackField as ClrThreadStaticField;
                     if (threadStat != null)
                     {
-                        foreach (var thread in m_type.Heap.GetRuntime().Threads)
+                        foreach (var thread in m_type.Heap.Runtime.Threads)
                         {
-                            foreach (var domain in AdHoc.GetDomains(m_type.Heap.GetRuntime()))
+                            foreach (var domain in AdHoc.GetDomains(m_type.Heap.Runtime))
                             {
                                 try
                                 {
@@ -1682,17 +1728,17 @@ namespace NetExt.Shim
                             m_type.Heap.ReadPointer(obj, out mt);
                         if(mt==0)
                             mt = HeapStatItem.GetMTOfType(m_type);
-                        ulong domainAddr = AdHoc.GetDomainFromMT(m_type.Heap.GetRuntime(), mt);
+                        ulong domainAddr = AdHoc.GetDomainFromMT(m_type.Heap.Runtime, mt);
                         if (domainAddr != 0)
                         {
-                            domain = AdHoc.GetDomainByAddress(m_type.Heap.GetRuntime(), domainAddr);
+                            domain = AdHoc.GetDomainByAddress(m_type.Heap.Runtime, domainAddr);
                             if (domain != null)
                             {
                                 address = stat.GetAddress(domain);
                                 if (address != 0)
                                     return HRESULTS.S_OK;
                             }
-                            foreach(var d in AdHoc.GetDomains(m_type.Heap.GetRuntime()))
+                            foreach(var d in AdHoc.GetDomains(m_type.Heap.Runtime))
                             {
                                 address = stat.GetAddress(d);
                                 if (address != 0)
@@ -1768,11 +1814,11 @@ namespace NetExt.Shim
                     field.ElementType == ClrElementType.Float ||
                     field.ElementType == ClrElementType.Double)
                 {
-                    fields[i].value = field.GetFieldAddress(obj, interior != 0);
+                    fields[i].value = field.GetAddress(obj, interior != 0);
                 }
                 else
                 {
-                    object value = field.GetFieldValue(obj, interior != 0);
+                    object value = field.GetValue(obj, interior != 0);
 
                     if (value == null)
                     {
@@ -1852,7 +1898,7 @@ namespace NetExt.Shim
         public int GetArrayElementValue(ulong objRef, int index, out IMDValue ppValue)
         {
             object value = m_type.GetArrayElementValue(objRef, index);
-            ClrElementType elementType = m_type.ArrayComponentType != null ? m_type.ArrayComponentType.ElementType : ClrElementType.Unknown;
+            ClrElementType elementType = m_type.ComponentType != null ? m_type.ComponentType.ElementType : ClrElementType.Unknown;
             ppValue = new MDValue(value, elementType);
             return HRESULTS.S_OK;
         }
@@ -2050,7 +2096,7 @@ namespace NetExt.Shim
                 Exports.WriteDmlLine("<link cmd=\"!wpe {0:%p}\">{0:%p}</link> {1} {2}</link>", exception.Inner.Address,
                     exception.Inner.Type.Name.Replace("<", "&lt;").Replace(">", "&gt;"), exception.Inner.Message);
             Exports.WriteLine("Stack:");
-            Exports.WriteLine("{0}", DumpStack(exception.StackTrace, m_heap.GetRuntime().PointerSize));
+            Exports.WriteLine("{0}", DumpStack(exception.StackTrace, m_heap.Runtime.PointerSize));
             Exports.WriteLine("HResult: {0:x4}", exception.HResult);
             Exports.WriteLine("");
             return HRESULTS.S_OK;
@@ -2067,7 +2113,7 @@ namespace NetExt.Shim
                 {
                     if (Exports.isInterrupted())
                         return HRESULTS.E_FAIL;
-                    string key = String.Format("{0}\0{1}\0{2}", ex.Type.Name, ex.Message, DumpStack(ex.StackTrace, m_heap.GetRuntime().PointerSize, true));
+                    string key = String.Format("{0}\0{1}\0{2}", ex.Type.Name, ex.Message, DumpStack(ex.StackTrace, m_heap.Runtime.PointerSize, true));
                     if (!allExceptions.ContainsKey(key))
                     {
                         allExceptions[key] = new List<ulong>();
@@ -2129,7 +2175,7 @@ namespace NetExt.Shim
         private static HeapCache cache = null;
         public void InitializeCache()
         {
-            cache = new HeapCache(m_heap.GetRuntime());
+            cache = new HeapCache(m_heap.Runtime);
         }
         public StringBuilder PrintAttribute(ulong Address)
         {
@@ -2666,7 +2712,7 @@ namespace NetExt.Shim
                     categories[handle.HandleType.ToString()] = 0;
                 }
                 categories[handle.HandleType.ToString()]++;
-                ClrType obj = m_runtime.GetHeap().GetObjectType(handle.Object);
+                ClrType obj = m_runtime.Heap.GetObjectType(handle.Object);
 
                 if (
                     (String.IsNullOrEmpty(filterByType) || handle.HandleType.ToString().ToLowerInvariant().Contains(filterByType.ToLowerInvariant()))
@@ -2822,10 +2868,11 @@ namespace NetExt.Shim
 
         public int GetHeap(out IMDHeap ppHeap)
         {
+            isFlushedCalled = false;
             ppHeap = null;
             if (m_runtime == null)
                 return HRESULTS.E_FAIL;
-            ppHeap = new MDHeap(m_runtime.GetHeap());
+            ppHeap = new MDHeap(m_runtime.Heap);
             return HRESULTS.S_OK;
         }
 
@@ -2852,7 +2899,7 @@ namespace NetExt.Shim
             ppEnum = null;
             if (m_runtime == null)
                 return HRESULTS.E_FAIL;
-            ppEnum = new MDObjectEnum(new List<ulong>(m_runtime.EnumerateFinalizerQueue()));
+            ppEnum = new MDObjectEnum(new List<ulong>(m_runtime.EnumerateFinalizerQueueObjectAddresses()));
             return HRESULTS.S_OK;
         }
 
@@ -2997,7 +3044,7 @@ namespace NetExt.Shim
             pLocation = null;
             if (m_info == null)
                 return HRESULTS.E_FAIL;
-            pLocation = m_info.TryGetDacLocation();
+            pLocation = m_info.LocalMatchingDac;
             return HRESULTS.S_OK;
         } 
 
@@ -3081,7 +3128,8 @@ namespace NetExt.Shim
             ppRuntime = null;
             if (m_target == null || m_target.ClrVersions == null)
                 return HRESULTS.E_FAIL;
-            ppRuntime = new MDRuntime(m_target.CreateRuntime(dacLocation));
+            
+            ppRuntime = new MDRuntime(m_target.ClrVersions.Single().CreateRuntime(dacLocation));
             return HRESULTS.S_OK;
         }
 
@@ -3090,7 +3138,7 @@ namespace NetExt.Shim
             ppRuntime = null;
             if (m_target == null || m_target.ClrVersions == null)
                 return HRESULTS.E_FAIL;
-            ppRuntime = new MDRuntime(m_target.CreateRuntime(ixCLRProcess));
+            ppRuntime = new MDRuntime(m_target.ClrVersions.Single().CreateRuntime(ixCLRProcess));
             return HRESULTS.S_OK;
         }
 
@@ -3408,13 +3456,14 @@ namespace NetExt.Shim
 
         private static bool isExeCreated = false;
         private static string toolsPath = null;
-
+        public static string ToolsPath { get { return toolsPath; } }
         public static void CopyTools()
         {
             if (!isExeCreated)
             {
-
-                DebugApi.WriteDmlLine("Expanding tools...");
+#if DEBUG
+                Exports.WriteLine("Expanding tools...");
+#endif
                 toolsPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
 
                 try
@@ -3429,12 +3478,12 @@ namespace NetExt.Shim
                 }
                 isExeCreated = true;
                 string[] files = new string[] { "ICSharpCode_Decompiler", "ICSharpCode_NRefactory", "ICSharpCode_NRefactory_CSharp",
-                    "ILSpy.exe", "Mono_Cecil", "Mono_Cecil_Pdb", "PdbRestorer.exe", "PdbRestorer_Engine" };
+                    "ILSpy.exe", "Mono_Cecil", "Mono_Cecil_Pdb", "PdbRestorer.exe", "PdbRestorer_Engine", "ICSharpCode_AvalonEdit" };
 
                 for (int i = 0; i < files.Length; i++)
                 {
                     string file = files[i].Replace('_', '.');
-                    if (!file.EndsWith(".exe"))
+                    if (!file.EndsWith(".exe") && !file.EndsWith(".xml"))
                         file += ".dll";
                     try
                     {
@@ -3449,6 +3498,7 @@ namespace NetExt.Shim
                     {
                         Exports.WriteLine("Failed to copy tool {0}", file);
                         Exports.WriteLine("Error: {0}: {1}", ex.GetType(), ex.Message);
+                        isExeCreated = false;
                     }
 
                 }
@@ -3520,6 +3570,115 @@ namespace NetExt.Shim
                 DebugApi.AddToSourcePath(symFolder);
                 DebugApi.AddToSymPath(symFolder);
                 DebugApi.IgnoreSymbolMismatch();
+            }
+            ulong context = DebugApi.AddressFromScope;
+            OpenSource(context);
+            return HRESULTS.S_OK;
+        }
+
+        public int OpenSource(ulong Address)
+        {
+            if (Address == 0)
+                return HRESULTS.E_FAIL;
+                
+            DEBUG_STACK_FRAME nativeFrame = new DEBUG_STACK_FRAME();
+            nativeFrame.InstructionOffset = Address;
+            StackFrame frame = new StackFrame(nativeFrame);
+            if (frame.ManagedModule == null)
+            {
+                Exports.WriteLine("No valid managed code at {0:%p}", nativeFrame.InstructionOffset);
+                return HRESULTS.E_FAIL;
+            }
+            FileAndLineNumber sourceInfo = frame.ManagedSourceLocation;
+
+            if (String.IsNullOrEmpty(sourceInfo.File))
+            {
+                Exports.WriteLine("No source file for managed code at {0:%p}", nativeFrame.InstructionOffset);
+                return HRESULTS.E_FAIL;
+            }
+            string filePath = DebugApi.GetSourcePath(sourceInfo.File, frame.ManagedModule.ImageBase);
+
+            if (String.IsNullOrEmpty(filePath))
+            {
+                Exports.WriteLine("Unable to resolve local path for file  {0}", sourceInfo.File);
+                return HRESULTS.E_FAIL;
+            }
+
+
+            if (!SourceWindow.HasInstance)
+            {
+                Thread td = new Thread(delegate(object Parameter)
+                {
+                    IntPtr hwd = Process.GetCurrentProcess().MainWindowHandle;
+                    Application app = new Application();
+
+                    object[] pars = Parameter as object[];
+                    SourceWindow wnd = SourceWindow.GetInstance(); //
+                    WindowInteropHelper helper = new WindowInteropHelper(wnd);
+                    helper.Owner = hwd;
+                    wnd.LoadFile((string)pars[0]);
+                    if ((int)pars[1] > 0)
+                        wnd.HighLightLine((string)pars[0], (int)pars[1]);
+
+
+                    app.Run(wnd);
+
+
+                });
+                td.SetApartmentState(ApartmentState.STA);
+                object[] parameters = new object[2];
+                parameters[0] = filePath;
+                parameters[1] = sourceInfo.Line;
+                td.Start(parameters);
+                // Wait for a maximum of 1 second
+                for (int i = 0; i < 100; i++)
+                {
+                    Thread.Sleep(10); // Wait until it is rendered for the first time
+                    if (SourceWindow.HasDocument)
+                    {
+                        Application.Current.Dispatcher.Invoke(new Action(() =>
+                        {
+                            SourceWindow wnd = SourceWindow.GetInstance();
+                            wnd.Show();
+                            wnd.LoadFile(filePath);
+                            if (sourceInfo.Line > 0)
+                                wnd.HighLightLine(filePath, sourceInfo.Line);
+                        }), DispatcherPriority.ContextIdle);
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                Application.Current.Dispatcher.Invoke(new Action(() =>
+                {
+                    SourceWindow wnd = SourceWindow.GetInstance();
+                    wnd.Show();
+                    wnd.LoadFile(filePath);
+                    if (sourceInfo.Line > 0)
+                        wnd.HighLightLine(filePath, sourceInfo.Line);
+                }), DispatcherPriority.ContextIdle);
+
+            }
+
+
+            return HRESULTS.S_OK;
+
+
+        }
+
+        public int DumpMixedStack()
+        {
+            string childSP = "Child-SP".PadRight((int)m_target.PointerSize * 2 + 1);
+            string retAddr = "RetAddr".PadRight((int)m_target.PointerSize * 2 + 1);
+
+            Exports.WriteLine("## {0}{1} Call Site", childSP, retAddr);
+            foreach (StackFrame frame in DebugApi.StackTrace)
+            {
+                Exports.WriteDml("<link cmd=\".frame {0:x2}\">{0:x2}</link> ", frame.FrameNumber);
+                Exports.Write(frame.ToString());
+                Exports.WriteDml("{0}", frame.SourceLocation.ToString(true));
+                Exports.WriteLine("");
             }
             return HRESULTS.S_OK;
         }

@@ -370,8 +370,18 @@ HRESULT INIT_API()
 		pRuntime->IsFlush(&isFlushed);
 		if(isFlushed != 0)
 		{
+			if(clrData == NULL)
+			{
+				g_ExtInstancePtr->Out("ERROR: Unable to create Runtime after flush\r");
+				isCLRInit = false;
+			}
+			pRuntime = NULL;
 			pHeap = NULL; // release previous
-			pRuntime->GetHeap(&pHeap);
+			HRESULT	hr=pTarget->CreateRuntimeFromIXCLR(clrData, &pRuntime);
+			
+			EXITPOINTEXT("Unable to create runtime\nTry running .cordll -l");
+			hr = pRuntime->GetHeap(&pHeap);
+			EXITPOINTEXT("Unable to create heap\nTry running .cordll -l");
 		}
 	}
 	if(isCLRInit)
@@ -656,6 +666,16 @@ EXT_COMMAND(wdomain,
 {
 	DO_INIT_API;
 	pRuntime->DumpDomains();
+}
+
+EXT_COMMAND(wopensource,
+			"Open the managed source code based on IP. Use '!whelp wopensource' for detailed help",
+			"{;e,r;;Address,IP Address}")
+
+{
+	DO_INIT_API;
+	CLRDATA_ADDRESS addr = GetUnnamedArgU64(0);
+	pTarget->OpenSource(addr);
 }
 
 EXT_COMMAND(wthreads,

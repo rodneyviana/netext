@@ -401,8 +401,17 @@ namespace Microsoft.Diagnostics.Runtime.Utilities
             if (!m.Success)
                 m = Regex.Match(commandLine, @"\s*(\S*)\s*(.*)");    // thing before first space is command
 
-            ProcessStartInfo startInfo = new ProcessStartInfo(m.Groups[1].Value, m.Groups[2].Value);
-            _process = new Process();
+            ProcessStartInfo startInfo = new ProcessStartInfo(m.Groups[1].Value, m.Groups[2].Value)
+            {
+                UseShellExecute = false,
+                RedirectStandardError = true,
+                RedirectStandardOutput = true,
+                ErrorDialog = false,
+                CreateNoWindow = true,
+                RedirectStandardInput = options.Input != null
+            };
+            
+            _process = new Process() { StartInfo = startInfo };
             _process.StartInfo = startInfo;
             _output = new StringBuilder();
             if (options.elevate)
@@ -412,27 +421,8 @@ namespace Microsoft.Diagnostics.Runtime.Utilities
                 if (options.currentDirectory == null)
                     options.currentDirectory = Environment.CurrentDirectory;
             }
-            startInfo.CreateNoWindow = options.noWindow;
-            if (options.useShellExecute)
-            {
-                startInfo.UseShellExecute = true;
-                if (options.noWindow)
-                    startInfo.WindowStyle = ProcessWindowStyle.Hidden;
-            }
-            else
-            {
-                if (options.input != null)
-                    startInfo.RedirectStandardInput = true;
-                startInfo.UseShellExecute = false;
-                startInfo.RedirectStandardError = true;
-                startInfo.RedirectStandardOutput = true;
-                startInfo.ErrorDialog = false;
-                startInfo.WindowStyle = ProcessWindowStyle.Hidden;
-                startInfo.CreateNoWindow = true;
-
-                _process.OutputDataReceived += new DataReceivedEventHandler(OnProcessOutput);
-                _process.ErrorDataReceived += new DataReceivedEventHandler(OnProcessOutput);
-            }
+            _process.OutputDataReceived += new DataReceivedEventHandler(OnProcessOutput);
+            _process.ErrorDataReceived += new DataReceivedEventHandler(OnProcessOutput);
 
             if (options.environmentVariables != null)
             {
@@ -444,7 +434,7 @@ namespace Microsoft.Diagnostics.Runtime.Utilities
                     if (value != null)
                     {
                         int startAt = 0;
-                        for (;;)
+                        for (; ;)
                         {
                             m = new Regex(@"%(\w+)%").Match(value, startAt);
                             if (!m.Success) break;
@@ -500,7 +490,7 @@ namespace Microsoft.Diagnostics.Runtime.Utilities
 
                 if (Regex.IsMatch(startInfo.FileName, @"^(copy|dir|del|color|set|cd|cdir|md|mkdir|prompt|pushd|popd|start|assoc|ftype)", RegexOptions.IgnoreCase))
                     msg += "    Cmd " + startInfo.FileName + " implemented by Cmd.exe, fix by prefixing with 'cmd /c'.";
-                throw new ApplicationException(msg, e);
+                throw new Exception(msg, e);
             }
 
             if (!startInfo.UseShellExecute)
@@ -514,7 +504,7 @@ namespace Microsoft.Diagnostics.Runtime.Utilities
             if (options.input != null)
             {
                 _process.StandardInput.Write(options.input);
-                _process.StandardInput.Close();
+                _process.StandardInput.Dispose();
             }
         }
         /// <summary>
@@ -559,7 +549,7 @@ namespace Microsoft.Diagnostics.Runtime.Utilities
 
             // If we created the output stream, we should close it.  
             if (_outputStream != null && _options.outputFile != null)
-                _outputStream.Close();
+                _outputStream.Dispose();
             _outputStream = null;
 
             if (waitReturned && killed)
@@ -644,7 +634,7 @@ namespace Microsoft.Diagnostics.Runtime.Utilities
 
             // If we created the output stream, we should close it.  
             if (_outputStream != null && _options.outputFile != null)
-                _outputStream.Close();
+                _outputStream.Dispose();
             _outputStream = null;
         }
 

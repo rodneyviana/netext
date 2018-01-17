@@ -9,7 +9,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>NetExt.Shim</RootNamespace>
     <AssemblyName>NetExtShim</AssemblyName>
-    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
     <SccProjectName>SAK</SccProjectName>
@@ -26,6 +26,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <PlatformTarget>AnyCPU</PlatformTarget>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -34,6 +35,7 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
     <DebugSymbols>true</DebugSymbols>
@@ -45,15 +47,18 @@
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <UseVSHostingProcess>false</UseVSHostingProcess>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
     <OutputPath>bin\x64\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <Optimize>true</Optimize>
-    <DebugType>pdbonly</DebugType>
+    <DebugType>full</DebugType>
     <PlatformTarget>x64</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <Prefer32Bit>false</Prefer32Bit>
+    <DebugSymbols>true</DebugSymbols>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release64|AnyCPU'">
     <OutputPath>bin\Release64\</OutputPath>
@@ -63,6 +68,7 @@
     <PlatformTarget>AnyCPU</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release64|x64'">
     <OutputPath>bin\x64\Release64\</OutputPath>
@@ -75,6 +81,7 @@
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <DebugSymbols>true</DebugSymbols>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
     <DebugSymbols>true</DebugSymbols>
@@ -85,15 +92,18 @@
     <PlatformTarget>x86</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x86'">
     <OutputPath>bin\x86\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <Optimize>true</Optimize>
-    <DebugType>pdbonly</DebugType>
+    <DebugType>full</DebugType>
     <PlatformTarget>x86</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <Prefer32Bit>false</Prefer32Bit>
+    <DebugSymbols>true</DebugSymbols>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release64|x86'">
     <OutputPath>bin\x86\Release64\</OutputPath>
@@ -103,6 +113,7 @@
     <PlatformTarget>x86</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release32|AnyCPU'">
     <OutputPath>bin\Release32\</OutputPath>
@@ -112,6 +123,7 @@
     <PlatformTarget>AnyCPU</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release32|x64'">
     <OutputPath>bin\x64\Release32\</OutputPath>
@@ -121,24 +133,28 @@
     <PlatformTarget>x64</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release32|x86'">
     <OutputPath>bin\x86\Release32\</OutputPath>
     <DefineConstants>
     </DefineConstants>
     <Optimize>true</Optimize>
-    <DebugType>pdbonly</DebugType>
+    <DebugType>full</DebugType>
     <PlatformTarget>x86</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Prefer32Bit>false</Prefer32Bit>
+    <DebugSymbols>true</DebugSymbols>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Dia2Lib, Version=2.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="ICSharpCode.AvalonEdit, Version=5.0.3.0, Culture=neutral, PublicKeyToken=9cc39be672370310, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <EmbedInteropTypes>True</EmbedInteropTypes>
-      <HintPath>Microsoft.Diagnostics.Runtime\Refs\Dia2Lib.dll</HintPath>
+      <HintPath>Binaries\ICSharpCode.AvalonEdit.dll</HintPath>
     </Reference>
+    <Reference Include="PresentationCore" />
+    <Reference Include="PresentationFramework" />
     <Reference Include="RGiesecke.DllExport.Metadata">
       <HintPath>..\packages\UnmanagedExports.1.2.6\lib\net\RGiesecke.DllExport.Metadata.dll</HintPath>
       <Private>False</Private>
@@ -146,11 +162,13 @@
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xaml" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
+    <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ClrDynamicClass.cs" />
@@ -163,9 +181,39 @@
     <Compile Include="DebugApi.cs" />
     <Compile Include="EventsCallback.cs" />
     <Compile Include="HeapCacheUtil.cs" />
-    <Compile Include="Microsoft.Diagnostics.Runtime\dacprivate.cs" />
-    <Compile Include="Microsoft.Diagnostics.Runtime\datatargetimpl.cs" />
-    <Compile Include="Microsoft.Diagnostics.Runtime\dbgengdatatarget.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\ClrAppDomain.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Microsoft.Diagnostics.Runtime\ClrException.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Microsoft.Diagnostics.Runtime\ClrHeap.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Microsoft.Diagnostics.Runtime\ClrModule.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Microsoft.Diagnostics.Runtime\ClrObject.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Microsoft.Diagnostics.Runtime\ClrRuntime.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Microsoft.Diagnostics.Runtime\ClrThread.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Microsoft.Diagnostics.Runtime\ClrType.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Microsoft.Diagnostics.Runtime\ClrValueClass.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Microsoft.Diagnostics.Runtime\DacInterfaces.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Microsoft.Diagnostics.Runtime\datatarget.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Microsoft.Diagnostics.Runtime\Debugger\Enums.cs" />
     <Compile Include="Microsoft.Diagnostics.Runtime\Debugger\IDebugAdvanced.cs" />
     <Compile Include="Microsoft.Diagnostics.Runtime\Debugger\IDebugAdvanced2.cs" />
@@ -178,6 +226,7 @@
     <Compile Include="Microsoft.Diagnostics.Runtime\Debugger\IDebugClient3.cs" />
     <Compile Include="Microsoft.Diagnostics.Runtime\Debugger\IDebugClient4.cs" />
     <Compile Include="Microsoft.Diagnostics.Runtime\Debugger\IDebugClient5.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Debugger\IDebugClient6.cs" />
     <Compile Include="Microsoft.Diagnostics.Runtime\Debugger\IDebugControl.cs" />
     <Compile Include="Microsoft.Diagnostics.Runtime\Debugger\IDebugControl2.cs" />
     <Compile Include="Microsoft.Diagnostics.Runtime\Debugger\IDebugControl3.cs" />
@@ -190,6 +239,7 @@
     <Compile Include="Microsoft.Diagnostics.Runtime\Debugger\IDebugDataSpaces4.cs" />
     <Compile Include="Microsoft.Diagnostics.Runtime\Debugger\IDebugEventCallbacks.cs" />
     <Compile Include="Microsoft.Diagnostics.Runtime\Debugger\IDebugEventCallbacksWide.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Debugger\IDebugEventContextCallbacks.cs" />
     <Compile Include="Microsoft.Diagnostics.Runtime\Debugger\IDebugInputCallbacks.cs" />
     <Compile Include="Microsoft.Diagnostics.Runtime\Debugger\IDebugOutputCallbacks.cs" />
     <Compile Include="Microsoft.Diagnostics.Runtime\Debugger\IDebugOutputCallbacks2.cs" />
@@ -221,28 +271,65 @@
     <Compile Include="Microsoft.Diagnostics.Runtime\Desktop\threads.cs" />
     <Compile Include="Microsoft.Diagnostics.Runtime\Desktop\types.cs" />
     <Compile Include="Microsoft.Diagnostics.Runtime\Desktop\v45runtime.cs" />
-    <Compile Include="Microsoft.Diagnostics.Runtime\dumpdatareader.cs" />
-    <Compile Include="Microsoft.Diagnostics.Runtime\heapbase.cs" />
-    <Compile Include="Microsoft.Diagnostics.Runtime\internal.cs" />
-    <Compile Include="Microsoft.Diagnostics.Runtime\livedatatarget.cs" />
-    <Compile Include="Microsoft.Diagnostics.Runtime\metadata.cs" />
-    <Compile Include="Microsoft.Diagnostics.Runtime\Native\dacprivate.cs" />
-    <Compile Include="Microsoft.Diagnostics.Runtime\Native\heap.cs" />
-    <Compile Include="Microsoft.Diagnostics.Runtime\Native\module.cs" />
-    <Compile Include="Microsoft.Diagnostics.Runtime\Native\roots.cs" />
-    <Compile Include="Microsoft.Diagnostics.Runtime\Native\runtime.cs" />
-    <Compile Include="Microsoft.Diagnostics.Runtime\Native\types.cs" />
-    <Compile Include="Microsoft.Diagnostics.Runtime\public.cs" />
-    <Compile Include="Microsoft.Diagnostics.Runtime\runtimebase.cs" />
-    <Compile Include="Microsoft.Diagnostics.Runtime\sigparser.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\dumpdatareader.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Microsoft.Diagnostics.Runtime\GCRoot.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Microsoft.Diagnostics.Runtime\ICorDebug\ICorDebugHelpers.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\ICorDebug\ICorDebugWrappers.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\ICorDebug\IMetadataImport.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\ICorDebug\IMetaHostWrappers.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\internal.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Microsoft.Diagnostics.Runtime\ISymbolResolver.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Microsoft.Diagnostics.Runtime\MemoryReadException.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Microsoft.Diagnostics.Runtime\Native\NativeDac.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Native\NativeException.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Native\NativeHeap.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Native\NativeModule.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Native\NativeRoots.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Native\NativeRuntime.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Native\NativeThread.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Native\NativeTypes.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\ObjectSet.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Microsoft.Diagnostics.Runtime\Utilities\command.cs" />
-    <Compile Include="Microsoft.Diagnostics.Runtime\Utilities\DirectoryUtilities.cs" />
     <Compile Include="Microsoft.Diagnostics.Runtime\Utilities\DumpReader.cs" />
-    <Compile Include="Microsoft.Diagnostics.Runtime\Utilities\FileUtilities.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Utilities\PDB\BitAccess.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Utilities\PDB\BitSet.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Utilities\PDB\CvInfo.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Utilities\PDB\DataStream.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Utilities\PDB\DbiDbgHdr.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Utilities\PDB\DbiHeader.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Utilities\PDB\DbiModuleInfo.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Utilities\PDB\DbiSecCon.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Utilities\PDB\MsfDirectory.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Utilities\PDB\PdbConstant.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Utilities\PDB\PdbDebugException.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Utilities\PDB\PdbException.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Utilities\PDB\PdbFile.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Utilities\PDB\PdbFileHeader.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Utilities\PDB\PdbFunction.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Utilities\PDB\PdbReader.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Utilities\PDB\PdbScope.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Utilities\PDB\PdbSequencePoint.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Utilities\PDB\PdbSequencePointCollection.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Utilities\PDB\PdbSlot.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Utilities\PDB\PdbSource.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Utilities\PDB\PdbStreamHelper.cs" />
     <Compile Include="Microsoft.Diagnostics.Runtime\Utilities\pefile.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Utilities\sigparser.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Utilities\SymbolLocator.Async.cs" />
     <Compile Include="Microsoft.Diagnostics.Runtime\Utilities\SymbolLocator.cs" />
     <Compile Include="Microsoft.Diagnostics.Runtime\Utilities\SymbolPath.cs" />
-    <Compile Include="Microsoft.Diagnostics.Runtime\Utilities\SymbolReader.cs" />
     <Compile Include="Module.cs" />
     <Compile Include="OutputCallBack.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -251,12 +338,15 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
+    <Compile Include="SourceWindow.cs" />
     <Compile Include="WinApi.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Binaries\ICSharpCode.AvalonEdit.dll" />
+    <None Include="Binaries\ICSharpCode.AvalonEdit.xml" />
     <Content Include="Binaries\ICSharpCode.Decompiler.dll" />
     <Content Include="Binaries\ICSharpCode.NRefactory.CSharp.dll" />
     <Content Include="Binaries\ICSharpCode.NRefactory.dll" />
@@ -266,7 +356,6 @@
     <Content Include="Binaries\PdbRestorer.Engine.dll" />
     <Content Include="Binaries\PdbRestorer.exe" />
     <Content Include="Microsoft.Diagnostics.Runtime\Microsoft.Diagnostics.Runtime.csproj" />
-    <Content Include="Microsoft.Diagnostics.Runtime\Refs\Dia2Lib.dll" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Microsoft.Diagnostics.Runtime\Properties\" />

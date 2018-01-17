@@ -603,6 +603,7 @@ public:
 	static std::wstring IPV6Address(WORD* SocketAddress, int Port, int ScopeId=0);
 	static std::wstring IPAddress(CLRDATA_ADDRESS IPAddress);
 	static std::wstring HtmlEncode(std::wstring HtmlString, bool EncodeSpaces=false);
+	static void PrintableString(std::string& Str, bool AllowNewLine = false);
 
 
 };

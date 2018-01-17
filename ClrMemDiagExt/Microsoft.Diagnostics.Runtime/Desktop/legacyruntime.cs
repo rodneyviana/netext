@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading;
 using Microsoft.Diagnostics.Runtime;
 
 namespace Microsoft.Diagnostics.Runtime.Desktop
@@ -17,18 +18,21 @@ namespace Microsoft.Diagnostics.Runtime.Desktop
         // type names that are 8k+ long...
         private byte[] _buffer = new byte[1024 * 32];
         private DesktopVersion _version;
-        private int _minor;
+        private int _patch;
         #endregion
 
         #region Constructor
-        public LegacyRuntime(DataTargetImpl dt, DacLibrary lib, DesktopVersion version, int minor)
-            : base(dt, lib)
+        public LegacyRuntime(ClrInfo info, DataTargetImpl dt, DacLibrary lib, DesktopVersion version, int patch)
+            : base(info, dt, lib)
         {
             _version = version;
-            _minor = minor;
+            _patch = patch;
 
             if (!GetCommonMethodTables(ref _commonMTs))
                 throw new ClrDiagnosticsException("Could not request common MethodTable list.", ClrDiagnosticsException.HR.DacError);
+            
+            if (!_commonMTs.Validate())
+                CanWalkHeap = false;
 
             // Ensure the version of the dac API matches the one we expect.  (Same for both
             // v2 and v4 rtm.)
@@ -53,6 +57,16 @@ namespace Microsoft.Diagnostics.Runtime.Desktop
             {
                 return _version;
             }
+        }
+
+        internal override Dictionary<ulong, List<ulong>> GetDependentHandleMap(CancellationToken cancelToken)
+        {
+            return new Dictionary<ulong, List<ulong>>();
+        }
+
+        internal override ulong GetILForModule(ClrModule module, uint rva)
+        {
+            throw new NotImplementedException();
         }
 
         internal override ulong[] GetAssemblyList(ulong appDomain, int count)
@@ -162,12 +176,29 @@ namespace Microsoft.Diagnostics.Runtime.Desktop
             return RequestAddrList(DacRequests.APPDOMAIN_LIST, count);
         }
 
+        internal override ulong GetMethodTableByEEClass(ulong eeclass)
+        {
+            if (eeclass == 0)
+                return 0;
+
+            IEEClassData classData;
+            if (CLRVersion == DesktopVersion.v2)
+                classData = Request<IEEClassData, V2EEClassData>(DacRequests.EECLASS_DATA, eeclass);
+            else
+                classData = Request<IEEClassData, V4EEClassData>(DacRequests.EECLASS_DATA, eeclass);
+
+            if (classData == null)
+                return 0;
+
+            return classData.Module;
+        }
+
         internal override IMethodTableData GetMethodTableData(ulong addr)
         {
             return Request<IMethodTableData, LegacyMethodTableData>(DacRequests.METHODTABLE_DATA, addr);
         }
 
-        internal override IGCInfo GetGCInfo()
+        internal override IGCInfo GetGCInfoImpl()
         {
             return Request<IGCInfo, LegacyGCInfo>(DacRequests.GCHEAP_DATA);
         }
@@ -252,10 +283,15 @@ namespace Microsoft.Diagnostics.Runtime.Desktop
             if (addr == 0)
                 return null;
 
+            IModuleData result = null;
             if (CLRVersion == DesktopVersion.v2)
-                return Request<IModuleData, V2ModuleData>(DacRequests.MODULE_DATA, addr);
+                result = Request<IModuleData, V2ModuleData>(DacRequests.MODULE_DATA, addr);
+            else
+                result = Request<IModuleData, V4ModuleData>(DacRequests.MODULE_DATA, addr);
 
-            return Request<IModuleData, V4ModuleData>(DacRequests.MODULE_DATA, addr);
+            // Only needed in legacy runtime since v4.5 and on do not return this interface.
+            RegisterForRelease(result);
+            return result;
         }
 
         internal override ulong GetModuleForMT(ulong mt)
@@ -358,12 +394,13 @@ namespace Microsoft.Diagnostics.Runtime.Desktop
             return Request<IObjectData, LegacyObjectData>(DacRequests.OBJECT_DATA, objRef);
         }
 
-        internal override IMetadata GetMetadataImport(ulong module)
+        internal override ICorDebug.IMetadataImport GetMetadataImport(ulong module)
         {
             IModuleData data = GetModuleData(module);
+            RegisterForRelease(data);
 
             if (data != null && data.LegacyMetaDataImport != null)
-                return data.LegacyMetaDataImport as IMetadata;
+                return data.LegacyMetaDataImport as ICorDebug.IMetadataImport;
 
             return null;
         }
@@ -403,14 +440,16 @@ namespace Microsoft.Diagnostics.Runtime.Desktop
             return null;
         }
 
-        internal override IList<ulong> GetMethodTableList(ulong module)
+        internal override IList<MethodTableTokenPair> GetMethodTableList(ulong module)
         {
-            List<ulong> mts = new List<ulong>();
+            List<MethodTableTokenPair> mts = new List<MethodTableTokenPair>();
 
-            ModuleMapTraverse traverse = delegate (uint index, ulong mt, IntPtr token) { mts.Add(mt); };
-            LegacyModuleMapTraverseArgs args = new LegacyModuleMapTraverseArgs();
-            args.pCallback = Marshal.GetFunctionPointerForDelegate(traverse);
-            args.module = module;
+            ModuleMapTraverse traverse = delegate (uint index, ulong mt, IntPtr token) { mts.Add(new MethodTableTokenPair(mt, index)); };
+            LegacyModuleMapTraverseArgs args = new LegacyModuleMapTraverseArgs()
+            {
+                pCallback = Marshal.GetFunctionPointerForDelegate(traverse),
+                module = module
+            };
 
             // TODO:  Blah, theres got to be a better way to do this.
             byte[] input = GetByteArrayForStruct<LegacyModuleMapTraverseArgs>();
@@ -498,7 +537,7 @@ namespace Microsoft.Diagnostics.Runtime.Desktop
             return token;
         }
 
-        protected override DesktopStackFrame GetStackFrame(int res, ulong ip, ulong sp, ulong frameVtbl)
+        protected override DesktopStackFrame GetStackFrame(DesktopThread thread, int res, ulong ip, ulong sp, ulong frameVtbl)
         {
             DesktopStackFrame frame;
             ClearBuffer();
@@ -514,12 +553,12 @@ namespace Microsoft.Diagnostics.Runtime.Desktop
                 if (mdData != null)
                     method = DesktopMethod.Create(this, mdData);
 
-                frame = new DesktopStackFrame(this, sp, frameName, method);
+                frame = new DesktopStackFrame(this, thread, sp, frameName, method);
             }
             else
             {
                 ulong md = GetMethodDescFromIp(ip);
-                frame = new DesktopStackFrame(this, ip, sp, md);
+                frame = new DesktopStackFrame(this, thread, ip, sp, md);
             }
 
             return frame;
@@ -545,7 +584,6 @@ namespace Microsoft.Diagnostics.Runtime.Desktop
         internal override IList<ClrStackFrame> GetExceptionStackTrace(ulong obj, ClrType type)
         {
             List<ClrStackFrame> result = new List<ClrStackFrame>();
-
             ulong _stackTrace;
             if (!GetStackTraceFromField(type, obj, out _stackTrace))
             {
@@ -556,7 +594,7 @@ namespace Microsoft.Diagnostics.Runtime.Desktop
             if (_stackTrace == 0)
                 return result;
 
-            var heap = TryGetHeap();
+            var heap = (DesktopGCHeap)Heap;
             ClrType stackTraceType = heap.GetObjectType(_stackTrace);
 
             if (stackTraceType == null)
@@ -568,27 +606,29 @@ namespace Microsoft.Diagnostics.Runtime.Desktop
             int len = stackTraceType.GetArrayLength(_stackTrace);
             if (len == 0)
                 return result;
-
+            ulong count, ip, sp, md;
             int elementSize = (CLRVersion == DesktopVersion.v2) ? IntPtr.Size * 4 : IntPtr.Size * 3;
             ulong dataPtr = _stackTrace + (ulong)(IntPtr.Size * 2);
-            ulong count = 0;
             if (!ReadPointer(dataPtr, out count))
                 return result;
 
             // Skip size and header
             dataPtr += (ulong)(IntPtr.Size * 2);
 
+            DesktopThread thread = null;
             for (int i = 0; i < (int)count; ++i)
             {
-                ulong ip, sp, md;
                 if (!ReadPointer(dataPtr, out ip))
                     break;
                 if (!ReadPointer(dataPtr + (ulong)IntPtr.Size, out sp))
                     break;
                 if (!ReadPointer(dataPtr + (ulong)(2 * IntPtr.Size), out md))
                     break;
+                
+                if (i == 0)
+                    thread = (DesktopThread)GetThreadByStackAddress(sp);
 
-                result.Add(new DesktopStackFrame(this, ip, sp, md));
+                result.Add(new DesktopStackFrame(this, thread, ip, sp, md));
 
                 dataPtr += (ulong)elementSize;
             }
@@ -669,7 +709,7 @@ namespace Microsoft.Diagnostics.Runtime.Desktop
             IMethodDescData result = GetMethodDescData(DacRequests.METHODDESC_IP_DATA, ip);
             if (result != null)
                 return result;
-            
+
             ulong methodDesc = GetMethodDescFromIp(ip);
             if (methodDesc != 0)
                 return GetMethodDescData(DacRequests.METHODDESC_DATA, ip);
@@ -708,11 +748,11 @@ namespace Microsoft.Diagnostics.Runtime.Desktop
                 return null;
 
             IMethodDescData result;
-            if (_version == DesktopVersion.v4 || _minor > 4016)
+            if (_version == DesktopVersion.v4 || _patch > 4016)
             {
                 result = Request<IMethodDescData, V35MethodDescData>(request_id, addr);
             }
-            else if (_minor < 3053)
+            else if (_patch < 3053)
             {
                 result = Request<IMethodDescData, V2MethodDescData>(request_id, addr);
             }
@@ -1037,6 +1077,38 @@ namespace Microsoft.Diagnostics.Runtime.Desktop
         {
             get { return _methodTablePtr; }
         }
+
+        public ulong GCInfo
+        {
+            get
+            {
+                return _GCInfo;
+            }
+        }
+
+        public ulong ColdStart
+        {
+            get
+            {
+                return 0;
+            }
+        }
+
+        public uint ColdSize
+        {
+            get
+            {
+                return 0;
+            }
+        }
+
+        public uint HotSize
+        {
+            get
+            {
+                return 0;
+            }
+        }
     }
 
     internal struct V35MethodDescData : IMethodDescData
@@ -1081,6 +1153,13 @@ namespace Microsoft.Diagnostics.Runtime.Desktop
             get { return _mdToken; }
         }
 
+        public ulong GCInfo
+        {
+            get
+            {
+                return _GCInfo;
+            }
+        }
 
         ulong IMethodDescData.NativeCodeAddr
         {
@@ -1096,6 +1175,30 @@ namespace Microsoft.Diagnostics.Runtime.Desktop
                 else if (_JITType == 2)
                     return MethodCompilationType.Ngen;
                 return MethodCompilationType.None;
+            }
+        }
+
+        public ulong ColdStart
+        {
+            get
+            {
+                return 0;
+            }
+        }
+
+        public uint ColdSize
+        {
+            get
+            {
+                return 0;
+            }
+        }
+
+        public uint HotSize
+        {
+            get
+            {
+                return 0;
             }
         }
     }
@@ -1488,17 +1591,17 @@ namespace Microsoft.Diagnostics.Runtime.Desktop
             get { return _bIsThreadLocal != 0; }
         }
 
-        bool IFieldData.bIsContextLocal
+        bool IFieldData.IsContextLocal
         {
             get { return _bIsContextLocal != 0; }
         }
 
-        bool IFieldData.bIsStatic
+        bool IFieldData.IsStatic
         {
             get { return _bIsStatic != 0; }
         }
 
-        ulong IFieldData.nextField
+        ulong IFieldData.NextField
         {
             get { return _nextField; }
         }
@@ -1733,7 +1836,7 @@ namespace Microsoft.Diagnostics.Runtime.Desktop
         public short wNumStaticFields;
         public uint dwClassDomainNeutralIndex;
         public uint dwAttrClass; // cached metadata
-        public uint token; // Metadata token    
+        public uint token; // Metadata token
 
         public ulong addrFirstField; // If non-null, you can retrieve more
 
@@ -2117,7 +2220,7 @@ namespace Microsoft.Diagnostics.Runtime.Desktop
         public short wNumThreadStaticFields;
         public uint dwClassDomainNeutralIndex;
         public uint dwAttrClass; // cached metadata
-        public uint token; // Metadata token    
+        public uint token; // Metadata token
 
         public ulong addrFirstField; // If non-null, you can retrieve more
 

@@ -3,16 +3,23 @@
 
 using System;
 using System.Collections.Generic;
-using Address = System.UInt64;
 
 namespace Microsoft.Diagnostics.Runtime.Desktop
 {
     internal class DesktopAppDomain : ClrAppDomain
     {
+        public override ClrRuntime Runtime
+        {
+            get
+            {
+                return _runtime;
+            }
+        }
+
         /// <summary>
-        /// Address of the AppDomain.
+        /// ulong of the AppDomain.
         /// </summary>
-        public override Address Address { get { return _address; } }
+        public override ulong Address { get { return _address; } }
 
         /// <summary>
         /// The AppDomain's ID.
@@ -67,7 +74,7 @@ namespace Microsoft.Diagnostics.Runtime.Desktop
         }
 
         #region Private
-        private Address _address;
+        private ulong _address;
         private string _name;
         private int _id, _internalId;
         private List<ClrModule> _modules = new List<ClrModule>();

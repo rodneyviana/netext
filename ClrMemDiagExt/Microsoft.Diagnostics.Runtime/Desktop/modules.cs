@@ -4,148 +4,149 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Text.RegularExpressions;
-using Address = System.UInt64;
-using System.Text;
-using System.Collections;
 using System.IO;
-using System.Reflection;
-using Microsoft.Diagnostics.Runtime;
 using System.Runtime.InteropServices;
 using Microsoft.Diagnostics.Runtime.Utilities;
-using Dia2Lib;
+using System.Linq;
 
 namespace Microsoft.Diagnostics.Runtime.Desktop
 {
     internal abstract class DesktopBaseModule : ClrModule
     {
-        internal abstract Address GetDomainModule(ClrAppDomain appDomain);
+        protected DesktopRuntimeBase _runtime;
 
-        internal Address ModuleId { get; set; }
+        public override ClrRuntime Runtime
+        {
+            get
+            {
+                return _runtime;
+            }
+        }
 
-        internal virtual IMetadata GetMetadataImport()
+        internal abstract ulong GetDomainModule(ClrAppDomain appDomain);
+
+        internal ulong ModuleId { get; set; }
+
+        internal virtual ICorDebug.IMetadataImport GetMetadataImport()
         {
             return null;
         }
 
         public int Revision { get; set; }
+
+        public DesktopBaseModule(DesktopRuntimeBase runtime)
+        {
+            _runtime = runtime;
+        }
     }
 
     internal class DesktopModule : DesktopBaseModule
     {
+        static PdbInfo s_failurePdb = new PdbInfo();
+
         private bool _reflection, _isPE;
         private string _name, _assemblyName;
-        private DesktopRuntimeBase _runtime;
-        private IMetadata _metadata;
+        private ICorDebug.IMetadataImport _metadata;
         private Dictionary<ClrAppDomain, ulong> _mapping = new Dictionary<ClrAppDomain, ulong>();
-        private Address _imageBase, _size;
-        private Address _metadataStart;
-        private Address _metadataLength;
+        private ulong _address;
+        private ulong _imageBase;
+        private Lazy<ulong> _size;
+        private ulong _metadataStart;
+        private ulong _metadataLength;
         private DebuggableAttribute.DebuggingModes? _debugMode;
-        private Address _address;
-        private Address _assemblyAddress;
+        private ulong _assemblyAddress;
         private bool _typesLoaded;
-        private SymbolModule _symbols;
-        private PEFile _peFile;
+        ClrAppDomain[] _appDomainList;
+        PdbInfo _pdb;
 
-
-        public override SourceLocation GetSourceInformation(ClrMethod method, int ilOffset)
+        public DesktopModule(DesktopRuntimeBase runtime, ulong address, IModuleData data, string name, string assemblyName)
+            : base(runtime)
         {
-            if (method == null)
-                throw new ArgumentNullException("method");
-
-            if (method.Type != null && method.Type.Module != this)
-                throw new InvalidOperationException("Method not in this module.");
-
-            return GetSourceInformation(method.MetadataToken, ilOffset);
-        }
-
-        public override SourceLocation GetSourceInformation(uint token, int ilOffset)
-        {
-            if (_symbols == null)
-                return null;
-
-            return _symbols.SourceLocationForManagedCode(token, ilOffset);
-        }
-
-        public override bool IsPdbLoaded { get { return _symbols != null; } }
-
-        public override bool IsMatchingPdb(string pdbPath)
-        {
-            if (_peFile == null)
-                _peFile = new PEFile(new ReadVirtualStream(_runtime.DataReader, (long)_imageBase, (long)_size), true);
-
-            string pdbName;
-            Guid pdbGuid;
-            int rev;
-            if (!_peFile.GetPdbSignature(out pdbName, out pdbGuid, out rev))
-                throw new ClrDiagnosticsException("Failed to get PDB signature from module.", ClrDiagnosticsException.HR.DataRequestError);
-
-            //todo: fix/release
-            IDiaDataSource source = DiaLoader.GetDiaSourceObject();
-            IDiaSession session;
-            source.loadDataFromPdb(pdbPath);
-            source.openSession(out session);
-            return pdbGuid == session.globalScope.guid;
-        }
-
-        public override void LoadPdb(string path)
-        {
-            _symbols = _runtime.DataTarget.SymbolLocator.LoadPdb(path);
-        }
-
-
-        public override object PdbInterface
-        {
-            get
-            {
-                if (_symbols == null)
-                    return null;
-
-                return _symbols.Session;
-            }
-        }
-
-        public override string TryDownloadPdb()
-        {
-            var dataTarget = _runtime.DataTarget;
-
-            string pdbName;
-            Guid pdbGuid;
-            int rev;
-            if (!_peFile.GetPdbSignature(out pdbName, out pdbGuid, out rev))
-                throw new ClrDiagnosticsException("Failed to get PDB signature from module.", ClrDiagnosticsException.HR.DataRequestError);
-
-            return _runtime.DataTarget.SymbolLocator.FindPdb(pdbName, pdbGuid, rev);
-        }
-
-
-        public DesktopModule(DesktopRuntimeBase runtime, ulong address, IModuleData data, string name, string assemblyName, ulong size)
-        {
+            _address = address;
             Revision = runtime.Revision;
             _imageBase = data.ImageBase;
-            _runtime = runtime;
             _assemblyName = assemblyName;
             _isPE = data.IsPEFile;
-            _reflection = data.IsReflection || string.IsNullOrEmpty(name) || !name.Contains("\\");
+            _reflection = data.IsReflection || string.IsNullOrEmpty(name);
             _name = name;
             ModuleId = data.ModuleId;
             ModuleIndex = data.ModuleIndex;
             _metadataStart = data.MetdataStart;
             _metadataLength = data.MetadataLength;
             _assemblyAddress = data.Assembly;
-            _address = address;
-            _size = size;
+            _size = new Lazy<ulong>(()=>runtime.GetModuleSize(address));
 
-            // This is very expensive in the minidump case, as we may be heading out to the symbol server or
-            // reading multiple files from disk. Only optimistically fetch this data if we have full memory.
             if (!runtime.DataReader.IsMinidump)
-                _metadata = data.LegacyMetaDataImport as IMetadata;
+            {
+                // This is very expensive in the minidump case, as we may be heading out to the symbol server or
+                // reading multiple files from disk. Only optimistically fetch this data if we have full memory.
+                _metadata = data.LegacyMetaDataImport as ICorDebug.IMetadataImport;
+            }
+        }
+
+        internal override ulong Address
+        {
+            get
+            {
+                return _address;
+            }
+        }
+
+        public override PdbInfo Pdb
+        {
+            get
+            {
+                if (_pdb == null)
+                {
+                    try
+                    {
+                        using (PEFile pefile = new PEFile(new ReadVirtualStream(_runtime.DataReader, (long)ImageBase, (long)(Size > 0 ? Size : 0x1000)), true))
+                        {
+                            _pdb = pefile.PdbInfo ?? s_failurePdb;
+                        }
+                    }
+                    catch
+                    {
+                    }
+                }
+
+                return _pdb != s_failurePdb ? _pdb : null;
+            }
+        }
+
+
+        internal ulong GetMTForDomain(ClrAppDomain domain, DesktopHeapType type)
+        {
+            DesktopGCHeap heap = null;
+            var mtList = _runtime.GetMethodTableList(_mapping[domain]);
+
+            bool hasToken = type.MetadataToken != 0 && type.MetadataToken != uint.MaxValue;
+
+            uint token = ~0xff000000 & type.MetadataToken;
+
+            foreach (MethodTableTokenPair pair in mtList)
+            {
+                if (hasToken)
+                {
+                    if (pair.Token == token)
+                        return pair.MethodTable;
+                }
+                else
+                {
+                    if (heap == null)
+                        heap = (DesktopGCHeap)_runtime.Heap;
+
+                    if (heap.GetTypeByMethodTable(pair.MethodTable, 0) == type)
+                        return pair.MethodTable;
+                }
+            }
+
+            return 0;
         }
 
         public override IEnumerable<ClrType> EnumerateTypes()
         {
-            var heap = (DesktopGCHeap)_runtime.GetHeap();
+            var heap = (DesktopGCHeap)_runtime.Heap;
             var mtList = _runtime.GetMethodTableList(_address);
             if (_typesLoaded)
             {
@@ -157,12 +158,13 @@ namespace Microsoft.Diagnostics.Runtime.Desktop
             {
                 if (mtList != null)
                 {
-                    foreach (ulong mt in mtList)
+                    foreach (var pair in mtList)
                     {
+                        ulong mt = pair.MethodTable;
                         if (mt != _runtime.ArrayMethodTable)
                         {
                             // prefetch element type, as this also can load types
-                            var type = heap.GetGCHeapType(mt, 0, 0);
+                            var type = heap.GetTypeByMethodTable(mt, 0, 0);
                             if (type != null)
                                 yield return type;
                         }
@@ -206,9 +208,24 @@ namespace Microsoft.Diagnostics.Runtime.Desktop
             _mapping[domain] = domainModule;
         }
 
+        public override IList<ClrAppDomain> AppDomains
+        {
+            get
+            {
+                if (_appDomainList == null)
+                {
+                    _appDomainList = new ClrAppDomain[_mapping.Keys.Count];
+                    _appDomainList = _mapping.Keys.ToArray();
+                    Array.Sort(_appDomainList, (d, d2) => d.Id.CompareTo(d2.Id));
+                }
+
+                return _appDomainList;
+            }
+        }
+
         internal override ulong GetDomainModule(ClrAppDomain domain)
         {
-            _runtime.InitDomains();
+            var domains = _runtime.AppDomains;
             if (domain == null)
             {
                 foreach (ulong addr in _mapping.Values)
@@ -216,7 +233,6 @@ namespace Microsoft.Diagnostics.Runtime.Desktop
 
                 return 0;
             }
-
             ulong value;
             if (_mapping.TryGetValue(domain, out value))
                 return value;
@@ -224,48 +240,39 @@ namespace Microsoft.Diagnostics.Runtime.Desktop
             return 0;
         }
 
-        internal override IMetadata GetMetadataImport()
+        internal override ICorDebug.IMetadataImport GetMetadataImport()
         {
             if (Revision != _runtime.Revision)
                 ClrDiagnosticsException.ThrowRevisionError(Revision, _runtime.Revision);
 
             if (_metadata != null)
                 return _metadata;
-
-            ulong module = GetDomainModule(null);
-            if (module == 0)
-                return null;
-
-            _metadata = _runtime.GetMetadataImport(module);
+            
+            _metadata = _runtime.GetMetadataImport(_address);
             return _metadata;
         }
 
-        public override Address ImageBase
+        public override ulong ImageBase
         {
             get { return _imageBase; }
         }
 
 
-        public override Address Size
+        public override ulong Size
         {
             get
             {
-                return _size;
+                return _size.Value;
             }
         }
 
-        internal void SetImageSize(Address size)
-        {
-            _size = size;
-        }
 
-
-        public override Address MetadataAddress
+        public override ulong MetadataAddress
         {
             get { return _metadataStart; }
         }
 
-        public override Address MetadataLength
+        public override ulong MetadataLength
         {
             get { return _metadataLength; }
         }
@@ -289,7 +296,7 @@ namespace Microsoft.Diagnostics.Runtime.Desktop
 
         private void InitDebugAttributes()
         {
-            IMetadata metadata = GetMetadataImport();
+            ICorDebug.IMetadataImport metadata = GetMetadataImport();
             if (metadata == null)
             {
                 _debugMode = DebuggableAttribute.DebuggingModes.None;
@@ -298,8 +305,9 @@ namespace Microsoft.Diagnostics.Runtime.Desktop
 
             try
             {
-                IntPtr data;
                 uint cbData;
+                IntPtr data;
+
                 int hr = metadata.GetCustomAttributeByName(0x20000001, "System.Diagnostics.DebuggableAttribute", out data, out cbData);
                 if (hr != 0 || cbData <= 4)
                 {
@@ -331,7 +339,7 @@ namespace Microsoft.Diagnostics.Runtime.Desktop
             return null;
         }
 
-        public override Address AssemblyId
+        public override ulong AssemblyId
         {
             get { return _assemblyAddress; }
         }
@@ -341,6 +349,27 @@ namespace Microsoft.Diagnostics.Runtime.Desktop
     {
         private static uint s_id = 0;
         private uint _id = s_id++;
+
+        public ErrorModule(DesktopRuntimeBase runtime)
+            : base(runtime)
+        {
+        }
+
+        public override PdbInfo Pdb
+        {
+            get
+            {
+                return null;
+            }
+        }
+
+        public override IList<ClrAppDomain> AppDomains
+        {
+            get
+            {
+                return new ClrAppDomain[0];
+            }
+        }
 
         public override string AssemblyName
         {
@@ -367,12 +396,12 @@ namespace Microsoft.Diagnostics.Runtime.Desktop
             get { return "<error>"; }
         }
 
-        public override Address ImageBase
+        public override ulong ImageBase
         {
             get { return 0; }
         }
 
-        public override Address Size
+        public override ulong Size
         {
             get { return 0; }
         }
@@ -382,12 +411,12 @@ namespace Microsoft.Diagnostics.Runtime.Desktop
             return new ClrType[0];
         }
 
-        public override Address MetadataAddress
+        public override ulong MetadataAddress
         {
             get { return 0; }
         }
 
-        public override Address MetadataLength
+        public override ulong MetadataLength
         {
             get { return 0; }
         }
@@ -397,7 +426,7 @@ namespace Microsoft.Diagnostics.Runtime.Desktop
             get { return null; }
         }
 
-        internal override Address GetDomainModule(ClrAppDomain appDomain)
+        internal override ulong GetDomainModule(ClrAppDomain appDomain)
         {
             return 0;
         }
@@ -412,43 +441,9 @@ namespace Microsoft.Diagnostics.Runtime.Desktop
             return null;
         }
 
-        public override Address AssemblyId
+        public override ulong AssemblyId
         {
             get { return _id; }
-        }
-
-        public override bool IsPdbLoaded
-        {
-            get { return false; }
-        }
-
-        public override bool IsMatchingPdb(string pdbPath)
-        {
-            return false;
-        }
-
-        public override void LoadPdb(string path)
-        {
-        }
-
-        public override object PdbInterface
-        {
-            get { return null; }
-        }
-
-        public override string TryDownloadPdb()
-        {
-            return null;
-        }
-
-        public override SourceLocation GetSourceInformation(uint token, int ilOffset)
-        {
-            return null;
-        }
-
-        public override SourceLocation GetSourceInformation(ClrMethod method, int ilOffset)
-        {
-            return null;
         }
     }
 }

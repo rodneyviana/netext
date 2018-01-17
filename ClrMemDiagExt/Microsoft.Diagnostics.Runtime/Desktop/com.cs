@@ -1,16 +1,7 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Text.RegularExpressions;
-using Address = System.UInt64;
-using System.Text;
-using System.Collections;
-using System.IO;
-using System.Reflection;
-using Microsoft.Diagnostics.Runtime;
 
 namespace Microsoft.Diagnostics.Runtime.Desktop
 {
@@ -21,27 +12,27 @@ namespace Microsoft.Diagnostics.Runtime.Desktop
             get { return _type; }
         }
 
-        public override Address InterfacePointer
+        public override ulong InterfacePointer
         {
             get { return _interface; }
         }
 
-        public DesktopInterfaceData(ClrType type, Address ptr)
+        public DesktopInterfaceData(ClrType type, ulong ptr)
         {
             _type = type;
             _interface = ptr;
         }
 
-        private Address _interface;
+        private ulong _interface;
         private ClrType _type;
     }
 
 
     internal class DesktopCCWData : CcwData
     {
-        public override Address IUnknown { get { return _ccw.IUnknown; } }
-        public override Address Object { get { return _ccw.Object; } }
-        public override Address Handle { get { return _ccw.Handle; } }
+        public override ulong IUnknown { get { return _ccw.IUnknown; } }
+        public override ulong Object { get { return _ccw.Object; } }
+        public override ulong Handle { get { return _ccw.Handle; } }
         public override int RefCount { get { return _ccw.RefCount + _ccw.JupiterRefCount; } }
 
         public override IList<ComInterfaceData> Interfaces
@@ -60,7 +51,7 @@ namespace Microsoft.Diagnostics.Runtime.Desktop
                 {
                     ClrType type = null;
                     if (interfaces[i].MethodTable != 0)
-                        type = _heap.GetGCHeapType(interfaces[i].MethodTable, 0);
+                        type = _heap.GetTypeByMethodTable(interfaces[i].MethodTable, 0);
 
                     _interfaces.Add(new DesktopInterfaceData(type, interfaces[i].InterfacePtr));
                 }
@@ -69,14 +60,14 @@ namespace Microsoft.Diagnostics.Runtime.Desktop
             }
         }
 
-        internal DesktopCCWData(DesktopGCHeap heap, Address ccw, ICCWData data)
+        internal DesktopCCWData(DesktopGCHeap heap, ulong ccw, ICCWData data)
         {
             _addr = ccw;
             _ccw = data;
             _heap = heap;
         }
 
-        private Address _addr;
+        private ulong _addr;
         private ICCWData _ccw;
         private DesktopGCHeap _heap;
         private List<ComInterfaceData> _interfaces;
@@ -85,12 +76,12 @@ namespace Microsoft.Diagnostics.Runtime.Desktop
     internal class DesktopRCWData : RcwData
     {
         //public ulong IdentityPointer { get; }
-        public override Address IUnknown { get { return _rcw.UnknownPointer; } }
-        public override Address VTablePointer { get { return _rcw.VTablePtr; } }
+        public override ulong IUnknown { get { return _rcw.UnknownPointer; } }
+        public override ulong VTablePointer { get { return _rcw.VTablePtr; } }
         public override int RefCount { get { return _rcw.RefCount; } }
-        public override Address Object { get { return _rcw.ManagedObject; } }
+        public override ulong Object { get { return _rcw.ManagedObject; } }
         public override bool Disconnected { get { return _rcw.IsDisconnected; } }
-        public override Address WinRTObject
+        public override ulong WinRTObject
         {
             get { return _rcw.JupiterObject; }
         }
@@ -127,7 +118,7 @@ namespace Microsoft.Diagnostics.Runtime.Desktop
                 {
                     ClrType type = null;
                     if (interfaces[i].MethodTable != 0)
-                        type = _heap.GetGCHeapType(interfaces[i].MethodTable, 0);
+                        type = _heap.GetTypeByMethodTable(interfaces[i].MethodTable, 0);
 
                     _interfaces.Add(new DesktopInterfaceData(type, interfaces[i].InterfacePtr));
                 }
@@ -136,7 +127,7 @@ namespace Microsoft.Diagnostics.Runtime.Desktop
             }
         }
 
-        internal DesktopRCWData(DesktopGCHeap heap, Address rcw, IRCWData data)
+        internal DesktopRCWData(DesktopGCHeap heap, ulong rcw, IRCWData data)
         {
             _addr = rcw;
             _rcw = data;
@@ -148,6 +139,6 @@ namespace Microsoft.Diagnostics.Runtime.Desktop
         private DesktopGCHeap _heap;
         private uint _osThreadID;
         private List<ComInterfaceData> _interfaces;
-        private Address _addr;
+        private ulong _addr;
     }
 }

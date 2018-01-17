@@ -103,7 +103,7 @@ namespace NetExt.Shim
 
                 dynamic dict = ((dynamic)this);
                 dynamic entries = dict.entries;
-                ClrInstanceField key = ((ClrType)entries).ArrayComponentType.GetFieldByName("key");
+                ClrInstanceField key = ((ClrType)entries).ComponentType.GetFieldByName("key");
 
                 // Two cases:  The key is an object or string, denoted by "System.__Canon", or it's a primitive.
                 //             otherwise we don't support it.
@@ -172,22 +172,22 @@ namespace NetExt.Shim
             {
                 int index = GetIndexFromObjects(indexes);
                 var itemsField = m_type.GetFieldByName("_items");
-                ulong addr = (ulong)itemsField.GetFieldValue(m_addr);
+                ulong addr = (ulong)itemsField.GetValue(m_addr);
 
                 // Populate length for bounds check.
                 if (m_len == -1)
                 {
                     var sizeField = m_type.GetFieldByName("_size");
-                    m_len = (int)sizeField.GetFieldValue(m_addr);
+                    m_len = (int)sizeField.GetValue(m_addr);
                 }
 
                 // If type is null, then we've hit a dac bug.  Attempt to work around it,
                 // but we'll have to give up if getting the object type directly doesn't work.
                 ClrType type = itemsField.Type;
-                if (type == null || type.ArrayComponentType == null)
+                if (type == null || type.ComponentType == null)
                 {
                     type = m_heap.GetObjectType(addr);
-                    if (type == null || type.ArrayComponentType == null)
+                    if (type == null || type.ComponentType == null)
                     {
                         result = new ClrNullValue(m_heap);
                         return true;
@@ -218,7 +218,7 @@ namespace NetExt.Shim
 
         private bool GetArrayValue(ClrType type, ulong addr, int index, out object result)
         {
-            var componentType = type.ArrayComponentType;
+            var componentType = type.ComponentType;
 
             // componentType being null is a dac bug which should only happen when we have an array of
             // value types, where we have never *actually* constructed one of the types.  If there are
@@ -242,7 +242,7 @@ namespace NetExt.Shim
             else if (componentType.IsObjectReference)
             {
                 addr = type.GetArrayElementAddress(addr, index);
-                if (!m_heap.GetRuntime().ReadPointer(addr, out addr) || addr == 0)
+                if (!m_heap.Runtime.ReadPointer(addr, out addr) || addr == 0)
                 {
                     result = new ClrNullValue(m_heap);
                     return true;
@@ -342,14 +342,14 @@ namespace NetExt.Shim
             if (IsDictionary())
             {
                 var countField = m_type.GetFieldByName("count");
-                m_len = (int)countField.GetFieldValue(m_addr);
+                m_len = (int)countField.GetValue(m_addr);
                 return m_len;
             }
 
             if (IsList())
             {
                 var sizeField = m_type.GetFieldByName("_size");
-                m_len = (int)sizeField.GetFieldValue(m_addr);
+                m_len = (int)sizeField.GetValue(m_addr);
                 return m_len;
             }
 
@@ -359,7 +359,7 @@ namespace NetExt.Shim
         public ClrType GetDictionaryKeyType()
         {
             dynamic entries = ((dynamic)this).entries;
-            ClrInstanceField key = ((ClrType)entries).ArrayComponentType.GetFieldByName("key");
+            ClrInstanceField key = ((ClrType)entries).ComponentType.GetFieldByName("key");
 
             if (key == null)
                 return null;
@@ -370,7 +370,7 @@ namespace NetExt.Shim
         public ClrType GetDictionaryValueType()
         {
             dynamic entries = ((dynamic)this).entries;
-            ClrInstanceField value = ((ClrType)entries).ArrayComponentType.GetFieldByName("value");
+            ClrInstanceField value = ((ClrType)entries).ComponentType.GetFieldByName("value");
 
             if (value == null)
                 return null;
@@ -430,9 +430,9 @@ namespace NetExt.Shim
                 throw new InvalidOperationException(string.Format("Type '{0}' does not contain a '{1}' field.", m_type.Name, binder.Name));
             }
 
-            if (field.IsPrimitive())
+            if (field.IsPrimitive)
             {
-                object value = field.GetFieldValue(m_addr, m_inner);
+                object value = field.GetValue(m_addr, m_inner);
                 if (value == null)
                     result = new ClrNullValue(m_heap);
                 else
@@ -440,16 +440,16 @@ namespace NetExt.Shim
 
                 return true;
             }
-            else if (field.IsValueClass())
+            else if (field.IsValueClass)
             {
-                ulong addr = field.GetFieldAddress(m_addr, m_inner);
+                ulong addr = field.GetAddress(m_addr, m_inner);
                 result = new ClrObject(m_heap, field.Type, addr, true);
                 return true;
             }
             else if (field.ElementType == ClrElementType.String)
             {
-                ulong addr = field.GetFieldAddress(m_addr, m_inner);
-                if (!m_heap.GetRuntime().ReadPointer(addr, out addr))
+                ulong addr = field.GetAddress(m_addr, m_inner);
+                if (!m_heap.Runtime.ReadPointer(addr, out addr))
                 {
                     result = new ClrNullValue(m_heap);
                     return true;
@@ -460,7 +460,7 @@ namespace NetExt.Shim
             }
             else
             {
-                object value = field.GetFieldValue(m_addr, m_inner);
+                object value = field.GetValue(m_addr, m_inner);
                 if (value == null)
                     result = new ClrNullValue(m_heap);
                 else

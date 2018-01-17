@@ -58,6 +58,7 @@ namespace NetExt.HeapCacheUtil
     
         public static void GetCommonMT(ClrRuntime Runtime, out ulong StringMT, out ulong ArrayMT, out ulong FreeMT)
         {
+            
             StringMT = 0;
             ArrayMT = 0;
             FreeMT = 0;
@@ -76,12 +77,17 @@ namespace NetExt.HeapCacheUtil
 
         public static ClrType GetTypeFromMT(ClrRuntime Runtime, ulong MethodTable)
         {
-            return RunMethod(Runtime.GetHeap(), "GetGCHeapType", (ulong)MethodTable, (ulong)0, (ulong)0) as ClrType;
+            return Runtime.Heap.GetTypeByMethodTable(MethodTable);
+            //return RunMethod(Runtime.GetHeap(), "GetGCHeapType", (ulong)MethodTable, (ulong)0, (ulong)0) as ClrType;
         }
 
         public static string GetNameForMT(ClrRuntime Runtime, ulong MethodTable)
         {
-            string name = RunMethod(Runtime, "GetNameForMT", MethodTable) as string;
+            ClrType tp = Runtime.Heap.GetTypeByMethodTable(MethodTable);
+            if (tp == null)
+                return null;
+
+            string name = tp.Name;  //RunMethod(Runtime, "GetNameForMT", MethodTable) as string;
             if (!String.IsNullOrEmpty(name))
             {
                 name.Replace('+', '_');
@@ -92,12 +98,15 @@ namespace NetExt.HeapCacheUtil
 
         public static uint GetOSThreadIdByAddress(ClrRuntime Runtime, ulong Address)
         {
+            return Runtime.Threads.First(t => t.Address == Address).OSThreadId;
+            /*
             uint OSThreadID = 0;
             if (Address == 0)
                 return 0;
             object thread = RunMethod(Runtime, "GetThread", Address);
             OSThreadID = (uint)GetMember(thread, "OSThreadID");
             return OSThreadID;
+             */
         }
 
         public static void GetThreadAllocationLimits(ClrRuntime Runtime, ulong Address, out ulong AllocContextPtr, out ulong AllocContextLimit)
@@ -110,19 +119,24 @@ namespace NetExt.HeapCacheUtil
             if (Address == 0)
                 return;
             object thread = RunMethod(Runtime, "GetThread", Address);
+            if (thread == null)
+                return;
             AllocContextPtr = (ulong)GetMember(thread, "AllocPtr");
             AllocContextLimit = (ulong)GetMember(thread, "AllocLimit");
         }
 
         public static ClrAppDomain[] GetDomains(ClrRuntime Runtime)
         {
+            ClrAppDomain system = Runtime.SystemDomain;
+            ClrAppDomain shared = Runtime.SharedDomain;
+            /*
             ulong systemDomain = 0;
             ulong sharedDomain = 0;
             GetSystemAndSharedAddress(Runtime, out systemDomain, out sharedDomain);
 
             ClrAppDomain system = RunMethod(Runtime, "InitDomain", systemDomain) as ClrAppDomain ;
             ClrAppDomain shared = RunMethod(Runtime, "InitDomain", sharedDomain) as ClrAppDomain;
-
+            */
             List<ClrAppDomain> domains = new List<ClrAppDomain>();
             domains.Add((ClrAppDomain)system);
 
@@ -134,8 +148,13 @@ namespace NetExt.HeapCacheUtil
 
         public static ClrType GetTypeFromEE(ClrRuntime Runtime, ulong EEClass)
         {
-            ClrHeap heap = Runtime.GetHeap();
-            ClrType type = null;
+            ClrHeap heap = Runtime.Heap;
+            //ClrType type = null;
+            ulong mt = heap.GetMethodTableByEEClass(EEClass);
+            if (mt == 0)
+                return null;
+            return heap.GetTypeByMethodTable(mt);
+            /*
             int max = heap.TypeIndexLimit;
             if (max < 1)
             {
@@ -150,6 +169,7 @@ namespace NetExt.HeapCacheUtil
                 throw new NullReferenceException("There is no object in the heap");
             ClrType EEType = (ClrType)RunMethod(type, "ConstructObjectType", EEClass);
             return EEType;
+             */
         }
 
 
@@ -252,6 +272,9 @@ namespace NetExt.HeapCacheUtil
 
         public static ulong GetEEFromMT(ClrRuntime Runtime, ulong MethodTable)
         {
+            return Runtime.Heap.GetEEClassByMethodTable(MethodTable);
+
+            /*
             object obj = RunMethod(Runtime, "GetMethodTableData", MethodTable);
             if (obj == null)
                 return 0;
@@ -259,6 +282,7 @@ namespace NetExt.HeapCacheUtil
             if (EEClass == null)
                 return 0;
             return (ulong)EEClass;
+             */
         }
         public const int ARRAYSTART = 0;
         public const int ARRAYELEMENTMT = 1;
@@ -354,8 +378,10 @@ namespace NetExt.HeapCacheUtil
 
         public static void GetSystemAndSharedAddress(ClrRuntime Runtime, out ulong AppDomainSystem, out ulong AppDomainShared)
         {
-            AppDomainSystem = 0;
-            AppDomainShared = 0;
+
+            AppDomainSystem = Runtime.SystemDomain.Address;
+            AppDomainShared = Runtime.SharedDomain.Address;
+            /*
             object store = RunMethod(Runtime, "GetAppDomainStoreData");
             object system = GetMember(store, "SharedDomain") as ulong?;
             object shared = GetMember(store, "SystemDomain") as ulong?;
@@ -363,7 +389,7 @@ namespace NetExt.HeapCacheUtil
                 AppDomainShared = (ulong)shared;
             if (system != null)
                 AppDomainSystem = (ulong)system;
-
+            */
         }
 
         public static ulong GetDomainFromMT(ClrRuntime Runtime, ulong MethodTable)
@@ -413,10 +439,14 @@ namespace NetExt.HeapCacheUtil
 
         public static ClrAppDomain GetDomainByAddress(ClrRuntime Runtime, ulong Address)
         {
+            var domain = GetDomains(Runtime).First(t => t.Address == Address);
+            return domain;
+            /*
             if (Address == 0)
                 return null;
             ClrAppDomain domain = RunMethod(Runtime, "InitDomain", Address) as ClrAppDomain;
             return domain;
+             */
         }
 
         public static object GetMember(object Source, string Field /*, Type castType=null */)
@@ -625,15 +655,18 @@ namespace NetExt.HeapCacheUtil
         {
             if (Type == null)
                 return 0UL;
+            return Type.MethodTable;
+            /*
             object temp = AdHoc.GetMember(Type, "_handle");
 
             if (temp as ulong? == null)
             {
-                temp = AdHoc.GetMember(Type.Heap.GetRuntime(), "ObjectMethodTable");
+                temp = AdHoc.GetMember(Type.Heap.Runtime, "ObjectMethodTable");
                 if(temp as ulong? == null)
                     return 0; ;
             }
             return (ulong)temp;
+            */
         }
 
         internal HeapStatItem(string Name, HeapCache Cache)
@@ -847,7 +880,7 @@ namespace NetExt.HeapCacheUtil
             if (cache != null) return;
             total = 0;
             cache = new Dictionary<string, CacheInfo>();
-            foreach (var obj in heap.EnumerateObjects())
+            foreach (var obj in heap.EnumerateObjectAddresses())
             {
                 string name = heap.GetObjectType(obj).Name;
 
@@ -1038,7 +1071,7 @@ namespace NetExt.HeapCacheUtil
                 fInfo = CacheFieldInfo.Fields(TheType).First(x => x.Name == fields[i]);
                 field = fInfo == null ? null : fInfo.BackField;
                 // At this level we cannot have a simple value
-                if (!field.IsObjectReference())
+                if (!field.IsObjectReference)
                     return GetDinamicFromAddress(Address);
 
                 if (fInfo.IsStatic)
@@ -1055,7 +1088,7 @@ namespace NetExt.HeapCacheUtil
                     }
                     else
                     {
-                        address = (ulong)((ClrInstanceField)field).GetFieldValue(address);
+                        address = (ulong)((ClrInstanceField)field).GetValue(address);
                     }
                 if (address == 0) return null;
                 type = heap.GetObjectType(address);
@@ -1067,7 +1100,7 @@ namespace NetExt.HeapCacheUtil
             field = fInfo.BackField;
             object value = null;
             
-            value = ((ClrInstanceField)field).GetFieldValue(address);
+            value = ((ClrInstanceField)field).GetValue(address);
             //if (field.Type.IsEnum)
             //    value = field.Type.GetEnumName(value);
 

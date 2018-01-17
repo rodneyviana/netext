@@ -108,6 +108,13 @@ EXT_COMMAND(wdo,
 
 		if(!forcearray && obj.NumComponents() > 0)
 		{
+			if((obj.TypeName() == L"System.Byte[]") || (obj.TypeName() == L"System.Char[]"))
+			{
+				string result = SpecialCases::GetRawArray(obj.Address());
+				Out("%s\n", result.c_str());
+				return;
+			}
+			/*
 			if(obj.TypeName() == L"System.Byte[]")
 			{
 				std::string strAddr(".printf \"%ma\",");
@@ -124,6 +131,7 @@ EXT_COMMAND(wdo,
 				Out("%s\n", result.c_str());
 				return;
 			}
+			*/
 		}
 		if(obj.NumComponents() > 0)
 		{

@@ -632,9 +632,13 @@ std::string SpecialCases::GetHexArray(CLRDATA_ADDRESS Obj, bool Padded, int Limi
 			if(!IsValidMemory(ptr.m_Offset))
 			{
 				if(Padded)
+				{
 					result.append("?? ");
+				}
 				else
+				{
 					result.append("??");
+				}
 				if(Limit != 0)
 					bytes += '?';
 			} else
@@ -715,6 +719,26 @@ SVAL SpecialCases::GetBoxedValue(CLRDATA_ADDRESS Address)
 	return s;
 }
 
+void SpecialCases::PrintableString(std::string& Str, bool AllowNewLine)
+{
+	std::string tmpString;
+	for(int k=0;k<Str.size();k++)
+	{
+		bool valid = ((Str[k] == 13 || Str[k] == 10) && AllowNewLine) || (Str[k] > 31);
+		if(!valid)
+		{
+			char buff[8] = {0};
+			sprintf_s(buff, 8, "\\x%02x", Str[k]);
+			tmpString.append(buff);
+		} else
+		{
+			tmpString.append(Str.substr(k, 1));
+
+		}
+	}
+	Str = tmpString;
+}
+
 std::string SpecialCases::PrettyPrint(CLRDATA_ADDRESS Address, CLRDATA_ADDRESS MethodTable)
 {
 	if(Address == 0) return "";
@@ -729,6 +753,11 @@ std::string SpecialCases::PrettyPrint(CLRDATA_ADDRESS Address, CLRDATA_ADDRESS M
 		obj.Request(Address);
 	}
 	std::wstring methName = obj.TypeName();
+
+	if(obj.IsRuntime())
+	{
+		return CW2A(obj.GetRuntimeTypeName().c_str());
+	}
 
 	if(methName == L"System.DateTime")
 	{
@@ -768,6 +797,46 @@ std::string SpecialCases::PrettyPrint(CLRDATA_ADDRESS Address, CLRDATA_ADDRESS M
 
 	if(obj.IsArray())
 	{
+		if(obj.InnerComponentType() == ELEMENT_TYPE_STRING)
+		{
+			string tmpString;
+			if(obj.NumComponents() > 0)
+				tmpString = "{ ";
+			for(int i=0;i<min(5,obj.NumComponents());i++)
+			{
+				if(i>0) tmpString.append(", ");
+				CLRDATA_ADDRESS address = ObjDetail::GetPTR(obj.DataPtr() + i*obj.InnerComponentSize());
+
+				if(NULL == address)
+				{
+					tmpString.append("null");
+				} else
+				{
+					string part(CW2A(ObjDetail::String(address).c_str()));
+					tmpString.append("\"");
+					for(int k=0;k<min(30,part.size());k++)
+					{
+						if(part[k] < 32 || part[k] > 127)
+						{
+							char buff[8] = {0};
+							sprintf_s(buff, 8, "\\x%02x", part[k]);
+							tmpString.append(buff);
+						} else
+						{
+							if(part[k] == '\\' || part[k] == '"')
+								tmpString.append("\\");
+							tmpString.append(part.substr(k, 1));
+
+						}
+					}
+					if(part.size() > 30) tmpString.append("...");
+					tmpString.append("\"");
+				}
+			}
+			if(obj.NumComponents() > 5) tmpString.append(", ...");
+			tmpString.append(" }");
+			return tmpString;
+		}
 		string tmpString = GetHexArray(obj.Address(), true, 32);
 		if(tmpString.size() != 0)  // This is for future expansions, it will only return if there is a match
 			return tmpString;
@@ -785,18 +854,47 @@ std::string SpecialCases::GetRawArray(CLRDATA_ADDRESS Obj)
 		return result;
 	std::wstring className = obj.TypeName();
 
+	if(obj.NumComponents() == 0)
+		return result;
+	ExtRemoteData buff(obj.DataPtr(), obj.InnerComponentSize() * obj.NumComponents());
+	ULONG maxBytes = min(65536, obj.InnerComponentSize() * obj.NumComponents());
 	if(className == L"System.Byte[]")
 	{
-		string strAddr(".printf \"%ma\",");
-		strAddr.append(formathex(obj.DataPtr()));
-		result = Extension::Execute(strAddr);
+		char* rawBuf = new char[maxBytes];
+		ZeroMemory(rawBuf, maxBytes);
+		try
+		{
+			maxBytes = buff.ReadBuffer(rawBuf, maxBytes);
+			if(maxBytes != 0) rawBuf[maxBytes - 1]=0;
+
+		} catch (...)
+		{
+			rawBuf[0]=0;
+		}
+		result.append(rawBuf);
+		delete[] rawBuf;
+
 	}
 	if(className == L"System.Char[]")
 	{
-		string strAddr(".printf \"%mu\",");
-		strAddr.append(formathex(obj.DataPtr()));
-		result = Extension::Execute(strAddr);
+
+		wchar_t* rawBuf = new wchar_t[obj.NumComponents()];
+		ZeroMemory(rawBuf, maxBytes);
+		try
+		{
+			maxBytes = buff.ReadBuffer(rawBuf, maxBytes);
+			if(maxBytes != 0) rawBuf[(maxBytes / 2) - 1]=0;
+
+		} catch(...)
+		{
+			rawBuf[0]=0;
+		}
+		result.append(CW2A(rawBuf));
+			
+		delete[] rawBuf;
+
 	}
+	PrintableString(result, true);
 	return result;
 }
 SVAL SpecialCases::GetDbgVar(int DBGVar)
@@ -1252,6 +1350,17 @@ void DumpFields(CLRDATA_ADDRESS Address, std::vector<std::string> Fields, CLRDAT
 									(*Vars)[(string)CW2A(fields[i].FieldName.c_str())]=GetValue(ptr1, ELEMENT_TYPE_STRING);
 									fields[i].FieldDesc.corElementType = ELEMENT_TYPE_STRING;
 								}
+							} else
+							{
+								if(!Vars)
+								{
+									string tmpString = SpecialCases::PrettyPrint(ptr);
+									if(tmpString.size() > 0)
+									{
+										g_ExtInstancePtr->Out(" %s",
+											tmpString.c_str());
+									}
+								}
 							}
 						}
 					}
@@ -1268,10 +1377,29 @@ void DumpFields(CLRDATA_ADDRESS Address, std::vector<std::string> Fields, CLRDAT
 						}
 					} else
 					{
-						if(!Vars) g_ExtInstancePtr->Dml("%S %S = <link cmd=\"!wselect * from %p\">%S</link>\n", fields[i].mtName.c_str(), fields[i].FieldName.c_str(), ptr,
-							currObj->ValueString(fields[i].FieldDesc, currObj->Address(), currObj->IsValueType()).c_str());
+						string tmpString = SpecialCases::PrettyPrint(ptr);
+						if(!Vars)
+						{
+							if(tmpString.size() == 0)
+								g_ExtInstancePtr->Dml("%S %S = <link cmd=\"!wselect * from %p\">%S</link>\n", fields[i].mtName.c_str(), fields[i].FieldName.c_str(), ptr,
+								currObj->ValueString(fields[i].FieldDesc, currObj->Address(), currObj->IsValueType()).c_str());
+							else
+								g_ExtInstancePtr->Dml("%S %S = <link cmd=\"!wselect * from %p\">%s</link>\n", fields[i].mtName.c_str(), fields[i].FieldName.c_str(), ptr,
+									tmpString.c_str());
+						}
 						else
 							(*Vars)[(string)CW2A(fields[i].FieldName.c_str())]=GetValue(ptr1, (CorElementType)fields[i].FieldDesc.corElementType);
+						if(!Vars)
+						{
+							string tmpString = SpecialCases::PrettyPrint(ptr);
+							if(tmpString.size() > 0)
+							{
+								g_ExtInstancePtr->Out(" %s",
+								tmpString.c_str());
+							}
+
+						}
+
 					}
 			} else
 				if(fields[i].FieldDesc.corElementType == ELEMENT_TYPE_VALUETYPE)
@@ -1280,10 +1408,25 @@ void DumpFields(CLRDATA_ADDRESS Address, std::vector<std::string> Fields, CLRDAT
 					//Dml("<link cmd=\"!wdo -mt %p %p\">%S</link>", field->MTOfType ,ptr, ObjDetail::ValueString(*field, addr, true).c_str());
 					if(!Vars)
 					{
-						g_ExtInstancePtr->Dml("%S %S = <link cmd=\"!wselect mt %I64u * from %p\">%S</link>", fields[i].mtName.c_str(), fields[i].FieldName.c_str(),
-							fields[i].FieldDesc.MethodTable, ptr,
-							currObj->ValueString(fields[i].FieldDesc, currObj->Address(), currObj->IsValueType()).c_str());
+						string pp = SpecialCases::PrettyPrint(ptr, fields[i].FieldDesc.MethodTable);
+
+						if(pp.size() > 0)
+						{
+							
+							g_ExtInstancePtr->Dml("%S %S = <link cmd=\"!wselect mt %8x * from %8x\">%s</link>", fields[i].mtName.c_str(), fields[i].FieldName.c_str(),
+								fields[i].FieldDesc.MethodTable, ptr,
+								pp.c_str());
+
+						} else
+						{
+
+			
+							g_ExtInstancePtr->Dml("%S %S = <link cmd=\"!wselect mt %8x * from %8x\">%S</link>", fields[i].mtName.c_str(), fields[i].FieldName.c_str(),
+								fields[i].FieldDesc.MethodTable, ptr,
+								currObj->ValueString(fields[i].FieldDesc, currObj->Address(), currObj->IsValueType()).c_str());
+						}
 						wstring methName = GetMethodName(fields[i].FieldDesc.MethodTable);
+						/*
 						if(methName == L"System.DateTime")
 						{
 							ExtRemoteData dt(ptr, sizeof(UINT64));
@@ -1300,6 +1443,7 @@ void DumpFields(CLRDATA_ADDRESS Address, std::vector<std::string> Fields, CLRDAT
 						{
 							g_ExtInstancePtr->Out(" %s",SpecialCases::ToGuid(ptr).c_str());
 						}
+						*/
 						g_ExtInstancePtr->Out("\n");
 					}
 					else

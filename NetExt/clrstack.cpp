@@ -7,10 +7,19 @@
 
 #include "NetExt.h"
 
-EXT_COMMAND(wclrstack,
-	"Dump current stack trace",
-	"{;e,o,d=@$peb;peb;PEB address}")
+EXT_COMMAND(wk,
+	"Dump current stack trace in mixed mode (native/managed). Use !whelp wk for more help",
+	"{{custom}}")
 {
+	DO_INIT_API;
+	pTarget->DumpMixedStack();
+}
+
+EXT_COMMAND(wclrstack,
+	"Dump current stack trace. Use !whelp wclrstack for more help",
+	"{{custom}}")
+{
+	
 	//
 	// To resolve a problem in live targets
 	//
@@ -21,6 +30,7 @@ EXT_COMMAND(wclrstack,
 		if(flushed == 0)
 			pRuntime->Flush();
 	}
+	
 	DO_INIT_API;
 	using namespace NetExtShim;
 

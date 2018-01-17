@@ -2,8 +2,10 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
-using Address = System.UInt64;
+using System.Runtime.InteropServices;
 
 namespace Microsoft.Diagnostics.Runtime.Desktop
 {
@@ -11,25 +13,52 @@ namespace Microsoft.Diagnostics.Runtime.Desktop
     {
         public override string ToString()
         {
-            return string.Format("<ClrMethod signature='{0}' />", _sig);
+            return _sig;
         }
 
-        internal static DesktopMethod Create(DesktopRuntimeBase runtime, IMetadata metadata, IMethodDescData mdData)
+        internal static DesktopMethod Create(DesktopRuntimeBase runtime, ICorDebug.IMetadataImport metadata, IMethodDescData mdData)
         {
             if (mdData == null)
                 return null;
 
-            MethodAttributes attrs = (MethodAttributes)0;
-            if (metadata != null)
-            {
-                int pClass, methodLength;
-                uint blobLen, codeRva, implFlags;
-                IntPtr blob;
-                if (metadata.GetMethodProps(mdData.MDToken, out pClass, null, 0, out methodLength, out attrs, out blob, out blobLen, out codeRva, out implFlags) < 0)
-                    attrs = (MethodAttributes)0;
-            }
+            MethodAttributes attrs = 0;
+            int pClass, methodLength;
+            IntPtr blob;
+            uint blobLen, codeRva, implFlags;
+            if (metadata == null || metadata.GetMethodProps(mdData.MDToken, out pClass, null, 0, out methodLength, out attrs, out blob, out blobLen, out codeRva, out implFlags) < 0)
+                attrs = 0;
 
             return new DesktopMethod(runtime, mdData.MethodDesc, mdData, attrs);
+        }
+        
+        internal void AddMethodHandle(ulong methodDesc)
+        {
+            if (_methodHandles == null)
+                _methodHandles = new List<ulong>(1);
+
+            _methodHandles.Add(methodDesc);
+        }
+
+        public override ulong MethodDesc
+        {
+            get
+            {
+                if (_methodHandles != null && _methodHandles[0] != 0)
+                    return _methodHandles[0];
+
+                return EnumerateMethodDescs().FirstOrDefault();
+            }
+        }
+
+        public override IEnumerable<ulong> EnumerateMethodDescs()
+        {
+            if (_methodHandles == null)
+                if(_type != null) _type.InitMethodHandles();
+
+            if (_methodHandles == null)
+                _methodHandles = new List<ulong>();
+
+            return _methodHandles;
         }
 
         internal static ClrMethod Create(DesktopRuntimeBase runtime, IMethodDescData mdData)
@@ -38,7 +67,7 @@ namespace Microsoft.Diagnostics.Runtime.Desktop
                 return null;
 
             DesktopModule module = runtime.GetModule(mdData.Module);
-            return Create(runtime, module != null ? module.GetMetadataImport() : null, mdData);
+            return Create(runtime, module == null ? null : module.GetMetadataImport(), mdData);
         }
 
         public DesktopMethod(DesktopRuntimeBase runtime, ulong md, IMethodDescData mdData, MethodAttributes attrs)
@@ -49,8 +78,10 @@ namespace Microsoft.Diagnostics.Runtime.Desktop
             _jit = mdData.JITType;
             _attrs = attrs;
             _token = mdData.MDToken;
-            var heap = (DesktopGCHeap)runtime.GetHeap();
-            _type = heap.GetGCHeapType(mdData.MethodTable, 0);
+            _gcInfo = mdData.GCInfo;
+            var heap = runtime.Heap;
+            _type = (DesktopHeapType)heap.GetTypeByMethodTable(mdData.MethodTable, 0);
+            _hotColdInfo = new HotColdRegions() { HotStart = _ip, HotSize = mdData.HotSize, ColdStart = mdData.ColdStart, ColdSize = mdData.ColdSize };
         }
 
         public override string Name
@@ -75,7 +106,7 @@ namespace Microsoft.Diagnostics.Runtime.Desktop
             }
         }
 
-        public override Address NativeCode
+        public override ulong NativeCode
         {
             get { return _ip; }
         }
@@ -90,46 +121,21 @@ namespace Microsoft.Diagnostics.Runtime.Desktop
             return _sig;
         }
 
-        public override SourceLocation GetSourceLocationForOffset(Address nativeOffset)
+        public override int GetILOffset(ulong addr)
         {
-            ClrType type = Type;
-            if (type == null)
-                return null;
-
-            DesktopModule module = (DesktopModule)type.Module;
-            if (module == null)
-                return null;
-
-            if (!module.IsPdbLoaded)
-            {
-                string val = module.TryDownloadPdb();
-                if (val == null)
-                    return null;
-
-                module.LoadPdb(val);
-                if (!module.IsPdbLoaded)
-                    return null;
-            }
-
             ILToNativeMap[] map = ILOffsetMap;
             if (map == null)
-                return null;
+                return -1;
 
             int ilOffset = 0;
             if (map.Length > 1)
                 ilOffset = map[1].ILOffset;
 
             for (int i = 0; i < map.Length; ++i)
-            {
-                //bug bug: we dont use nativeOffset
-                if (map[i].StartAddress <= _ip && _ip <= map[i].EndAddress)
-                {
-                    ilOffset = map[i].ILOffset;
-                    break;
-                }
-            }
+                if (map[i].StartAddress <= addr && addr <= map[i].EndAddress)
+                    return map[i].ILOffset;
 
-            return module.GetSourceInformation(MetadataToken, ilOffset);
+            return ilOffset;
         }
 
         public override bool IsStatic
@@ -202,6 +208,13 @@ namespace Microsoft.Diagnostics.Runtime.Desktop
             }
         }
 
+        public override HotColdRegions HotColdInfo
+        {
+            get
+            {
+                return _hotColdInfo;
+            }
+        }
 
         public override ILToNativeMap[] ILOffsetMap
         {
@@ -224,13 +237,90 @@ namespace Microsoft.Diagnostics.Runtime.Desktop
             get { return _type; }
         }
 
+        public override ulong GCInfo
+        {
+            get
+            {
+                return _gcInfo;
+            }
+        }
+
+        
+        public override ILInfo IL
+        {
+            get
+            {
+                if (_il == null)
+                    InitILInfo();
+
+                return _il;
+            }
+        }
+        
+        private unsafe void InitILInfo()
+        {
+            ClrModule module = Type == null ? null : Type.Module;
+            if (module != null && module.MetadataImport is ICorDebug.IMetadataImport)
+            {
+                ICorDebug.IMetadataImport metadataImport = module.MetadataImport as ICorDebug.IMetadataImport;
+                uint rva, flags, tmp;
+                byte b;
+                if (metadataImport.GetRVA(_token, out rva, out flags) == 0)
+                {
+                    ulong il = _runtime.GetILForModule(module, rva);
+                    if (il != 0)
+                    {
+                        _il = new ILInfo();
+
+                        if (_runtime.ReadByte(il, out b))
+                        {
+                            bool isTinyHeader = ((b & (IMAGE_COR_ILMETHOD.FormatMask >> 1)) == IMAGE_COR_ILMETHOD.TinyFormat);
+                            if (isTinyHeader)
+                            {
+                                _il.Address = il + 1;
+                                _il.Length = b >> (int)(IMAGE_COR_ILMETHOD.FormatShift - 1);
+                                _il.LocalVarSignatureToken = IMAGE_COR_ILMETHOD.mdSignatureNil;
+                            }
+                            else if (_runtime.ReadDword(il, out tmp))
+                            {
+                                _il.Flags = tmp;
+                                _runtime.ReadDword(il + 4, out tmp);
+                                _il.Length = (int)tmp;
+                                _runtime.ReadDword(il + 8, out tmp);
+                                _il.LocalVarSignatureToken = tmp;
+                                _il.Address = il + 12;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+
         private uint _token;
         private ILToNativeMap[] _ilMap;
         private string _sig;
         private ulong _ip;
+        private ulong _gcInfo;
         private MethodCompilationType _jit;
         private MethodAttributes _attrs;
         private DesktopRuntimeBase _runtime;
-        private ClrType _type;
+        private DesktopHeapType _type;
+        private List<ulong> _methodHandles;
+        private ILInfo _il;
+        private HotColdRegions _hotColdInfo;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct IMAGE_COR_ILMETHOD
+    {
+        public uint FlagsSizeStack;
+        public uint CodeSize;
+        public uint LocalVarSignatureToken;
+
+        public const uint FormatShift = 3;
+        public const uint FormatMask = (uint)(1 << (int)FormatShift) - 1;
+        public const uint TinyFormat = 0x2;
+        public const uint mdSignatureNil = 0x11000000;
     }
 }

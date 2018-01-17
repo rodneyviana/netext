@@ -77,6 +77,13 @@ namespace NetExt.Shim
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
         [PreserveSig]
         int MakeSource();
+        [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
+        [PreserveSig]
+        int OpenSource(ulong Address);
+        [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
+        [PreserveSig]
+        int DumpMixedStack();
+
     }
 
     [ComVisible(true)]

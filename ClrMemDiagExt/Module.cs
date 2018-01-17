@@ -278,7 +278,7 @@ namespace NetExt.Shim
                     return DebuggableAttribute.DebuggingModes.None;
                 }
                 
-                foreach(var module in DebugApi.Runtime.EnumerateModules())
+                foreach(var module in DebugApi.Runtime.Modules)
                 {
                     if(BaseAddress == module.ImageBase)
                     {

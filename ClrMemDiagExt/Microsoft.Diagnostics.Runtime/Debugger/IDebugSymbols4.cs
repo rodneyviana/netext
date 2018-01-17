@@ -218,7 +218,7 @@ namespace Microsoft.Diagnostics.Runtime.Interop
         [PreserveSig]
         new int SetScope(
             [In] UInt64 InstructionOffset,
-            [In] DEBUG_STACK_FRAME ScopeFrame,
+            [In] ref DEBUG_STACK_FRAME ScopeFrame,
             [In] IntPtr ScopeContext,
             [In] UInt32 ScopeContextSize);
 
@@ -783,6 +783,7 @@ namespace Microsoft.Diagnostics.Runtime.Interop
             [Out] out UInt32 RegionsAvail
             );
 
+        [Obsolete("Do not use: no longer implemented.", true)]
         [PreserveSig]
         new int GetSymbolEntryBySymbolEntry(
             [In, MarshalAs(UnmanagedType.LPStruct)] DEBUG_MODULE_AND_ID FromId,

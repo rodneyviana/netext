@@ -7,13 +7,36 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
+using Microsoft.Diagnostics.Runtime.Utilities;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
+using System.Diagnostics;
+using Microsoft.Diagnostics.Runtime.Utilities.Pdb;
 
 namespace NetExt.Shim
 {
 
     public delegate bool BreakPointCallBack(IDebugBreakpoint Bp, string BpExpression);
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct STACK_SRC_INFO
+    {
+        [MarshalAs(UnmanagedType.LPWStr)]
+        public string ImagePath;
+        [MarshalAs(UnmanagedType.LPWStr)]
+        public string ModuleName;
+        [MarshalAs(UnmanagedType.LPWStr)]
+        public string Function;
+        public uint Displacement;
+        public uint Row;
+        public uint Column;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct STACK_SYM_FRAME_INFO {
+     public DEBUG_STACK_FRAME_EX StackFrameEx;
+     public STACK_SRC_INFO SrcInfo;
+    }
 
     [StructLayout(LayoutKind.Sequential)]
     public struct MemLocation
@@ -316,6 +339,501 @@ namespace NetExt.Shim
         /// The section can be written to.
         /// </summary>
         MemoryWrite = 0x80000000
+    }
+
+
+    public struct FileAndLineNumber
+
+    {
+
+        public string File;
+
+        public int Line;
+
+        public ulong Address;
+
+        public bool IsManaged;
+        public string ToString(bool IsDml=false)
+        {
+            if(String.IsNullOrWhiteSpace(File))
+                return String.Empty;
+            if (IsDml)
+            {
+                if(IsManaged)
+                    return String.Format("[<link cmd=\"!wopensource 0x{0:x}\">{1}</link> @ {2}]", Address, File, Line);
+                return String.Format("[<link cmd=\".open -a {0:x}\">{1}</link> @ {2}]", Address, File, Line);
+            }
+            return String.Format("[{0} @ {1}]", File, Line);
+        }
+
+    }
+
+    public class StackFrame
+    {
+        #region ManagedSymbol
+        private Dictionary<PdbInfo, PdbReader> s_pdbReaders = new Dictionary<PdbInfo, PdbReader>();
+
+        public FileAndLineNumber ManagedSourceLocation
+
+        {
+            get
+            {
+
+                PdbReader reader = GetReaderForFrame();
+
+                if (reader == null)
+
+                    return new FileAndLineNumber();
+
+
+
+                PdbFunction function = reader.GetFunctionFromToken(MethodDesc.MetadataToken);
+
+                int ilOffset = ILOffset;
+
+                var nearest = FindNearestLine(function, ilOffset);
+                if(!String.IsNullOrEmpty(nearest.File))
+                {
+                    nearest.IsManaged = IsManaged;
+                    nearest.Address = frame.InstructionOffset;
+                }
+
+                return nearest;
+            }
+
+        }
+
+
+        public FileAndLineNumber SourceLocation
+        {
+            get
+            {
+                var method = MethodDesc;
+                if(method != null)
+                {
+                    return ManagedSourceLocation;
+                }
+                IDebugSymbols5 symbol = (IDebugSymbols5)DebugApi.Client;
+
+                var retValue = new FileAndLineNumber { File = String.Empty, Line = -1 };
+
+                if (symbol == null)
+                {
+                    return retValue;
+                }
+
+                StringBuilder filename = new StringBuilder(1000);
+                uint line = 0;
+                uint size = 1000;
+                ulong displ = 0;
+                var hr = symbol.GetLineByOffset(frame.InstructionOffset, out line, filename, (int)size, out size, out displ);
+                if (hr != 0)
+                    return retValue;
+                retValue.File = filename.ToString();
+                retValue.Line = (int)line;
+                retValue.IsManaged = false;
+                retValue.Address = frame.InstructionOffset;
+                return retValue;
+
+            }
+        }
+        private static FileAndLineNumber FindNearestLine(PdbFunction function, int ilOffset)
+
+        {
+
+            int distance = int.MaxValue;
+
+            FileAndLineNumber nearest = new FileAndLineNumber();
+
+
+            if (function == null || function.SequencePoints == null)
+                return nearest;
+            foreach (PdbSequencePointCollection sequenceCollection in function.SequencePoints)
+
+            {
+                if (sequenceCollection == null || sequenceCollection.Lines == null)
+                    continue;
+                foreach (PdbSequencePoint point in sequenceCollection.Lines)
+
+                {
+
+                    int dist = (int)Math.Abs(point.Offset - ilOffset);
+
+                    if (dist < distance)
+
+                    {
+
+                        nearest.File = sequenceCollection.File.Name;
+
+                        nearest.Line = (int)point.LineBegin;
+
+                    }
+                    distance = dist;
+                }
+
+            }
+
+
+
+            return nearest;
+
+        }
+
+
+        public bool IsManaged
+        {
+            get
+            {
+                return MethodDesc != null;
+            }
+        }
+
+        public int ILOffset
+
+        {
+            get
+            {
+
+                ulong ip = frame.InstructionOffset;
+
+                int last = -1;
+
+                if (MethodDesc != null && MethodDesc.ILOffsetMap != null)
+                {
+                    foreach (ILToNativeMap item in MethodDesc.ILOffsetMap)
+                    {
+
+                        if (item.StartAddress > ip)
+
+                            return last;
+
+
+
+                        if (ip <= item.EndAddress)
+
+                            return item.ILOffset;
+
+
+
+                        last = item.ILOffset;
+
+                    }
+                }
+
+
+
+                return last;
+            }
+        }
+
+
+
+
+
+        private PdbReader GetReaderForFrame()
+
+        {
+
+            ClrModule module = ManagedModule;
+
+            PdbInfo info = module == null ? null : module.Pdb;
+
+
+
+            PdbReader reader = null;
+
+            if (info != null)
+
+            {
+
+                if (!s_pdbReaders.TryGetValue(info, out reader))
+
+                {
+                    SymbolLocator locator = DebugApi.Runtime.DataTarget.SymbolLocator;
+                    locator.SymbolPath = DebugApi.SymPath;
+                    string pdbPath = locator.FindPdb(info);
+                    try
+                    {
+                        if (pdbPath != null)
+
+                            reader = new PdbReader(pdbPath);
+                    } catch(Exception ex)
+                    {
+                        Exports.WriteLine("Error: {0}", ex.ToString());
+                    }
+
+
+                    s_pdbReaders[info] = reader;
+
+                }
+
+            }
+
+
+
+            return reader;
+
+        }
+
+
+
+
+
+        #endregion
+
+        private DEBUG_STACK_FRAME_EX frame;
+        public StackFrame()
+        { }
+
+        public StackFrame(DEBUG_STACK_FRAME Frame)
+        {
+            frame = new DEBUG_STACK_FRAME_EX(Frame);
+        }
+
+        public StackFrame(DEBUG_STACK_FRAME_EX Frame)
+        {
+            frame = Frame;
+        }
+
+        public UInt64 InstructionOffset
+        {
+            get
+            {
+                return frame.InstructionOffset;
+            }
+        }
+        public UInt64 ReturnOffset
+        {
+            get
+            {
+                return frame.ReturnOffset;
+            }
+        }
+        public UInt64 FrameOffset
+        {
+            get
+            {
+                return frame.FrameOffset;
+            }
+        }
+
+        public UInt64 StackOffset
+        {
+            get
+            {
+                return frame.StackOffset;
+            }
+        }
+
+        public UInt64 FuncTableEntry
+        {
+            get
+            {
+                if(frame.FuncTableEntry == 0)
+                {
+                    if(MethodDesc != null)
+                    {
+                        frame.FuncTableEntry = MethodDesc.NativeCode;
+                    } else
+                    {
+                        
+                        IDebugSymbols5 symbol = (IDebugSymbols5)DebugApi.Client;
+                        StringBuilder Name = new StringBuilder(1000);
+                        uint size = 0;
+                        ulong displ = 0;
+                        if (symbol.GetNameByOffset(frame.InstructionOffset, Name, 100, out size, out displ) == (int)HRESULT.S_OK)
+                        {
+                            symbol.GetOffsetByName(Name.ToString(), out frame.FuncTableEntry);
+                        }
+                    }
+                }
+                return frame.FuncTableEntry;
+            }
+        }
+        public UInt64 GetParam(int Index)
+        {
+
+
+
+            return 0;
+            /*
+                fixed (ulong* param  = &frame.Params[Index])
+                {
+                    return param;
+                }
+                */
+        }
+
+        public UInt32 Virtual
+        {
+            get
+            {
+                return frame.Virtual;
+                
+            }
+        }
+        public UInt32 FrameNumber
+        {
+            get
+            {
+                return frame.FrameNumber;
+            }
+        }
+
+        private ulong funcEntry;
+
+        private string symbolStr;
+        public ulong Displacement
+        { set; get;  }
+
+
+        public ClrMethod MethodDesc
+        {
+            get
+            {
+                return DebugApi.Runtime.GetMethodByAddress(frame.InstructionOffset);
+            }
+        }
+
+        public ClrModule ManagedModule
+        {
+            get
+            {
+                var md = MethodDesc;
+
+                if (md == null)
+                    return null;
+                return md.Type.Module;
+            }
+        }
+        private void EnsureSymbol()
+        {
+            DebugApi.INIT_API();
+            IDebugSymbols5 symbol = (IDebugSymbols5)DebugApi.Client;
+            StringBuilder Name = new StringBuilder(1000);
+            uint size = 0;
+            ulong displ = 0;
+            if (symbol.GetNameByOffset(frame.InstructionOffset, Name, 100, out size, out displ) != (int)HRESULT.S_OK || /* Name.ToString().StartsWith("clr!") || */
+                Name.ToString().StartsWith("mscorlib"))
+            {
+                DebugApi.INIT_CLRAPI();
+                ClrMethod met = DebugApi.Runtime.GetMethodByAddress(frame.InstructionOffset);
+                if (met != null)
+                {
+                    Name.Clear();
+                    string modName = Path.GetFileNameWithoutExtension(met.Type.Module.Name);
+                    displ = frame.InstructionOffset - met.NativeCode;
+                    funcEntry = met.NativeCode;
+                    
+
+                    //symbol.AddSyntheticModule(met.Type.Module.ImageBase, (uint)met.Type.Module.Size, met.Type.Module.Name, modName, DEBUG_ADDSYNTHMOD.DEFAULT);
+                    DEBUG_MODULE_AND_ID modid;
+                    Name.Append(modName);
+                    Name.Append('!');
+                    Name.Append(met.GetFullSignature());
+
+                    ulong codeSize = met.ILOffsetMap != null && met.ILOffsetMap.Length > 0 ? (met.ILOffsetMap[met.ILOffsetMap.Length - 1].EndAddress - met.NativeCode)
+                        : displ + 10;
+                    int r = symbol.AddSyntheticSymbol(met.NativeCode, (uint)codeSize, met.GetFullSignature(),
+                        DEBUG_ADDSYNTHSYM.DEFAULT, out modid);
+                    DebugApi.DebugWriteLine("Start: {0:%p}, Size: 0x{1:x} ModBase: {2:%p} {3} {4}", met.NativeCode, (uint)codeSize, modid.ModuleBase, Name.ToString(),
+                        (HRESULT)r);
+
+
+                }
+                else
+                {
+
+                    Name.Append(String.Format(DebugApi.pointerFormat("{0:%p}"), frame.InstructionOffset));
+                }
+
+            }
+            Displacement = displ;
+            if (displ > 0)
+                Name.Append(String.Format("+0x{0:x}", displ));
+            //return Name.ToString();
+
+
+        }
+
+        public ulong FuncEntry
+        {
+            get {
+                if(funcEntry == 0 && frame.FuncTableEntry == 0)
+                {
+                    string str = Symbol;
+                    
+                }
+
+                return funcEntry;
+            }
+        }
+        /* DEBUG_STACK_FRAME_EX */
+        public UInt32 InlineFrameContext
+        {
+            get
+            {
+                return frame.InlineFrameContext;
+            }
+        }
+
+        public string Symbol
+        {
+            get
+            {
+                DebugApi.INIT_API();
+                IDebugSymbols5 symbol = (IDebugSymbols5)DebugApi.Client;
+                StringBuilder Name = new StringBuilder(1000);
+                uint size = 0;
+                ulong displ = 0;
+                if (symbol.GetNameByOffset(frame.InstructionOffset, Name, 100, out size, out displ) != (int)HRESULT.S_OK || /* Name.ToString().StartsWith("clr!") || */
+                    Name.ToString().StartsWith("mscorlib"))
+                {
+                    DebugApi.INIT_CLRAPI();
+                    ClrMethod met = DebugApi.Runtime.GetMethodByAddress(frame.InstructionOffset);
+                    if (met != null)
+                    {
+                        Name.Clear();
+                        string modName = Path.GetFileNameWithoutExtension(met.Type.Module.Name);
+                        displ = frame.InstructionOffset - met.NativeCode;
+                        funcEntry = met.NativeCode;
+                        
+                        //symbol.AddSyntheticModule(met.Type.Module.ImageBase, (uint)met.Type.Module.Size, met.Type.Module.Name, modName, DEBUG_ADDSYNTHMOD.DEFAULT);
+                        //DEBUG_MODULE_AND_ID modid;
+                        Name.Append(modName);
+                        Name.Append('!');
+                        Name.Append(met.GetFullSignature());
+
+                        ulong codeSize = met.ILOffsetMap != null && met.ILOffsetMap.Length > 0 ? (met.ILOffsetMap[met.ILOffsetMap.Length - 1].EndAddress - met.NativeCode)
+                            : displ + 10;
+                        int r = 0;
+                        //r = symbol.AddSyntheticSymbol(met.NativeCode, (uint)codeSize, met.GetFullSignature(),
+                        //    DEBUG_ADDSYNTHSYM.DEFAULT, out modid);
+                        //DebugApi.DebugWriteLine("Start: {0:%p}, Size: 0x{1:x} ModBase: {2:%p} {3} {4}", met.NativeCode, (uint)codeSize, modid.ModuleBase, Name.ToString(),
+                        //    (HRESULT)r);
+
+
+                    }
+                    else
+                    {
+                        
+                        Name.Append(String.Format(DebugApi.pointerFormat("{0:%p}"), frame.InstructionOffset));
+                    }
+
+                }
+
+                if (displ > 0)
+                    Name.Append(String.Format("+0x{0:x}", displ));
+                return Name.ToString();
+
+            }
+        }
+
+        public override string ToString()
+        {
+            return String.Format(DebugApi.pointerFormat("{0:%p} {1:%p} {2}"), frame.FrameOffset, frame.ReturnOffset, Symbol);
+
+        }
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -727,17 +1245,49 @@ namespace NetExt.Shim
         public const uint DEBUG_ANY_ID = 0xffffffff;
         public const uint DEBUG_DATA_SharedUserData = 100008;
 
-        [DllImport("DbgHelp.dll", CharSet=CharSet.Ansi)]
-        internal static extern bool SymMatchString(string Text, string Pattern, bool IsCase);
+        [DllImport("Dbghelp.dll")]
+        internal static extern bool SymGetSourceFile(
+            [In] IntPtr  hProcess,
+            [In] ulong Base,
+            [In] [MarshalAs(UnmanagedType.LPStr)] string Params,
+            [In] [MarshalAs(UnmanagedType.LPStr)] string FileSpec,
+            [Out] StringBuilder FilePath,
+            [In] uint   Size);
+
+        [DllImport("Dbghelp.dll")]
+        internal static extern bool SymInitialize(
+            [In] IntPtr hProcess,
+            [In] [MarshalAs(UnmanagedType.LPStr)] string UserSearchPath,
+            [In] [MarshalAs(UnmanagedType.Bool)] bool fInvadeProcess);
+
+        [DllImport("Dbghelp.dll")]
+        internal static extern bool SymCleanup(
+            [In] IntPtr hProcess);
+
+
+        [DllImport("Dbghelp.dll")]
+        internal static extern bool SymSetSearchPath(
+          [In] IntPtr hProcess,
+          [In] [MarshalAs(UnmanagedType.LPStr)] string SearchPath
+        );
+
+        [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool SetDllDirectory(string lpPathName);
 
         [DllImport("dbgeng.dll")]
         internal static extern uint DebugCreate(ref Guid InterfaceId, [MarshalAs(UnmanagedType.IUnknown)] out object Interface);
+
+        [DllImport("DbgHelp.dll", CharSet=CharSet.Ansi)]
+        internal static extern bool SymMatchString(string Text, string Pattern, bool IsCase);
+
 
         internal static EventsCallback eventsCallBack = null;
 
 
         internal static HRESULT LastHR;
         private static string processName = null;
+        internal static IntPtr processHandle = IntPtr.Zero;
 
         public static string ProcessName
         {
@@ -758,11 +1308,140 @@ namespace NetExt.Shim
             }
         }
 
+        public static bool StartSource()
+        {
+            if (processHandle == IntPtr.Zero)
+            {
+                GetExpressionDelegate del = new GetExpressionDelegate(GetExpression);
+                processHandle = Marshal.GetFunctionPointerForDelegate(del);
+                if (!SymInitialize(processHandle, SourcePath, false))
+                {
+                    processHandle = IntPtr.Zero;
+                    return false;
+                }
+            }
+            bool ret = SymSetSearchPath(processHandle, SymPath);
+            return true;
+        }
+
+        public static void EndSource()
+        {
+            if(processHandle != IntPtr.Zero)
+            {
+                SymCleanup(processHandle);
+            }
+        }
+
+        public static void UNINIT_API()
+        {
+            EndSource();
+        }
+
+        private static string SourcePathComposer(string OriginalPath, string compositeFolder)
+        {
+            if (File.Exists(compositeFolder))
+                return OriginalPath;
+            if (compositeFolder.ToLower().Trim().StartsWith("srv*"))
+                return null;
+            if (compositeFolder.ToLower().Trim().StartsWith("http"))
+                return null;
+            if (!Directory.Exists(compositeFolder))
+                return null;
+            string fileName = Path.GetFileName(OriginalPath);
+            List<string> parts = new List<string>(OriginalPath.Split("\\".ToArray(), StringSplitOptions.RemoveEmptyEntries));
+            while (parts.Count != 0)
+            {
+                if (parts[0].Contains(':'))
+                {
+                    parts.RemoveAt(0);
+                    continue;
+                }
+                string combPath = Path.Combine(compositeFolder, Path.Combine(parts.ToArray()));
+#if DEBUG
+                DebugApi.DebugWriteLine("Path: {0}", combPath);
+#endif
+                if(File.Exists(combPath))
+                {
+                    return combPath;
+                }
+                parts.RemoveAt(0);
+            }
+            
+
+            
+            return null;
+        }
+
+        public static string GetSourcePath(string InitialPath, ulong ModBase)
+        {
+            if(!StartSource())
+            {
+                return null;
+            }
+            StringBuilder path=new StringBuilder(3000);
+            IDebugAdvanced3 source = (IDebugAdvanced3)Client;
+            int foundElement = -1;
+            int foundSize = -1;
+            
+            int hr =  source.FindSourceFileAndToken(0, ModBase, InitialPath, DEBUG_FIND_SOURCE.DEFAULT, null, 0, out foundElement, path, 3000, out foundSize);
+            if(hr == 0)
+            {
+                return path.ToString();
+            }
+
+            
+            //hr = source.FindSourceFileAndToken(0, ModBase, InitialPath, DEBUG_FIND_SOURCE.DEFAULT, )
+
+            //path = new StringBuilder(3000);
+            //byte[] bytes = new byte[3000];
+            //hr = source.GetSourceFileInformation(DEBUG_SRCFILE.SYMBOL_TOKEN_SOURCE_COMMAND_WIDE, InitialPath, ModBase, 0,
+            //    bytes, 3000, out foundSize);
+
+            //hr = source.GetSourceFileInformation(DEBUG_SRCFILE.SYMBOL_TOKEN, InitialPath, ModBase, 0,
+            //    bytes, 3000, out foundSize);
+
+
+            path = new StringBuilder(3000);
+            if (!SymGetSourceFile(processHandle, ModBase, null, InitialPath, path, 3000))
+            {
+                path = new StringBuilder(3000);
+                if (!SymGetSourceFile(processHandle, ModBase, null, Path.GetFileName(InitialPath), path, 3000))
+                {
+                    string[] parts = (SourcePath ?? "").Split(';');
+                    foreach (var pathPart in parts)
+                    {
+                        string tmpPath = SourcePathComposer(InitialPath, pathPart);
+                        if (tmpPath != null)
+                            return tmpPath;
+                    }
+
+                }
+                return null;
+            }
+            return path.ToString();
+        }
+
+        //public static DateTime CurrentTimeDate
+        //{
+        //    get
+        //    {
+        //        INIT_API();
+
+        //        uint ticks = 0;
+        //        control.GetCurrentTimeDate(out ticks);
+
+        //        DateTime targetTime = new DateTime(1970,1,1);
+        //        targetTime += new TimeSpan(ticks*(new TimeSpan(0,0,1)).Ticks);
+
+        //        return targetTime;
+        //    }
+
+        //}
+		
         public static bool MatchPattern(string Text, string Pattern, bool IsCase = false)
         {
             return SymMatchString(Text, Pattern, IsCase);
-        }
-
+		}
 
         public static DateTime ConvertDateTime(WinApi.FILETIME Time)
         {
@@ -833,24 +1512,25 @@ kernel32!KUSER_SHARED_DATA
                 IDebugDataSpaces4 ds = (IDebugDataSpaces4)Client;
 
                 // Allocate and Zero Memory
-                IntPtr sharedData = Marshal.AllocHGlobal(sizeof(ulong));
-                Marshal.WriteInt64(sharedData, 0);
+                //IntPtr sharedData = Marshal.AllocHGlobal(sizeof(ulong));
+                //Marshal.WriteInt64(sharedData, 0);
                 try
                 {
 
-
+                    ulong Address = 0;
+                    byte[] sharedData = new byte[sizeof(ulong)];
                     uint dwSize = sizeof(ulong);
                     int hr = ds.ReadDebuggerData(DEBUG_DATA_SharedUserData,sharedData, dwSize, out dwSize);
 
-                    ulong Address = 0;
+                    
                     if (hr != 0)
                     {
-
+                        // It should never get here, but if it does, get the default address as per SDK
                         Address = 0x7FFE0000;
                     } else
                     {
-                        // It should never get here, but if it does, get the default address as per SDK
-                        Address = (ulong)Marshal.ReadInt64(sharedData);
+
+                        Address = BitConverter.ToUInt64(sharedData, 0); //(ulong)Marshal.ReadInt64(sharedData);
                     }
                     WinApi.KUSER_SHARED_DATA SHARED_DATA;
                     if (!ReadMemory<WinApi.KUSER_SHARED_DATA>(Address, out SHARED_DATA, true))
@@ -863,7 +1543,7 @@ kernel32!KUSER_SHARED_DATA
                 } finally
                 {
                     // No matter what happens, free memory
-                    Marshal.FreeHGlobal(sharedData);
+                    //Marshal.FreeHGlobal(sharedData);
                 }
             }
         }
@@ -876,7 +1556,7 @@ kernel32!KUSER_SHARED_DATA
                 if (String.IsNullOrWhiteSpace(SharedData.NtSystemRoot) || SharedData.NtSystemRoot[1] != ':') // Bad SharedData
                 {
                     uint ticks = 0;
-                    control.GetCurrentTimeDate(out ticks);
+                    Control.GetCurrentTimeDate(out ticks);
 
                     DateTime targetTime = new DateTime(1970, 1, 1);
                     targetTime += new TimeSpan(ticks * (new TimeSpan(0, 0, 1)).Ticks);
@@ -930,6 +1610,21 @@ kernel32!KUSER_SHARED_DATA
             }
         }
 
+        private static int isNewIDNA = -1;
+        public static bool IsNewIDNA
+        {
+            get
+            {
+                if (isNewIDNA != -1)
+                    return isNewIDNA == 1;
+
+                INIT_API();
+                // TTDAnalyze.dll
+                string chain = Execute(".chain").ToLower();
+                isNewIDNA = chain.Contains("ttdanalyze.dll") ? 1 : 0;
+                return isNewIDNA == 1;
+            }
+        }
         /// <summary>
         /// Return trues if it is a dump (full or not)
         /// </summary>
@@ -1033,6 +1728,73 @@ kernel32!KUSER_SHARED_DATA
             }
         }
 
+        public static IList<StackFrame> StackTrace
+        {
+            get
+            {
+                
+#if DEBUG
+                StringBuilder sb = new StringBuilder();
+#endif
+                INIT_API();
+                IDebugControl5 control = (IDebugControl5)Client;
+                
+                DEBUG_STACK_FRAME_EX[] frames = new DEBUG_STACK_FRAME_EX[1000];
+                uint total = 0;
+                List<StackFrame> listFrames = new List<StackFrame>();
+                if (control.GetStackTraceEx(0, 0, 0, frames, 1000, out total) == (int)HRESULT.S_OK)
+                {
+#if DEBUG
+                    /*
+                    sb.AppendFormat("if(SystemThreadId == 0x{0:x})\n", DebugApi.SystemThreadId);
+                    sb.Append("{");
+                    sb.AppendFormat("\tNativeFrames = new STACK_SYM_FRAME_INFO[{0}];\n", total);
+
+                    sb.AppendFormat("\tZeroMemory(NativeFrames, sizeof(STACK_SYM_FRAME_INFO)*{0});\n",total);
+                    //sb.Append("\tINLINE_FRAME_CONTEXT frameContext;\n");
+                    */
+
+#endif
+                    for (int i=0; i< total; i++)
+                    {
+                        listFrames.Add(new StackFrame(frames[i]));
+#if DEBUG
+                        /*
+                        FileAndLineNumber fl = listFrames[i].SourceLocation;
+                        
+
+                        
+                        sb.AppendFormat("\tframes[{0}].StackFrameEx.InstructionOffset = 0x{1:x16};\n", i, listFrames[i].InstructionOffset);
+                        sb.AppendFormat("\tframes[{0}].StackFrameEx.ReturnOffset = 0x{1:x16};\n", i, listFrames[i].ReturnOffset);
+                        sb.AppendFormat("\tframes[{0}].StackFrameEx.FrameOffset = 0x{1:x16};\n", i, listFrames[i].FrameOffset);
+                        sb.AppendFormat("\tframes[{0}].StackFrameEx.InlineFrameContext = 0x{1:x16};\n", i, listFrames[i].InlineFrameContext);
+                        string symb = String.IsNullOrWhiteSpace(listFrames[i].Symbol) ? "!" : listFrames[i].Symbol;
+                        string[] parts = symb.Split('!');
+                        if (parts.Length != 2)
+                            parts = new string[] { parts[0], "" };
+                        parts[1] = parts[1].Split('+')[0];
+                        parts[1] = parts[1].Split('(')[0];
+                        
+                        sb.AppendFormat("\tframes[{0}].SrcInfo.ModuleName = L\"{1}\";\n", i, parts[0]);
+                        sb.AppendFormat("\tframes[{0}].SrcInfo.Function = L\"{1}\";\n", i, parts[1]);
+                        sb.AppendFormat("\tframes[{0}].StackFrameEx.FuncTableEntry = 0x{1:x16};\n", i, listFrames[i].FuncTableEntry);
+                        sb.AppendFormat("\tframes[{0}].SrcInfo.ImagePath = L\"{1}\";\n", i, fl.File);
+                        
+                        sb.AppendFormat("\tframes[{0}].SrcInfo.Row = {1};\n", i, fl.Line);
+                        sb.AppendFormat("\tframes[{0}].SrcInfo.Column = 0;\n", i);
+                        */
+#endif
+                    }
+                }
+#if DEBUG
+                sb.Append("}\n");
+                DebugApi.WriteLine("{0}\n", sb.ToString());
+#endif
+                //DEBUG_STACK_FRAME frame1;
+                return listFrames;
+            }
+        }
+
         internal delegate uint IoctlDelegate(IG IoctlType, ref WDBGEXTS_CLR_DATA_INTERFACE lpvData, int cbSizeOfContext);
         internal delegate ulong GetExpressionDelegate([MarshalAs(UnmanagedType.LPStr)] string Expression);
         internal delegate uint CheckControlCDelegate();
@@ -1123,10 +1885,10 @@ kernel32!KUSER_SHARED_DATA
             Guid guid = new Guid("27fe5639-8407-4f47-8364-ee118fb08ac8");
             object obj;
             var hr = DebugCreate(ref guid, out obj);
-            if (hr < 0)
+            if (hr != 0)
             {
                 LastHR = Int2HResult(hr);
-                WriteLine("SourceFix: Unable to acquire client interface");
+                Debug.WriteLine("SourceFix: Unable to acquire client interface: {0}", LastHR); // This will cause stackoverflow
                 return null;
             }
             IDebugClient client = (IDebugClient5)obj;
@@ -1265,7 +2027,7 @@ kernel32!KUSER_SHARED_DATA
                 target = DataTarget.CreateFromDebuggerInterface(client);
 
 
-                runtime = target.CreateRuntime(clr.Interface); //target.ClrVersions.Single().CreateRuntime(clr.Interface);
+                runtime = target.ClrVersions.Single().CreateRuntime(clr.Interface); //target.ClrVersions.Single().CreateRuntime(clr.Interface);
             }
 
 
@@ -1318,29 +2080,42 @@ kernel32!KUSER_SHARED_DATA
             }
         }
 
+        public static ulong AddressFromScope
+        {
+            get
+            {
+                DEBUG_STACK_FRAME stackFrame;
+                IDebugSymbols4 symbols = (IDebugSymbols4)Client;
+                ulong IP;
 
+                if (symbols.GetScope(out IP, out stackFrame, IntPtr.Zero, 0) != 0)
+                {
+                    return 0; // Unable to get context
+                }
+                return IP;
+            }
+        }
 
         public static Module ModuleFromScope
         {
             get
             {
 
-                DEBUG_STACK_FRAME frame;
+                DEBUG_STACK_FRAME stackFrame;
                 IDebugSymbols4 symbols = (IDebugSymbols4)Client;
                 ulong IP;
 
-                if (symbols.GetScope(out IP, out frame, IntPtr.Zero, 0) == 0)
+                if(symbols.GetScope(out IP, out stackFrame, IntPtr.Zero, 0) == 0)
                 {
-                    StringBuilder modName = new StringBuilder(1500);
-                    uint size;
-                    ulong displ;
-                    if (symbols.GetNameByOffset(IP, modName, 1500, out size, out displ) != 0)
-                    {
-                        return null;
-                    }
-                    Module mod = new Module(modName.ToString().Split('!')[0]);
-                    if (mod.BaseAddress == 0)
-                        return null;
+                    StackFrame frame = new StackFrame(stackFrame);
+
+                    var manMod = frame.ManagedModule;
+                    Module mod;
+                    if (manMod == null)
+                        mod = new Module(frame.Symbol.Split('!')[0]);
+                    else
+                        mod = new Module(manMod.ImageBase);
+
                     return mod;
                 }
                 return null;
@@ -1424,28 +2199,94 @@ kernel32!KUSER_SHARED_DATA
 
         public static UInt64 GetIdnaPosition()
         {
-            Regex reg = new Regex(@"\s([0-9a-fA-F]+)\s");
-            var matches = reg.Matches(Execute("!idna.position -c"));
-            if (matches.Count != 1)
-                return 0;
-            return UInt64.Parse(matches[0].Value, NumberStyles.HexNumber);
+            if (IsNewIDNA)
+            {
+                Regex reg = new Regex(@":\s+0x([0-9a-fA-F]+)");
+                var matches = reg.Matches(Execute("dx @$curthread.TTD.Position.Sequence * 0x100000000 + (@$curthread.TTD.Position.Steps) : 0x11400000001"));
+                if (matches.Count != 1)
+                    return 0;
+                return UInt64.Parse(matches[0].Groups[1].Value, NumberStyles.HexNumber);
+            }
+            else
+            {
+                Regex reg = new Regex(@"\s([0-9a-fA-F]+)\s");
+                var matches = reg.Matches(Execute("!idna.position -c"));
+                if (matches.Count != 1)
+                    return 0;
+                return UInt64.Parse(matches[0].Groups[1].Value, NumberStyles.HexNumber);
+            }
+        }
+
+        public static string GetIdnaString(UInt64 Position = 0, bool IncludeCommand = false)
+        {
+            UInt64 pos = Position == 0 ? GetIdnaPosition() : Position;
+
+            if (IsNewIDNA)
+            {
+                uint seq = (uint)(pos >> 32);
+                uint steps = (uint)(pos & UInt32.MaxValue);
+                string newStr = String.Format("{0:X4}:{1:X4}", seq, steps);
+                return IncludeCommand ? ("!TTDExt.tt " + newStr) : newStr;
+            }
+
+            string oldStr = String.Format("{0:x8}", pos);
+            return IncludeCommand ? ("!idna.tt " + oldStr) : oldStr;
 
         }
 
+        public static string GetLinkToPos(UInt64 Position =  0)
+        {
+            string PositionToRestore = DebugApi.GetIdnaString(0, true);
+
+            return String.Format("<link cmd=\"{0}\">{1}</link>", PositionToRestore, DebugApi.GetIdnaString());
+
+        }
         public static UInt64 MoveToIdnaPosition(UInt64 Position)
         {
             if (Position == 100)
                 Position = 99; // iDNA bug
-            string cmd = Position < 101 ? String.Format("!idna.tt {0}", Position) : String.Format("!idna.tt {0:x8}", Position);
 
+            string cmd = null;
+
+            if (IsNewIDNA)
+            {
+                uint seq = (uint)(Position >> 32);
+                uint steps = (uint)(Position & UInt32.MaxValue);
+                cmd = Position < 101 ? String.Format("!TTDExt.tt {0}", Position) : String.Format("!TTDExt.tt {0:X4}:{1:X4}", seq, steps);
+            }
+            else
+            {
+                cmd = Position < 101 ? String.Format("!idna.tt {0}", Position) : String.Format("!idna.tt {0:x8}", Position);
+            }
             var res = Execute(cmd);
-            if (Position < 101)
+            if(IsNewIDNA)
+            {
+                if (res.Contains("Setting position"))
+                {
+                    Regex reg1 = new Regex(@":\s+([0-9a-fA-F]+:[0-9a-fA-F]+)");
+                    var matches1 = reg1.Matches(res);
+                    if (matches1.Count != 1)
+                        return 0;
+                    string pos = matches1[0].Groups[1].Value;
+
+                    UInt64 asHex = UInt64.Parse(pos.Split(new char[] { ':' })[0]
+                        , NumberStyles.HexNumber) * 0x100000000 +
+                        (UInt64.Parse(pos.Split(new char[] { ':' })[1]
+                        , NumberStyles.HexNumber) & UInt32.MaxValue);
+                    return asHex;
+                    
+                }
+                else
+                {
+                    return 0; // It did not work.
+                }
+            }
+            if(Position < 101)
             {
                 if (res.Contains("Success"))
                 {
                     return GetIdnaPosition();
-                }
-                else
+                } else
                 {
                     return 0; // It did not work.
                 }
@@ -1589,11 +2430,23 @@ kernel32!KUSER_SHARED_DATA
         }
         public static void Out(string Message)
         {
+            if (Control == null)
+            {
+                Debug.WriteLine("Control is null");
+                Debug.WriteLine("Skipped Message {0}", Message);
+                return;
+            }
             Control.ControlledOutput(DEBUG_OUTCTL.ALL_CLIENTS, DEBUG_OUTPUT.NORMAL, Message);
         }
 
         public static void OutDml(string Message)
         {
+            if (Control == null)
+            {
+                Debug.WriteLine("Control is null");
+                Debug.WriteLine("Skipped Message {0}", Message);
+                return;
+            }
             Control.ControlledOutput(DEBUG_OUTCTL.ALL_CLIENTS | DEBUG_OUTCTL.DML, DEBUG_OUTPUT.NORMAL, Message);
         }
 
@@ -1740,5 +2593,14 @@ kernel32!KUSER_SHARED_DATA
 
         #endregion
 
+
+        internal static void INIT_API(object DebugClient)
+        {
+            if (DebugApi.client == null)
+            {
+                DebugApi.client = (IDebugClient5)DebugClient;
+                DebugApi.control = (IDebugControl6)DebugApi.client;
+            }
+        }
     }
 }

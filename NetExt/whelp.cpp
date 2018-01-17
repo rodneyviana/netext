@@ -1,4 +1,4 @@
-// Source Date: Tuesday, October 10, 2017 6:32:21 PM
+// Source Date: Tuesday, January 16, 2018 1:28:46 PM
 // Source File: C:\Users\rviana\OneDrive\Projects\netext\NetExt\helptxt.txt
 // This file was generated. Do not modify. Modify Source File instead
 #include "netext.h"
@@ -35,14 +35,15 @@ EXT_COMMAND(whelp,
 		Dml("\n");
 		Dml("<b>Process commands</b>\n");
 		Dml("<b>----------------</b>\n");
-		Dml("!<link cmd=\"!whelp wclrstack\">wclrstack</link> - Dump current stack trace (only managed thread)\n");
+		Dml("!<link cmd=\"!whelp wclrstack\">wclrstack</link> - Dump current thread's stack trace (only managed thread)\n");
 		Dml("!<link cmd=\"!whelp wthreads\">wthreads</link> - show all managed threads\n");
 		Dml("!<link cmd=\"!whelp wver\">wver</link> - Show CLR version and extension version\n");
 		Dml("!<link cmd=\"!whelp wupdate\">wupdate</link> - Check for update\n");
 		Dml("!<link cmd=\"!whelp wdomain\">wdomain</link> - Dump all Application Domains\n");
-		Dml("<b>*(new)*</b> !<link cmd=\"!whelp wmodule\">wmodule</link> - List modules based on a pattern\n");
-		Dml("<b>*(new)*</b> !<link cmd=\"!whelp wtime\">wtime</link> - Show UTC and local time\n");
-		Dml("<b>*(new)*</b> !<link cmd=\"!whelp wapppool\">wapppool</link> - Display AppPool details\n");
+		Dml("!<link cmd=\"!whelp wmodule\">wmodule</link> - List modules based on a pattern\n");
+		Dml("!<link cmd=\"!whelp wtime\">wtime</link> - Show UTC and local time\n");
+		Dml("!<link cmd=\"!whelp wapppool\">wapppool</link> - Display AppPool details\n");
+		Dml("<b>*(new)*</b> !<link cmd=\"!whelp wk\">wk</link> - Dump current thread's stack trace in mixed mode (native and managed)\n");
 		Dml("\n");
 		Dml("<b>Special</b>\n");
 		Dml("<b>-------</b>\n");
@@ -59,8 +60,9 @@ EXT_COMMAND(whelp,
 		Dml("!<link cmd=\"!whelp wtoken\">wtoken</link> - Display WIF tokens and cookies\n");
 		Dml("!<link cmd=\"!whelp wclass\">wclass</link> - Dump classs layout and let you set breakpoint\n");
 		Dml("!<link cmd=\"!whelp wsocket\">wsocket</link> - Dump socket information\n");
-		Dml("<b>*(new)*</b> !<link cmd=\"!whelp wxml\">wxml</link> - Dump a XML document\n");
-		Dml("<b>*(new)*</b> !<link cmd=\"!whelp wmakesource\">wmakesource</link> - It tries to reflect the current frame into source code\n");
+		Dml("!<link cmd=\"!whelp wxml\">wxml</link> - Dump a XML document\n");
+		Dml("!<link cmd=\"!whelp wmakesource\">wmakesource</link> - It tries to reflect the current frame into source code\n");
+		Dml("<b>*(new)*</b> !<link cmd=\"!whelp wopensource\">wopensource</link> - Open source file based on the IP provided\n");
 		Dml("\n");
 		Dml("<b>Misc</b>\n");
 		Dml("<b>----</b>\n");
@@ -68,6 +70,116 @@ EXT_COMMAND(whelp,
 		Dml("<link cmd=\"!whelp expression\">expression</link> syntax\n");
 		Dml("<link cmd=\"!whelp functions\">functions</link> list *new functions*\n");
 		Dml("<link cmd=\"!whelp license\">license</link> see all licenses applied to this product\n");
+		Dml("\n");
+	return;
+	}
+	if(keyword=="wopensource")
+	{
+		Dml("Open a window with the source code and selected line mapped to a managed code address\n");
+		Dml("\n");
+		Dml("<b>Syntax:</b>\n");
+		Dml("-------\n");
+		Dml(" \n");
+		Dml("!wopensource &lt;address&gt;\n");
+		Dml("\n");
+		Dml("<b>Where:</b>\n");
+		Dml("&lt;address&gt; - is the expression of the address of native code\n");
+		Dml("\n");
+		Dml("* Note: if the source path is not configured correctly or the source code is not available, the code will not be displayed\n");
+		Dml("\n");
+		Dml("<b>Example:</b>\n");
+		Dml("----------\n");
+		Dml("\n");
+		Dml("<i>Open source code for SampleClass1.CPUHog</i>\n");
+		Dml("--------------------------------------------------\n");
+		Dml("\n");
+		Dml("0:016&gt; !wk\n");
+		Dml("Child-SP         RetAddr           Call Site\n");
+		Dml("00 0000007befffc5f0 00007ffbf1ef5a03 ConceptNetConsole1!ConceptNetConsole1.SampleClass1.CPUHog(System.Object)+0x14[C:\\Projects\\ConceptNetConsole1\\ConceptNetConsole1\\Program.cs @ 261]\n");
+		Dml("01 0000007befffc630 00007ffbf1ef589d clr!CallDescrWorkerInternal+0x83\n");
+		Dml("02 0000007befffc670 00007ffbf1f3324f clr!CallDescrWorkerWithHandler+0x4e\n");
+		Dml("03 0000007befffc6d0 00007ffbf1f986bd clr!DispatchCallDebuggerWrapper+0x1f\n");
+		Dml("04 0000007befffc790 00007ffbf1f98df2 clr!DispatchCall+0x79\n");
+		Dml("05 0000007befffcaa0 00007ffbf1f9b0ab clr!CrossDomainChannel::MarshalAndCall_Wrapper+0x2c5\n");
+		Dml("06 0000007befffcb90 00007ffbf1f9a5bb clr!MakeCallWithAppDomainTransition+0xef\n");
+		Dml("07 0000007befffe910 00007ffbf1f9af5c clr!CrossDomainChannel::MarshalAndCall+0x620\n");
+		Dml("08 0000007befffe950 00007ffbf1f9aef7 clr!CrossDomainChannel::ExecuteCrossDomainCall+0x50\n");
+		Dml("09 0000007befffe980 00007ffbf1f9add7 clr!CrossDomainChannel::CheckCrossDomainCall+0xb7\n");
+		Dml("0a 0000007befffeb80 00007ffbf1ef4925 clr!TransparentProxyStubWorker+0xb8\n");
+		Dml("0b 0000007befffec40 00007ffbe8414740 clr!TransparentProxyStub_CrossContext+0x55\n");
+		Dml("0c 0000007befffed10 00007ffbe84145d4 mscorlib!System.Threading.ExecutionContext.RunInternal(System.Threading.ExecutionContext, System.Threading.ContextCallback, System.Object, Boolean)+0x160[f:\\dd\\ndp\\clr\\src\\BCL\\system\\threading\\executioncontext.cs @ 960]\n");
+		Dml("0d 0000007befffed40 00007ffbe841f120 mscorlib!System.Threading.ExecutionContext.Run(System.Threading.ExecutionContext, System.Threading.ContextCallback, System.Object, Boolean)+0x14[f:\\dd\\ndp\\clr\\src\\BCL\\system\\threading\\executioncontext.cs @ 902]\n");
+		Dml("0e 0000007befffed80 00007ffbe841f73e mscorlib!System.Threading.QueueUserWorkItemCallback.System.Threading.IThreadPoolWorkItem.ExecuteWorkItem()+0x70[f:\\dd\\ndp\\clr\\src\\BCL\\system\\threading\\threadpool.cs @ 1252]\n");
+		Dml("0f 0000007befffee20 00007ffbf1ef5a03 mscorlib!System.Threading.ThreadPoolWorkQueue.Dispatch()+0x14e[f:\\dd\\ndp\\clr\\src\\BCL\\system\\threading\\threadpool.cs @ 864]\n");
+		Dml("10 0000007befffee60 00007ffbf1ef589d clr!CallDescrWorkerInternal+0x83\n");
+		Dml("11 0000007befffeea0 00007ffbf1ef5fa5 clr!CallDescrWorkerWithHandler+0x4e\n");
+		Dml("12 0000007befffefa0 00007ffbf1efb6f9 clr!MethodDescCallSite::CallTargetWorker+0xf8\n");
+		Dml("13 0000007beffff090 00007ffbf1ef6751 clr!QueueUserWorkItemManagedCallback+0x2a\n");
+		Dml("14 0000007beffff0d0 00007ffbf1ef66cc clr!ManagedThreadBase_DispatchInner+0x39\n");
+		Dml("15 0000007beffff1d0 00007ffbf1ef660a clr!ManagedThreadBase_DispatchMiddle+0x6c\n");
+		Dml("16 0000007beffff260 00007ffbf1ef678b clr!ManagedThreadBase_DispatchOuter+0x75\n");
+		Dml("17 0000007beffff2c0 00007ffbf1efb660 clr!ManagedThreadBase_FullTransitionWithAD+0x2f\n");
+		Dml("18 0000007beffff440 00007ffbf1ef7648 clr!ManagedPerAppDomainTPCount::DispatchWorkItem+0xa0\n");
+		Dml("19 0000007beffff470 00007ffbf1ef7525 clr!ThreadpoolMgr::ExecuteWorkRequest+0x64\n");
+		Dml("1a 0000007beffff510 00007ffbf20b222f clr!ThreadpoolMgr::WorkerThreadStart+0xf5\n");
+		Dml("1b 0000007beffffa50 00007ffc267b1fe4 clr!Thread::intermediateThreadProc+0x86\n");
+		Dml("1c 0000007beffffa80 00007ffc28d1ef91 kernel32!BaseThreadInitThunk+0x14\n");
+		Dml("1d 0000007beffffad0 0000000000000000 ntdll!RtlUserThreadStart+0x21\n");
+		Dml("\n");
+		Dml("0:016&gt; <b>!wopensource 0x7ffb92954ba4</b>\n");
+		Dml("\n");
+	return;
+	}
+	if(keyword=="wk")
+	{
+		Dml("Dump mixed mode stack trace showing managed and native stack trace. If the source code information is available it also shows the source code location.\n");
+		Dml("\n");
+		Dml("<b>Syntax:</b>\n");
+		Dml("-------\n");
+		Dml(" \n");
+		Dml("!wk\n");
+		Dml("\n");
+		Dml("<b>Example:</b>\n");
+		Dml("----------\n");
+		Dml("\n");
+		Dml("<i>Dump a managed thread native and managed frames</i>\n");
+		Dml("--------------------------------------------------\n");
+		Dml("\n");
+		Dml("0:016&gt; !wk\n");
+		Dml("Child-SP         RetAddr           Call Site\n");
+		Dml("00 0000007befffc5f0 00007ffbf1ef5a03 ConceptNetConsole1!ConceptNetConsole1.SampleClass1.CPUHog(System.Object)+0x14[C:\\Projects\\ConceptNetConsole1\\ConceptNetConsole1\\Program.cs @ 261]\n");
+		Dml("01 0000007befffc630 00007ffbf1ef589d clr!CallDescrWorkerInternal+0x83\n");
+		Dml("02 0000007befffc670 00007ffbf1f3324f clr!CallDescrWorkerWithHandler+0x4e\n");
+		Dml("03 0000007befffc6d0 00007ffbf1f986bd clr!DispatchCallDebuggerWrapper+0x1f\n");
+		Dml("04 0000007befffc790 00007ffbf1f98df2 clr!DispatchCall+0x79\n");
+		Dml("05 0000007befffcaa0 00007ffbf1f9b0ab clr!CrossDomainChannel::MarshalAndCall_Wrapper+0x2c5\n");
+		Dml("06 0000007befffcb90 00007ffbf1f9a5bb clr!MakeCallWithAppDomainTransition+0xef\n");
+		Dml("07 0000007befffe910 00007ffbf1f9af5c clr!CrossDomainChannel::MarshalAndCall+0x620\n");
+		Dml("08 0000007befffe950 00007ffbf1f9aef7 clr!CrossDomainChannel::ExecuteCrossDomainCall+0x50\n");
+		Dml("09 0000007befffe980 00007ffbf1f9add7 clr!CrossDomainChannel::CheckCrossDomainCall+0xb7\n");
+		Dml("0a 0000007befffeb80 00007ffbf1ef4925 clr!TransparentProxyStubWorker+0xb8\n");
+		Dml("0b 0000007befffec40 00007ffbe8414740 clr!TransparentProxyStub_CrossContext+0x55\n");
+		Dml("0c 0000007befffed10 00007ffbe84145d4 mscorlib!System.Threading.ExecutionContext.RunInternal(System.Threading.ExecutionContext, System.Threading.ContextCallback, System.Object, Boolean)+0x160[f:\\dd\\ndp\\clr\\src\\BCL\\system\\threading\\executioncontext.cs @ 960]\n");
+		Dml("0d 0000007befffed40 00007ffbe841f120 mscorlib!System.Threading.ExecutionContext.Run(System.Threading.ExecutionContext, System.Threading.ContextCallback, System.Object, Boolean)+0x14[f:\\dd\\ndp\\clr\\src\\BCL\\system\\threading\\executioncontext.cs @ 902]\n");
+		Dml("0e 0000007befffed80 00007ffbe841f73e mscorlib!System.Threading.QueueUserWorkItemCallback.System.Threading.IThreadPoolWorkItem.ExecuteWorkItem()+0x70[f:\\dd\\ndp\\clr\\src\\BCL\\system\\threading\\threadpool.cs @ 1252]\n");
+		Dml("0f 0000007befffee20 00007ffbf1ef5a03 mscorlib!System.Threading.ThreadPoolWorkQueue.Dispatch()+0x14e[f:\\dd\\ndp\\clr\\src\\BCL\\system\\threading\\threadpool.cs @ 864]\n");
+		Dml("10 0000007befffee60 00007ffbf1ef589d clr!CallDescrWorkerInternal+0x83\n");
+		Dml("11 0000007befffeea0 00007ffbf1ef5fa5 clr!CallDescrWorkerWithHandler+0x4e\n");
+		Dml("12 0000007befffefa0 00007ffbf1efb6f9 clr!MethodDescCallSite::CallTargetWorker+0xf8\n");
+		Dml("13 0000007beffff090 00007ffbf1ef6751 clr!QueueUserWorkItemManagedCallback+0x2a\n");
+		Dml("14 0000007beffff0d0 00007ffbf1ef66cc clr!ManagedThreadBase_DispatchInner+0x39\n");
+		Dml("15 0000007beffff1d0 00007ffbf1ef660a clr!ManagedThreadBase_DispatchMiddle+0x6c\n");
+		Dml("16 0000007beffff260 00007ffbf1ef678b clr!ManagedThreadBase_DispatchOuter+0x75\n");
+		Dml("17 0000007beffff2c0 00007ffbf1efb660 clr!ManagedThreadBase_FullTransitionWithAD+0x2f\n");
+		Dml("18 0000007beffff440 00007ffbf1ef7648 clr!ManagedPerAppDomainTPCount::DispatchWorkItem+0xa0\n");
+		Dml("19 0000007beffff470 00007ffbf1ef7525 clr!ThreadpoolMgr::ExecuteWorkRequest+0x64\n");
+		Dml("1a 0000007beffff510 00007ffbf20b222f clr!ThreadpoolMgr::WorkerThreadStart+0xf5\n");
+		Dml("1b 0000007beffffa50 00007ffc267b1fe4 clr!Thread::intermediateThreadProc+0x86\n");
+		Dml("1c 0000007beffffa80 00007ffc28d1ef91 kernel32!BaseThreadInitThunk+0x14\n");
+		Dml("1d 0000007beffffad0 0000000000000000 ntdll!RtlUserThreadStart+0x21\n");
+		Dml("\n");
+		Dml("\n");
+		Dml("\n");
 		Dml("\n");
 	return;
 	}
@@ -121,7 +233,7 @@ EXT_COMMAND(whelp,
 		Dml("\n");
 		Dml("<i>Reflect and create symbol for a frame</i>\n");
 		Dml("--------------------------------------------------\n");
-		Dml("0:000&gt; kc\n");
+		Dml("0:000&gt; !wk\n");
 		Dml("\n");
 		Dml(" # Call Site\n");
 		Dml("00 ntdll!ZwWaitForSingleObject\n");
@@ -2297,7 +2409,7 @@ EXT_COMMAND(whelp,
 		Dml("0:000&gt; !wfrom -type System.IO.MemoryStream $pp(_buffer)\n");
 		Dml("calculated: 3c 44 69 67 65 73 74 56 61 6c 75 65 64 20 41 6c 67 6f 72 69 74 68 6d 3d 22 68 74 74 70 3a 2f 2f  &lt;DigestValued Algorithm=\"http:// (...more...)\n");
 		Dml("calculated: 3c 44 69 67 65 73 74 56 61 6c 75 65 64 20 41 6c 67 6f 72 69 74 68 6d 3d 22 68 74 74 70 3a 2f 2f  &lt;DigestValued Algorithm=\"http:// (...more...)\n");
-		Dml("calculated: 3c 44 69 67 65 73 74 56 61 6c 75 65 64 20 41 6c 67 6f 72 69 74 68 6d 3d 22 68 74 74 70 3a 2f 2f  &lt;<DigestValued Algorithm=\"http:// (...more...)\n");
+		Dml("calculated: 3c 44 69 67 65 73 74 56 61 6c 75 65 64 20 41 6c 67 6f 72 69 74 68 6d 3d 22 68 74 74 70 3a 2f 2f  &lt;DigestValued Algorithm=\"http:// (...more...)\n");
 		Dml("calculated: 3c 44 69 67 65 73 74 56 61 6c 75 65 64 20 41 6c 67 6f 72 69 74 68 6d 3d 22 68 74 74 70 3a 2f 2f  &lt;DigestValued Algorithm=\"http:// (...more...)\n");
 		Dml("calculated: 3c 53 69 67 6e 65 64 49 6e 66 6f 20 78 6d 6c 6e 73 3d 22 68 74 74 70 3a 2f 2f 77 77 77 2e 77 33  &lt;SignedInfo xmlns=\"http://www.w3 (...more...)\n");
 		Dml("calculated: 57 86 03 0b 01 74 7e 0b 01 75 66 57 f6 02 99 2c 68 74 74 70 3a 2f 2f 73 63 68 65 6d 61 73 2e 78  W....t~..ufW...,http://schemas.x (...more...)\n");
