@@ -788,7 +788,7 @@ public:
 	int Gen() { return obj.generation; }
 	int Module() { return obj.Module; }
 	int Assembly() { return obj.assembly; }
-	int Domain() { return obj.appDomain; }
+	CLRDATA_ADDRESS Domain() { return obj.appDomain; }
 };
 
 

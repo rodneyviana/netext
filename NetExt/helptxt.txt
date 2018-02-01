@@ -73,7 +73,7 @@ Open a window with the source code and selected line mapped to a managed code ad
 --------------------------------------------------
 
 0:016&gt; !wk
-Child-SP         RetAddr           Call Site
+## Child-SP         RetAddr           Call Site
 00 0000007befffc5f0 00007ffbf1ef5a03 ConceptNetConsole1!ConceptNetConsole1.SampleClass1.CPUHog(System.Object)+0x14[C:\Projects\ConceptNetConsole1\ConceptNetConsole1\Program.cs @ 261]
 01 0000007befffc630 00007ffbf1ef589d clr!CallDescrWorkerInternal+0x83
 02 0000007befffc670 00007ffbf1f3324f clr!CallDescrWorkerWithHandler+0x4e

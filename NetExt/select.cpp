@@ -1867,6 +1867,11 @@ void EXT_CLASS::wfrom_internal(FromFlags flags)
 		addv.clear();
 		for(int i=0;i<addrs.size();i++)
 		{
+			// for !wfrom do not add null values or the loop will stop at the first NULL
+			if(addrs[i] == NULL)
+			{
+				continue;
+			}
 			addv.push_back((DWORD_PTR)addrs[i]);
 		}
 		if(addv.size() == 0)

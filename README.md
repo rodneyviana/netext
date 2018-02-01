@@ -151,6 +151,7 @@ Listing objects from: 0000000004208000 to 0000000004210000 from thread: 20 [1780
 - [!wdo](#wdo) - Display ad-hoc objects or arrays from GAC or Stack	
 - [!wselect](#wselect) - Display ad-hoc fields (and level fields) for an object or for all item in an array
 - [!wfrom](#wfrom) - Perform SQL-like analysis of Heap objects enabling comparison, expression evaluation and indexed filtering.
+- [!wpe ](#wpe) - Dump Exception Object
 
 *Enumerate objects*
 *---------------------*
@@ -158,6 +159,19 @@ Listing objects from: 0000000004208000 to 0000000004210000 from thread: 20 [1780
 - [!wstack](#wstack) - dump unique stack objects
 - [!wheap](#wheap) - list objects without indexing and show thottled heap sampling
 - [!wgchandles](#wgchandles) - Dump GC root handles
+- [!wdae ](#wdae) - Dump all exceptions in the heap
+
+*Process commands*
+*----------------*
+- [!wclrstack] (#wclrstack) - Dump current thread's stack trace (only managed thread)
+- [!wthreads](#wthreads) - Dump thread information
+- [!wver](#wver) - Show version of the .NET framework(s) present in the process or dump and extension version
+- [!wupdate](#wupdate) - Check for new versions and compare with current. If a new version is found, it tries to open the update page
+- [!wdomain ](#wdomain) - Dump all Application Domains
+- [!wmodule](#wmodule) - List modules based on a pattern
+- [!wtime](#wtime) - Show UTC and local time
+- [!wapppool] (#wapppool) - Display AppPool details
+- *(new)* [!wk] (#wk) - Dump current thread's stack trace in mixed mode (native and managed)
 
 *Special Purpose*
 *------------------*
@@ -172,16 +186,10 @@ Listing objects from: 0000000004208000 to 0000000004210000 from thread: 20 [1780
 - [!wcookie](#wcookie) - Display HTTP cookies using filters and grouping
 - [!wruntime](#wruntime) - Display HTTP Runtime Info including Active Requests count
 - [!wtoken](#wtoken) - Display WIF tokens and claims
-- [!wthreads](#wthreads) - Dump thread information
-- [!wver](#wver) - Show version of the .NET framework(s) present in the process or dump and extension version
-- [!wupdate](#wupdate) - Check for new versions and compare with current. If a new version is found, it tries to open the update page
-- [!wdomain ](#wdomain) - Dump all Application Domains
-- [!wdae ](#wdae) - Dump all exceptions in the heap
-- [!wpe ](#wpe) - Dump Exception Object
-- *(new)* [!wmodule](#wmodule) - List modules based on a pattern
-- *(new)* [!wtime](#wtime) - Show UTC and local time
+- {!wsocket] (#wsocket) - Dump socket information
 - *(new)* [!wxml](#wxml) - Dump a XML document
 - *(new)* [!wmakesource](#wmakesource) - It tries to reflect the current frame into source code
+- *(new)* [!wopensource] (#wopensource) - Open source file based on the IP provided
 ----
 
 
@@ -190,7 +198,62 @@ Listing objects from: 0000000004208000 to 0000000004210000 from thread: 20 [1780
 
 [functions list](#functions) 
 
+<a id='wopensource'></a>
+## !wopensource
+Open a window with the source code and selected line mapped to a managed code address
 
+```
+Syntax:
+-------
+ 
+!wopensource <address>
+
+Where:
+<address> - is the expression of the address of native code
+
+* Note: if the source path is not configured correctly or the source code is not available, the code will not be displayed
+
+Example:
+----------
+
+Open source code for SampleClass1.CPUHog
+--------------------------------------------------
+
+0:016&gt; !wk
+## Child-SP         RetAddr           Call Site
+00 0000007befffc5f0 00007ffbf1ef5a03 ConceptNetConsole1!ConceptNetConsole1.SampleClass1.CPUHog(System.Object)+0x14[C:\Projects\ConceptNetConsole1\ConceptNetConsole1\Program.cs @ 261]
+01 0000007befffc630 00007ffbf1ef589d clr!CallDescrWorkerInternal+0x83
+02 0000007befffc670 00007ffbf1f3324f clr!CallDescrWorkerWithHandler+0x4e
+03 0000007befffc6d0 00007ffbf1f986bd clr!DispatchCallDebuggerWrapper+0x1f
+04 0000007befffc790 00007ffbf1f98df2 clr!DispatchCall+0x79
+05 0000007befffcaa0 00007ffbf1f9b0ab clr!CrossDomainChannel::MarshalAndCall_Wrapper+0x2c5
+06 0000007befffcb90 00007ffbf1f9a5bb clr!MakeCallWithAppDomainTransition+0xef
+07 0000007befffe910 00007ffbf1f9af5c clr!CrossDomainChannel::MarshalAndCall+0x620
+08 0000007befffe950 00007ffbf1f9aef7 clr!CrossDomainChannel::ExecuteCrossDomainCall+0x50
+09 0000007befffe980 00007ffbf1f9add7 clr!CrossDomainChannel::CheckCrossDomainCall+0xb7
+0a 0000007befffeb80 00007ffbf1ef4925 clr!TransparentProxyStubWorker+0xb8
+0b 0000007befffec40 00007ffbe8414740 clr!TransparentProxyStub_CrossContext+0x55
+0c 0000007befffed10 00007ffbe84145d4 mscorlib!System.Threading.ExecutionContext.RunInternal(System.Threading.ExecutionContext, System.Threading.ContextCallback, System.Object, Boolean)+0x160[f:\dd\ndp\clr\src\BCL\system\threading\executioncontext.cs @ 960]
+0d 0000007befffed40 00007ffbe841f120 mscorlib!System.Threading.ExecutionContext.Run(System.Threading.ExecutionContext, System.Threading.ContextCallback, System.Object, Boolean)+0x14[f:\dd\ndp\clr\src\BCL\system\threading\executioncontext.cs @ 902]
+0e 0000007befffed80 00007ffbe841f73e mscorlib!System.Threading.QueueUserWorkItemCallback.System.Threading.IThreadPoolWorkItem.ExecuteWorkItem()+0x70[f:\dd\ndp\clr\src\BCL\system\threading\threadpool.cs @ 1252]
+0f 0000007befffee20 00007ffbf1ef5a03 mscorlib!System.Threading.ThreadPoolWorkQueue.Dispatch()+0x14e[f:\dd\ndp\clr\src\BCL\system\threading\threadpool.cs @ 864]
+10 0000007befffee60 00007ffbf1ef589d clr!CallDescrWorkerInternal+0x83
+11 0000007befffeea0 00007ffbf1ef5fa5 clr!CallDescrWorkerWithHandler+0x4e
+12 0000007befffefa0 00007ffbf1efb6f9 clr!MethodDescCallSite::CallTargetWorker+0xf8
+13 0000007beffff090 00007ffbf1ef6751 clr!QueueUserWorkItemManagedCallback+0x2a
+14 0000007beffff0d0 00007ffbf1ef66cc clr!ManagedThreadBase_DispatchInner+0x39
+15 0000007beffff1d0 00007ffbf1ef660a clr!ManagedThreadBase_DispatchMiddle+0x6c
+16 0000007beffff260 00007ffbf1ef678b clr!ManagedThreadBase_DispatchOuter+0x75
+17 0000007beffff2c0 00007ffbf1efb660 clr!ManagedThreadBase_FullTransitionWithAD+0x2f
+18 0000007beffff440 00007ffbf1ef7648 clr!ManagedPerAppDomainTPCount::DispatchWorkItem+0xa0
+19 0000007beffff470 00007ffbf1ef7525 clr!ThreadpoolMgr::ExecuteWorkRequest+0x64
+1a 0000007beffff510 00007ffbf20b222f clr!ThreadpoolMgr::WorkerThreadStart+0xf5
+1b 0000007beffffa50 00007ffc267b1fe4 clr!Thread::intermediateThreadProc+0x86
+1c 0000007beffffa80 00007ffc28d1ef91 kernel32!BaseThreadInitThunk+0x14
+1d 0000007beffffad0 0000000000000000 ntdll!RtlUserThreadStart+0x21
+
+0:016>!wopensource 0x7ffb92954ba4
+```
 
 <a id='wpe'></a>
 ## !wpe - Dump Details of an Exception Object

@@ -3142,7 +3142,7 @@ namespace NetExt.Shim
             return HRESULTS.S_OK;
         }
 
-        internal const string DownloadUrl = "https://github.com/rodneyviana/netext/tree/master/binaries/";
+        internal const string DownloadUrl = "https://github.com/rodneyviana/netext/tree/master/Binaries/";
         internal const string versionUrl = "https://github.com/rodneyviana/netext/";
 
         internal static Version GetOnlineVersion()
@@ -3675,7 +3675,7 @@ namespace NetExt.Shim
             Exports.WriteLine("## {0}{1} Call Site", childSP, retAddr);
             foreach (StackFrame frame in DebugApi.StackTrace)
             {
-                Exports.WriteDml("<link cmd=\".frame {0:x2}\">{0:x2}</link> ", frame.FrameNumber);
+                Exports.WriteDml("<link cmd=\".frame {0:x2}{1}\">{0:x2}</link> ", frame.FrameNumber, !frame.SourceLocation.IsManaged || String.IsNullOrWhiteSpace(frame.SourceLocation.File) ? "" : String.Format(";!wopensource 0x{0:x}", frame.SourceLocation.Address));
                 Exports.Write(frame.ToString());
                 Exports.WriteDml("{0}", frame.SourceLocation.ToString(true));
                 Exports.WriteLine("");

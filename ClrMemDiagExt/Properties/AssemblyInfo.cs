@@ -8,9 +8,9 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTitle("NetExt.Shim")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("Rodney Viana")]
+[assembly: AssemblyCompany("Open Source")]
 [assembly: AssemblyProduct("NetExt.Shim")]
-[assembly: AssemblyCopyright("Copyright © 2015-2018 - Rodney Viana")]
+[assembly: AssemblyCopyright("Copyright © 2015-2018 Open Source - Rodney Viana")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -22,5 +22,5 @@ using System.Runtime.InteropServices;
 // The following GUID is for the ID of the typelib if this project is exposed to COM
 [assembly: Guid("f12c38b7-0893-4208-ab3d-54c3f8d1c01e")]
 
-[assembly: AssemblyVersion("2.1.16.5000")]
-[assembly: AssemblyFileVersion("2.1.16.5000")]
+[assembly: AssemblyVersion("2.1.17.5100")]
+[assembly: AssemblyFileVersion("2.1.17.5000")]

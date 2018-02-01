@@ -84,7 +84,7 @@ namespace NetExt.Shim
             {
                 for (int i = 0; i < tabControl.Items.Count; i++)
                 {
-                    if ((tabControl.Items[0] as TabItem).Tag.ToString() == Path)
+                    if ((tabControl.Items[i] as TabItem).Tag.ToString() == Path)
                     {
                         tabControl.SelectedIndex = i;
                         return true;
