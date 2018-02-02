@@ -1,4 +1,4 @@
-// Source Date: Tuesday, January 16, 2018 1:28:46 PM
+// Source Date: Wednesday, January 31, 2018 7:58:54 PM
 // Source File: C:\Users\rviana\OneDrive\Projects\netext\NetExt\helptxt.txt
 // This file was generated. Do not modify. Modify Source File instead
 #include "netext.h"
@@ -94,7 +94,10 @@ EXT_COMMAND(whelp,
 		Dml("--------------------------------------------------\n");
 		Dml("\n");
 		Dml("0:016&gt; !wk\n");
-		Dml("Child-SP         RetAddr           Call Site\n");
+	return;
+	}
+	if(keyword==" Child-SP         RetAddr           Call Site")
+	{
 		Dml("00 0000007befffc5f0 00007ffbf1ef5a03 ConceptNetConsole1!ConceptNetConsole1.SampleClass1.CPUHog(System.Object)+0x14[C:\\Projects\\ConceptNetConsole1\\ConceptNetConsole1\\Program.cs @ 261]\n");
 		Dml("01 0000007befffc630 00007ffbf1ef589d clr!CallDescrWorkerInternal+0x83\n");
 		Dml("02 0000007befffc670 00007ffbf1f3324f clr!CallDescrWorkerWithHandler+0x4e\n");

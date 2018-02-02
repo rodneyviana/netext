@@ -510,7 +510,7 @@ namespace NetExt.HeapCacheUtil
 
         public static string GetFieldTypeName(ClrType Type)
         {
-            if (Type == null)
+            if (Type == null || Type.MetadataToken == 0)
                 return "System.Object";
 
             return Type.Name.Replace('+','_');

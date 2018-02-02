@@ -620,7 +620,7 @@ inline void Init()
 		DebugControl->ControlledOutput(DEBUG_OUTCTL_ALL_CLIENTS | DEBUG_OUTCTL_DML, DEBUG_OUTPUT_NORMAL, "License and usage can be seen here: <link cmd=\"!whelp license\">!whelp license</link>\n");
 		DebugControl->ControlledOutput(DEBUG_OUTCTL_ALL_CLIENTS | DEBUG_OUTCTL_DML, DEBUG_OUTPUT_NORMAL, "Check Latest version: <link cmd=\"!wupdate\">!wupdate</link>\n");
 		DebugControl->ControlledOutput(DEBUG_OUTCTL_ALL_CLIENTS | DEBUG_OUTCTL_DML, DEBUG_OUTPUT_NORMAL, "For help, type <link cmd=\"!whelp\">!whelp</link> (or in WinDBG run: '<b>.browse !whelp</b>')\n");
-		DebugControl->ControlledOutput(DEBUG_OUTCTL_ALL_CLIENTS | DEBUG_OUTCTL_DML, DEBUG_OUTPUT_NORMAL, "<b>Questions and Feedback:</b> http://netext.codeplex.com/discussions \n");
+		DebugControl->ControlledOutput(DEBUG_OUTCTL_ALL_CLIENTS | DEBUG_OUTCTL_DML, DEBUG_OUTPUT_NORMAL, "<b>Questions and Feedback:</b> https://github.com/rodneyviana/netext/issues \n");
 		DebugControl->ControlledOutput(DEBUG_OUTCTL_ALL_CLIENTS | DEBUG_OUTCTL_DML, DEBUG_OUTPUT_NORMAL, "<b>Copyright (c) 2014-2015 Rodney Viana</b> (http://blogs.msdn.com/b/rodneyviana) \n");
 		DebugControl->ControlledOutput(DEBUG_OUTCTL_ALL_CLIENTS | DEBUG_OUTCTL_DML, DEBUG_OUTPUT_NORMAL, "Type: <link cmd=\"!windex -tree\">!windex -tree</link> or <link cmd=\"~*e!wstack\">~*e!wstack</link> to get started\n\n");
         DebugControl->Release();

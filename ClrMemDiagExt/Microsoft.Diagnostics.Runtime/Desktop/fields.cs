@@ -569,6 +569,8 @@ namespace Microsoft.Diagnostics.Runtime.Desktop
                             if (etype == 0x11 || etype == 0x12)
                                 res = res && sigParser.GetToken(out token);
 
+                            if (token == 0 && data.FieldToken != 0)
+                                token = (int)data.FieldToken;
                             if (token != 0)
                                 result = (BaseDesktopHeapType)heap.GetGCHeapTypeFromModuleAndToken(data.Module, (uint)token);
 
@@ -759,6 +761,8 @@ namespace Microsoft.Diagnostics.Runtime.Desktop
                 case ClrElementType.NativeUInt:  // native unsigned int
                 case ClrElementType.Pointer:
                 case ClrElementType.FunctionPointer:
+                case ClrElementType.Unknown:
+                case ClrElementType.Var:
                     if (type == null)
                         return IntPtr.Size;  // todo: fixme
                     return (int)type.DesktopHeap.PointerSize;

@@ -1015,6 +1015,7 @@ namespace Microsoft.Diagnostics.Runtime.Desktop
 
                     case ClrElementType.Object:
                     case ClrElementType.Class:
+                    case ClrElementType.Var:
                         return ObjectType;
 
                     case ClrElementType.Struct:

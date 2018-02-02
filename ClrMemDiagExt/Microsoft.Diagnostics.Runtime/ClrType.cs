@@ -123,6 +123,12 @@ namespace Microsoft.Diagnostics.Runtime
         Class = 0x12,
 
         /// <summary>
+        /// ELEMENT_TYPE_VAR
+        /// </summary>
+        Var = 0x13,
+
+
+        /// <summary>
         /// ELEMENT_TYPE_ARRAY
         /// </summary>
         Array = 0x14,
