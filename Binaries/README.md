@@ -2,7 +2,7 @@
 NetExt is back. New commands added not yet included in this help. Use !whelp for all commands
 
 
-# LATEST VERSION: 2.1.18.5000
+# LATEST VERSION: 2.1.19.5000
 
 
 # Description
