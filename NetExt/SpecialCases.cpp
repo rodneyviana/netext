@@ -713,8 +713,8 @@ SVAL SpecialCases::GetBoxedValue(CLRDATA_ADDRESS Address)
 	varMap fieldV;
 	DumpFields(Address,fields,0,&fieldV);
 	if(fieldV["m_value"].IsInt() || fieldV["m_value"].IsReal()
-		|| fieldV["m_value"].IsUnsigned() || fieldV["m_value"].corBaseType == ELEMENT_TYPE_BOOLEAN);
-	return fieldV["m_value"];
+		|| fieldV["m_value"].IsUnsigned() || fieldV["m_value"].corBaseType == ELEMENT_TYPE_BOOLEAN)
+		return fieldV["m_value"];
 	// all failed, return invalid
 	return s;
 }
@@ -758,6 +758,9 @@ std::string SpecialCases::PrettyPrint(CLRDATA_ADDRESS Address, CLRDATA_ADDRESS M
 	{
 		return CW2A(obj.GetRuntimeTypeName().c_str());
 	}
+
+	if(obj.IsString())
+		return CW2A(obj.String().c_str());
 
 	if(methName == L"System.DateTime")
 	{
@@ -1413,7 +1416,7 @@ void DumpFields(CLRDATA_ADDRESS Address, std::vector<std::string> Fields, CLRDAT
 						if(pp.size() > 0)
 						{
 							
-							g_ExtInstancePtr->Dml("%S %S = <link cmd=\"!wselect mt %8x * from %8x\">%s</link>", fields[i].mtName.c_str(), fields[i].FieldName.c_str(),
+							g_ExtInstancePtr->Dml("%S %S = <link cmd=\"!wselect mt %p * from %p\">%s</link>", fields[i].mtName.c_str(), fields[i].FieldName.c_str(),
 								fields[i].FieldDesc.MethodTable, ptr,
 								pp.c_str());
 
@@ -1421,11 +1424,11 @@ void DumpFields(CLRDATA_ADDRESS Address, std::vector<std::string> Fields, CLRDAT
 						{
 
 			
-							g_ExtInstancePtr->Dml("%S %S = <link cmd=\"!wselect mt %8x * from %8x\">%S</link>", fields[i].mtName.c_str(), fields[i].FieldName.c_str(),
+							g_ExtInstancePtr->Dml("%S %S = <link cmd=\"!wselect mt %p * from %p\">%S</link>", fields[i].mtName.c_str(), fields[i].FieldName.c_str(),
 								fields[i].FieldDesc.MethodTable, ptr,
 								currObj->ValueString(fields[i].FieldDesc, currObj->Address(), currObj->IsValueType()).c_str());
 						}
-						wstring methName = GetMethodName(fields[i].FieldDesc.MethodTable);
+						//wstring methName = GetMethodName(fields[i].FieldDesc.MethodTable);
 						/*
 						if(methName == L"System.DateTime")
 						{
