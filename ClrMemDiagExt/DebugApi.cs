@@ -12,6 +12,7 @@ using System.Text.RegularExpressions;
 using System.Windows.Forms;
 using System.Diagnostics;
 using Microsoft.Diagnostics.Runtime.Utilities.Pdb;
+using System.Net;
 
 namespace NetExt.Shim
 {
@@ -1416,6 +1417,33 @@ namespace NetExt.Shim
                     }
 
                 }
+
+                if (!InitialPath.StartsWith("f:\\dd\\")) // Only .NET
+                    return null;
+                string[] parts1 = Runtime.DataTarget.ClrVersions.Single().DacInfo.FileName.Split('.');
+                int p = parts1.Length;
+                string version = p < 3 ? String.Empty : parts1[p - 3] + "." + parts1[p - 2];
+                string partialFolder = InitialPath.Substring(6);
+                string localFolder = Path.Combine(Path.GetTempPath(), "src", version, partialFolder);
+                string url = String.Format("http://referencesource.microsoft.com/Source/{0}/Source/{1}", version, partialFolder.Replace('\\', '/'));
+                WebClient client = new WebClient();
+                string fileBytes = null;
+                try
+                {
+                    fileBytes = client.DownloadString(url);
+                    string dir = Path.GetDirectoryName(localFolder);
+                    if(!Directory.Exists(dir))
+                    {
+                        Directory.CreateDirectory(dir);
+                    }
+                    File.WriteAllText(localFolder, fileBytes);
+                    return localFolder;
+                }
+                catch
+                {
+                    DebugApi.WriteLine("Unable to download .NET source from: {0}", url);
+                }
+
                 return null;
             }
             return path.ToString();
@@ -1855,6 +1883,11 @@ kernel32!KUSER_SHARED_DATA
                 }
                 return runtime;
             }
+
+            set
+            {
+                runtime = value;
+            }
         }
 
         public static HRESULT Int2HResult(int Result)
@@ -1888,7 +1921,7 @@ kernel32!KUSER_SHARED_DATA
             if (hr != 0)
             {
                 LastHR = Int2HResult(hr);
-                Debug.WriteLine("SourceFix: Unable to acquire client interface: {0}", LastHR); // This will cause stackoverflow
+                Debug.WriteLine("NetExt: Unable to acquire client interface: {0}", LastHR); // This will cause stackoverflow
                 return null;
             }
             IDebugClient client = (IDebugClient5)obj;
@@ -2016,7 +2049,7 @@ kernel32!KUSER_SHARED_DATA
                 WriteLine("Run the command below to check if .NET Interface can be loaded:");
                 WriteLine(".cordll -u -ve -l");
                 client = null;
-                WriteLine("SourceFix: Unable to acquire .NET interface");
+                WriteLine("NetExt: Unable to acquire .NET interface");
                 LastHR = HRESULT.E_NOINTERFACE;
                 target = null;
                 runtime = null;

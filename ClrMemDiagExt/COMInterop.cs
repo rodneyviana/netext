@@ -2957,7 +2957,7 @@ namespace NetExt.Shim
             pMethodName = null;
             if (m_runtime == null)
                 return HRESULTS.E_FAIL;
-            var method = m_runtime.GetMethodByAddress(addr);
+            var method = m_runtime.GetMethodByHandle(addr);
             if (method == null)
             {
                 return HRESULTS.E_FAIL;
@@ -3138,7 +3138,9 @@ namespace NetExt.Shim
             ppRuntime = null;
             if (m_target == null || m_target.ClrVersions == null)
                 return HRESULTS.E_FAIL;
-            ppRuntime = new MDRuntime(m_target.ClrVersions.Single().CreateRuntime(ixCLRProcess));
+            DebugApi.Runtime = m_target.ClrVersions.Single().CreateRuntime(ixCLRProcess);
+            ppRuntime = new MDRuntime(DebugApi.Runtime);
+            
             return HRESULTS.S_OK;
         }
 
