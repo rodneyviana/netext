@@ -354,6 +354,88 @@ namespace NetExt.Shim
         public ulong Address;
 
         public bool IsManaged;
+
+        public string LocalPdbPath;
+
+        private List<string> srcSrvs;
+
+        public IList<string> GetSrcSrv()
+        {
+            if (srcSrvs != null)
+                return srcSrvs;
+            srcSrvs = new List<string>();
+            if (String.IsNullOrWhiteSpace(LocalPdbPath))
+                return srcSrvs;
+            if (!System.IO.File.Exists(LocalPdbPath))
+                return srcSrvs;
+            try
+            {
+                const string SrvInfo = "SRCSRV: ini ----";
+                const string SrvEnd = "SRCSRV: source";
+                int i = 2;
+                byte[] buffer = new byte[16];
+                StringBuilder sb = null;
+                using (FileStream pdb = System.IO.File.OpenRead(LocalPdbPath))
+                {
+                    while (true)
+                    {
+                        i++;
+                        if (pdb.Read(buffer, i * 16, 16) < 16)
+                        {
+                            break;  // we are done here
+                        }
+                        
+                        sb = new StringBuilder(500);
+                        sb.Append(System.Text.Encoding.UTF8.GetString(buffer));
+                        if (sb.ToString() == SrvInfo)
+                        {
+                            while (!sb.ToString().Contains(SrvEnd))
+                            {
+                                i++;
+                                if (pdb.Read(buffer, i * 16, 16) < 16)
+                                {
+                                    break;  // this is inexpected
+                                }
+                                sb.Append(System.Text.Encoding.UTF8.GetString(buffer));
+                            }
+                            string srv = sb.ToString();
+                            srcSrvs.Add(srv.Substring(0, srv.IndexOf(SrvEnd) - 1));
+                        }
+                    }
+                    return srcSrvs;
+                }
+            }
+            catch(Exception ex)
+            {
+                DebugApi.WriteLine("Error reading Pdb file '{0}' - {1}", LocalPdbPath, ex);
+            }
+
+            return srcSrvs;
+        }
+
+        public string GetUrlBaseForSource()
+        {
+            const string pattern = @"HTTP_ALIAS=([a-zA-Z0-9-.\/:]+)";
+            if (srcSrvs == null)
+                return null;
+            foreach (string srv in srcSrvs)
+            {
+                var ms = Regex.Matches(srv, pattern);
+                if (ms.Count > 0)
+                {
+                    string res = ms[0].Groups[1].Value;
+                    if (res.EndsWith("/"))
+                        return res.Substring(0, res.Length - 1);
+                    return res;
+                }
+            }
+            //
+            // Things did not work out. Let's get the closest source
+            //
+            return null;
+        }
+
+
         public string ToString(bool IsDml=false)
         {
             if(String.IsNullOrWhiteSpace(File))
@@ -374,13 +456,15 @@ namespace NetExt.Shim
         #region ManagedSymbol
         private Dictionary<PdbInfo, PdbReader> s_pdbReaders = new Dictionary<PdbInfo, PdbReader>();
 
+        
+
         public FileAndLineNumber ManagedSourceLocation
 
         {
             get
             {
-
-                PdbReader reader = GetReaderForFrame();
+                string localPath = null;
+                PdbReader reader = GetReaderForFrame(out localPath);
 
                 if (reader == null)
 
@@ -397,6 +481,7 @@ namespace NetExt.Shim
                 {
                     nearest.IsManaged = IsManaged;
                     nearest.Address = frame.InstructionOffset;
+                    nearest.LocalPdbPath = localPath;
                 }
 
                 return nearest;
@@ -531,7 +616,7 @@ namespace NetExt.Shim
 
 
 
-        private PdbReader GetReaderForFrame()
+        private PdbReader GetReaderForFrame(out string PdbPath)
 
         {
 
@@ -543,6 +628,7 @@ namespace NetExt.Shim
 
             PdbReader reader = null;
 
+            PdbPath = null;
             if (info != null)
 
             {
@@ -556,8 +642,10 @@ namespace NetExt.Shim
                     try
                     {
                         if (pdbPath != null)
-
+                        {
                             reader = new PdbReader(pdbPath);
+                            PdbPath = pdbPath;
+                        }
                     } catch(Exception ex)
                     {
                         Exports.WriteLine("Error: {0}", ex.ToString());
@@ -1373,7 +1461,99 @@ namespace NetExt.Shim
             return null;
         }
 
-        public static string GetSourcePath(string InitialPath, ulong ModBase)
+        private static Dictionary<string, string> valVersions = null;
+
+        public static Dictionary<string, string> VersionDict
+        {
+            get
+            {
+                if (valVersions == null)
+                {
+                    valVersions = new Dictionary<string, string>();
+                    valVersions.Add("30319.36013", "http://referencesource.microsoft.com/Source/30319.36013/Source/");
+                    valVersions.Add("50938.18408", "http://referencesource.microsoft.com/Source/50938.18408/Source/");
+                    valVersions.Add("52213.36213", "http://referencesource.microsoft.com/Source/52213.36213/Source/");
+                    valVersions.Add("51209.34209", "http://referencesource.microsoft.com/Source/51209.34209/Source/");
+                    valVersions.Add("00079.00", "http://referencesource.microsoft.com/Source/00079.00/Source/");
+                    valVersions.Add("00081.00", "http://referencesource.microsoft.com/Source/00081.00/Source/");
+                    valVersions.Add("01586.00", "http://referencesource.microsoft.com/Source/01586.00/Source/");
+                    valVersions.Add("01590.00", "http://referencesource.microsoft.com/Source/01590.00/Source/");
+                    valVersions.Add("01038.00", "http://referencesource.microsoft.com/Source/01038.00/Source/");
+                    valVersions.Add("01040.00", "http://referencesource.microsoft.com/Source/01040.00/Source/");
+                    valVersions.Add("01055.00", "http://referencesource.microsoft.com/Source/01055.00/Source/");
+                    valVersions.Add("02046.00", "http://referencesource.microsoft.com/Source/02046.00/Source/");
+                    valVersions.Add("02053.00", "http://referencesource.microsoft.com/Source/02053.00/Source/");
+                    valVersions.Add("02556.00", "http://referencesource.microsoft.com/Source/02556.00/Source/");
+                    valVersions.Add("02558.00", "http://referencesource.microsoft.com/Source/02558.00/Source/");
+                }
+                return valVersions;
+            }
+        }
+
+        public static string BaseFromVersion(Version ModVer)
+        {
+            if (ModVer.Major < 4)
+                return null;
+            int min = 100000;
+            int delta=0;
+            string bestValue = null;
+            if (ModVer.Minor == 0)
+            {
+                foreach (var pre45 in VersionDict)
+                {
+                    if (!pre45.Key.EndsWith(".00"))
+                    {
+                        delta = 100000;
+                        string[] parts = pre45.Key.Split('.');
+                        bool ok = false;
+                        if(parts.Length == 2)
+                            ok = int.TryParse(parts[1], out delta);
+                        if(ok)
+                        {
+                            delta = Math.Abs(ModVer.Revision - delta);
+                            if (delta < min)
+                            {
+                                min = delta;
+                                bestValue = pre45.Value;
+                            }
+                        }
+                    }
+
+
+                }
+                
+                return bestValue;
+            }
+            else
+            {
+                foreach (var pos45 in VersionDict)
+                {
+                    if (pos45.Key.EndsWith(".00"))
+                    {
+                        delta = 100000;
+                        string[] parts = pos45.Key.Split('.');
+                        bool ok = int.TryParse(parts[0], out delta);
+                        if (ok)
+                        {
+                            delta = Math.Abs(ModVer.Build - delta);
+                            if (delta < min)
+                            {
+                                min = delta;
+                                bestValue = pos45.Value;
+                            }
+                        }
+                    }
+
+
+                }
+
+                return bestValue;
+            }
+            return null;
+
+        }
+
+        public static string GetSourcePath(string InitialPath, ulong ModBase, string BaseUrl = null)
         {
             if(!StartSource())
             {
@@ -1420,12 +1600,34 @@ namespace NetExt.Shim
 
                 if (!InitialPath.StartsWith("f:\\dd\\")) // Only .NET
                     return null;
+                Module mod = new Module(ModBase);
+                if (!mod.IsValid)
+                    return null;
+                var modVer = mod.VersionInfo;
+                if (modVer.Major < 4)
+                    return null;
+
+                string baseUrl = BaseFromVersion(modVer);
+                if(baseUrl == null)
+                    return null;
+
+                
                 string[] parts1 = Runtime.DataTarget.ClrVersions.Single().DacInfo.FileName.Split('.');
                 int p = parts1.Length;
                 string version = p < 3 ? String.Empty : parts1[p - 3] + "." + parts1[p - 2];
                 string partialFolder = InitialPath.Substring(6);
                 string localFolder = Path.Combine(Path.GetTempPath(), "src", version, partialFolder);
-                string url = String.Format("http://referencesource.microsoft.com/Source/{0}/Source/{1}", version, partialFolder.Replace('\\', '/'));
+                string url = null;
+
+                if (String.IsNullOrEmpty(BaseUrl))
+                {
+                    url = String.Format("{0}/{1}", baseUrl, partialFolder.Replace('\\', '/'));
+                }
+                else
+                {
+                    url = String.Format("{0}/{1}", BaseUrl, partialFolder.Replace('\\', '/'));
+                }
+                
                 WebClient client = new WebClient();
                 string fileBytes = null;
                 try
@@ -1437,6 +1639,7 @@ namespace NetExt.Shim
                         Directory.CreateDirectory(dir);
                     }
                     File.WriteAllText(localFolder, fileBytes);
+                    DebugApi.WriteLine("Downloading closest .NET source from: {0}", url);
                     return localFolder;
                 }
                 catch

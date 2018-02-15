@@ -3598,7 +3598,7 @@ namespace NetExt.Shim
                 Exports.WriteLine("No source file for managed code at {0:%p}", nativeFrame.InstructionOffset);
                 return HRESULTS.E_FAIL;
             }
-            string filePath = DebugApi.GetSourcePath(sourceInfo.File, frame.ManagedModule.ImageBase);
+            string filePath = DebugApi.GetSourcePath(sourceInfo.File, frame.ManagedModule.ImageBase, sourceInfo.GetUrlBaseForSource());
 
             if (String.IsNullOrEmpty(filePath))
             {
