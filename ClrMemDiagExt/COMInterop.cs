@@ -3645,6 +3645,8 @@ namespace NetExt.Shim
                             wnd.LoadFile(filePath);
                             if (sourceInfo.Line > 0)
                                 wnd.HighLightLine(filePath, sourceInfo.Line);
+
+                            wnd.MoveToLine(filePath, sourceInfo.Line);
                         }), DispatcherPriority.ContextIdle);
                         break;
                     }
@@ -3659,6 +3661,7 @@ namespace NetExt.Shim
                     wnd.LoadFile(filePath);
                     if (sourceInfo.Line > 0)
                         wnd.HighLightLine(filePath, sourceInfo.Line);
+                    wnd.MoveToLine(filePath, sourceInfo.Line);
                 }), DispatcherPriority.ContextIdle);
 
             }
@@ -3677,9 +3680,16 @@ namespace NetExt.Shim
             Exports.WriteLine("## {0}{1} Call Site", childSP, retAddr);
             foreach (StackFrame frame in DebugApi.StackTrace)
             {
-                Exports.WriteDml("<link cmd=\".frame {0:x2}{1}\">{0:x2}</link> ", frame.FrameNumber, !frame.SourceLocation.IsManaged || String.IsNullOrWhiteSpace(frame.SourceLocation.File) ? "" : String.Format(";!wopensource 0x{0:x}", frame.SourceLocation.Address));
+                var sourceLocation = frame.SourceLocation;
+                Exports.WriteDml("<link cmd=\".frame {0:x2}{1}\">{0:x2}</link> ", frame.FrameNumber, !sourceLocation.IsManaged || String.IsNullOrWhiteSpace(sourceLocation.File) ? "" : String.Format(";!wopensource 0x{0:x}", sourceLocation.Address));
                 Exports.Write(frame.ToString());
                 Exports.WriteDml("{0}", frame.SourceLocation.ToString(true));
+#if DEBUG
+                if (sourceLocation.Start != 0)
+                    Exports.WriteDml("<link cmd=\"u {0:%p} {1:%p}\"> {0:%p} {1:%p}</link> ", sourceLocation.Start, sourceLocation.End);
+                else
+                    Exports.Write(" [no line info]");
+#endif
                 Exports.WriteLine("");
             }
             return HRESULTS.S_OK;

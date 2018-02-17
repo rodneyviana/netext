@@ -18,7 +18,6 @@
     <None Include="NetExt.def">
       <Filter>Source Files</Filter>
     </None>
-    <None Include="ClassDiagram.cd" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="resource.h">

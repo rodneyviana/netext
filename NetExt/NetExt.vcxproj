@@ -386,7 +386,6 @@ echo lib\$(PlatformShortName)</Command>
     </PreLinkEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <None Include="ClassDiagram.cd" />
     <None Include="NetExt.def" />
   </ItemGroup>
   <ItemGroup>

@@ -353,11 +353,17 @@ namespace NetExt.Shim
 
         public ulong Address;
 
+        public ulong Start;
+
+        public ulong End;
+
         public bool IsManaged;
 
         public string LocalPdbPath;
 
         private List<string> srcSrvs;
+
+
 
         public IList<string> GetSrcSrv()
         {
@@ -471,12 +477,12 @@ namespace NetExt.Shim
                     return new FileAndLineNumber();
 
 
-
-                PdbFunction function = reader.GetFunctionFromToken(MethodDesc.MetadataToken);
+                var md = MethodDesc;
+                PdbFunction function = reader.GetFunctionFromToken(md.MetadataToken);
 
                 int ilOffset = ILOffset;
 
-                var nearest = FindNearestLine(function, ilOffset);
+                var nearest = FindNearestLine(function, ilOffset, md.ILOffsetMap);
                 if(!String.IsNullOrEmpty(nearest.File))
                 {
                     nearest.IsManaged = IsManaged;
@@ -523,7 +529,7 @@ namespace NetExt.Shim
 
             }
         }
-        private static FileAndLineNumber FindNearestLine(PdbFunction function, int ilOffset)
+        private static FileAndLineNumber FindNearestLine(PdbFunction function, int ilOffset, ILToNativeMap[] map)
 
         {
 
@@ -552,6 +558,16 @@ namespace NetExt.Shim
                         nearest.File = sequenceCollection.File.Name;
 
                         nearest.Line = (int)point.LineBegin;
+
+                        // Get the code range
+                        if (map != null)
+                        {
+                            var range = map.FirstOrDefault(m => m.ILOffset == ilOffset);
+                            nearest.Start = range.StartAddress;
+                            nearest.End = range.EndAddress;
+
+                        }
+                        
 
                     }
                     distance = dist;
@@ -2018,8 +2034,8 @@ kernel32!KUSER_SHARED_DATA
                     }
                 }
 #if DEBUG
-                sb.Append("}\n");
-                DebugApi.WriteLine("{0}\n", sb.ToString());
+                //sb.Append("}\n");
+                //DebugApi.WriteLine("{0}\n", sb.ToString());
 #endif
                 //DEBUG_STACK_FRAME frame1;
                 return listFrames;

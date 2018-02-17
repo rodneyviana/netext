@@ -87,6 +87,7 @@ namespace NetExt.Shim
                     if ((tabControl.Items[i] as TabItem).Tag.ToString() == Path)
                     {
                         tabControl.SelectedIndex = i;
+                        this.Title = Path;
                         return true;
                     }
                 }
@@ -130,6 +131,7 @@ namespace NetExt.Shim
                     tabControl.Items.Add(item);
                     tabControl.SelectedIndex = tabControl.Items.Count - 1;
                     sourceFiles[Path] = editor;
+                    editor.InvalidateVisual();
                     //string sourceString = File.ReadAllText(Path);
                     //editor.Document.Text = sourceString;
 
@@ -154,6 +156,7 @@ namespace NetExt.Shim
             if (!sourceFiles.ContainsKey(Path))
                 return;
             var editor = sourceFiles[Path];
+            SelectEditor(Path);
             var line = editor.Document.GetLineByNumber(LineNumber);
             if (line == null)
                 return;
@@ -167,6 +170,7 @@ namespace NetExt.Shim
             if (!sourceFiles.ContainsKey(Path))
                 return;
             var editor = sourceFiles[Path];
+            SelectEditor(Path);
             var line = editor.Document.GetLineByNumber(LineNumber);
             if (line == null)
                 return;
@@ -180,6 +184,7 @@ namespace NetExt.Shim
             if (!sourceFiles.ContainsKey(Path))
                 return;
             var editor = sourceFiles[Path];
+            SelectEditor(Path);
             IBackgroundRenderer before = null;
             try
             {
@@ -208,7 +213,10 @@ namespace NetExt.Shim
         {
             if (!sourceFiles.ContainsKey(Path))
                 return;
+
+            SelectEditor(Path);
             var editor = sourceFiles[Path];
+            editor.InvalidateVisual();
             editor.ScrollToLine(Line);
         }
         public void UnHighLightLine(string Path, int Line)
@@ -216,12 +224,16 @@ namespace NetExt.Shim
             if (!sourceFiles.ContainsKey(Path))
                 return;
             var editor = sourceFiles[Path];
+            SelectEditor(Path);
             var before = editor.TextArea.TextView.BackgroundRenderers.First(r => r.GetType().ToString().Contains("HighlightCurrentLineBackgroundRenderer"));
 
             if (before != null)
             {
                 editor.TextArea.TextView.BackgroundRenderers.Remove(before);
             }
+            editor.InvalidateVisual();
+
+            editor.ScrollToLine(Line);
         }
 
     }
