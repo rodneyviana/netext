@@ -752,6 +752,8 @@ std::string SpecialCases::PrettyPrint(CLRDATA_ADDRESS Address, CLRDATA_ADDRESS M
 			return CW2A(v.strValue.c_str());
 		obj.Request(Address);
 	}
+	if(!obj.IsValid())
+		return "";
 	std::wstring methName = obj.TypeName();
 
 	if(obj.IsRuntime())

@@ -1840,6 +1840,23 @@ kernel32!KUSER_SHARED_DATA
 
         }
 
+        public static int DeteBias
+        {
+            get
+            {
+                WinApi.KUSER_SHARED_DATA SHARED_DATA = SharedData;
+                if (String.IsNullOrWhiteSpace(SharedData.NtSystemRoot) || SHARED_DATA.NtSystemRoot[1] != ':') // Bad SharedData
+                {
+
+
+                    return int.MaxValue; // Invalid Date
+
+                }
+
+                return (int)(SHARED_DATA.TimeZoneBias.ToLong());
+            }
+        }
+
         /// <summary>
         /// Return trues if it is an iDNA trace
         /// </summary>

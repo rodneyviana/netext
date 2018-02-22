@@ -639,7 +639,7 @@ namespace Microsoft.Diagnostics.Runtime.Desktop
                     return _elementType;
 
                 ClrType type = _type.Value;
-                if (type == null)
+                if (type == null || type.BaseSize == 0)
                     _elementType = (ClrElementType)_field.CorElementType;
 
                 else if (type.IsEnum)

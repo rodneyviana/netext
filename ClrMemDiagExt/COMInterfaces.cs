@@ -83,7 +83,14 @@ namespace NetExt.Shim
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
         [PreserveSig]
         int DumpMixedStack();
-
+        [PreserveSig]
+        int GetTargetTime([Out] out Int64 TargetTicks, [Out] out Int64 UTCTicks, [Out] out MD_NETTime TargetTime, [Out] out MD_NETTime NETTime);
+        [PreserveSig]
+        int DecimalToStr(int lo, int mid, int hi, int flags, [Out] [MarshalAs((UnmanagedType)19)] out string DecimalStr);
+        [PreserveSig]
+        int DecimalToDouble(int lo, int mid, int hi, int flags, [Out] out double DecimalDouble);
+        [PreserveSig]
+        int TicksToStr(Int64 Ticks, int Bias, [Out] [MarshalAs((UnmanagedType)19)] out string DateStr);
     }
 
     [ComVisible(true)]
@@ -108,6 +115,20 @@ namespace NetExt.Shim
         int SaveModule([MarshalAs((UnmanagedType)19)] string Path);
 
 
+    }
+    [ComVisible(true)]
+    [StructLayout(LayoutKind.Sequential, Pack = 8, CharSet = CharSet.Unicode)]
+    public struct MD_NETTime
+    {
+
+        public int Year;
+        public int Month;
+        public int Day;
+        public int Hours;
+        public int Minutes;
+        public int Seconds;
+        public int Milisseconds;
+        public int Bias;
     }
     [ComVisible(true)]
     [StructLayout(LayoutKind.Sequential, Pack = 8, CharSet = CharSet.Unicode)]

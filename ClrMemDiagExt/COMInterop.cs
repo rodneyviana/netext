@@ -3694,6 +3694,65 @@ namespace NetExt.Shim
             }
             return HRESULTS.S_OK;
         }
+
+        public int GetTargetTime(out Int64 TargetTicks, out Int64 UTCTicks, out MD_NETTime TargetTime, out MD_NETTime NETTime)
+        {
+            var utc = DebugApi.CurrentTimeDate;
+            var local = DebugApi.CurrentTimeDateLocal;
+            UTCTicks = utc.Ticks;
+            TargetTicks = local.Ticks;
+
+            TargetTime = new MD_NETTime()
+            {
+                Bias = DebugApi.DeteBias,
+                Day = local.Day,
+                Month = local.Month,
+                Year = local.Year,
+                Hours = local.Hour,
+                Minutes = local.Minute,
+                Milisseconds = local.Millisecond
+            };
+
+            NETTime = new MD_NETTime()
+            {
+                Bias = 0,
+                Day = utc.Day,
+                Month = utc.Month,
+                Year = utc.Year,
+                Hours = utc.Hour,
+                Minutes = utc.Minute,
+                Milisseconds = utc.Millisecond
+            };
+
+            return TargetTime.Bias == Int32.MaxValue ? HRESULTS.E_FAIL : HRESULTS.S_OK;
+        }
+
+        public int DecimalToStr(int lo, int mid, int hi, int flags, out string DecimalStr)
+        {
+            int[] parts = new int[] { lo, mid, hi, flags };
+            Decimal dec = new decimal(parts);
+            DecimalStr = dec.ToString();
+            return HRESULTS.S_OK;
+        }
+        
+        public int DecimalToDouble(int lo, int mid, int hi, int flags, [Out] out double DecimalDouble)
+        {
+            int[] parts = new int[] { lo, mid, hi, flags };
+            Decimal dec = new decimal(parts);
+            DecimalDouble = (double)dec;
+            return HRESULTS.S_OK;
+        }
+
+        public int TicksToStr(Int64 Ticks, int Bias, [Out] [MarshalAs((UnmanagedType)19)] out string DateStr)
+        {
+            DateTime date = new DateTime();
+
+            DateStr = date.ToString("MM/dd/yyyy HH:mm:ss.ff");
+
+            return HRESULTS.S_OK;
+        }
+
+
     }
 
     [ComVisible(true)]

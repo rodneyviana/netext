@@ -99,7 +99,15 @@ CLRDATA_ADDRESS MTFromEEClass(CLRDATA_ADDRESS cl)
 
 bool IsMinidump()
 {
-	return !g_ExtInstancePtr->HasFullMemBasic();
+	ULONG cls, qual, flags = 0;
+	g_ExtInstancePtr->m_Control4->GetDebuggeeType(&cls, &qual);
+	if(cls == DEBUG_USER_WINDOWS_SMALL_DUMP)
+	{
+		g_ExtInstancePtr->m_Control4->GetDumpFormatFlags(&flags);
+		return (flags & DEBUG_FORMAT_USER_SMALL_FULL_MEMORY) == 0;
+	}
+	return false;
+	
 }
 
 bool IsValidMemory(CLRDATA_ADDRESS Address, MEMORY_BASIC_INFORMATION64& MemInfo, INT64 Size)
@@ -108,7 +116,7 @@ bool IsValidMemory(CLRDATA_ADDRESS Address, MEMORY_BASIC_INFORMATION64& MemInfo,
 
 	if(isMini == false && IsMinidump())
 	{
-		g_ExtInstancePtr->Out("*WARNING*: This is a minidump. It will not test whether memory is valid or not");
+		g_ExtInstancePtr->Out("*WARNING*: This is a minidump. It will not test whether memory is valid or not. This message is only shown once.");
 		isMini = true;
 	}
 
