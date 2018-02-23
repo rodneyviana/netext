@@ -232,6 +232,8 @@ public:
 std::string TypeString(CorElementType CorType);
 bool IsMinidump();
 
+bool IsiDNA();
+
 //#ifndef _WIN64
 //bool IsValidMemory(CLRDATA_ADDRESS Address, MEMORY_BASIC_INFORMATION32& MemInfo, INT64 Size = 0);
 //#else

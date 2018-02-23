@@ -90,6 +90,114 @@ extern WCHAR NameBuffer[MAX_CLASS_NAME];
 
 extern bool IsValidMemory(CLRDATA_ADDRESS Address, INT64 Size);
 
+//
+// From sdk wdm.h
+// Define system time structure.
+//
+
+typedef struct _KSYSTEM_TIME {
+	ULONG LowPart;
+	LONG High1Time;
+	LONG High2Time;
+} KSYSTEM_TIME, *PKSYSTEM_TIME;
+
+//
+// Adapted from ntextapi.h
+//
+typedef struct KUSER_SHARED_DATA_MINI {
+
+	//
+	// Current low 32-bit of tick count and tick count multiplier.
+	//
+	// N.B. The tick count is updated each time the clock ticks.
+	//
+
+	ULONG TickCountLowDeprecated;
+	ULONG TickCountMultiplier;
+
+	//
+	// Current 64-bit interrupt time in 100ns units.
+	//
+
+	volatile KSYSTEM_TIME InterruptTime;
+
+	//
+	// Current 64-bit system time in 100ns units.
+	//
+
+	volatile KSYSTEM_TIME SystemTime;
+
+	//
+	// Current 64-bit time zone bias.
+	//
+
+	volatile KSYSTEM_TIME TimeZoneBias;
+
+	//
+	// Support image magic number range for the host system.
+	//
+	// N.B. This is an inclusive range.
+	//
+
+	USHORT ImageNumberLow;
+	USHORT ImageNumberHigh;
+
+	//
+	// Copy of system root in unicode.
+	//
+
+	WCHAR NtSystemRoot[260];
+
+	//
+	// Maximum stack trace depth if tracing enabled.
+	//
+
+	ULONG MaxStackTraceDepth;
+
+	//
+	// Crypto exponent value.
+	//
+
+	ULONG CryptoExponent;
+
+	//
+	// Time zone ID.
+	//
+
+	ULONG TimeZoneId;
+	ULONG LargePageMinimum;
+
+	//
+	// This value controls the AIT Sampling rate.
+	//
+
+	ULONG AitSamplingValue;
+
+	//
+	// This value controls switchback processing.
+	//
+
+	ULONG AppCompatFlag;
+
+	//
+	// Current Kernel Root RNG state seed version
+	//
+
+	ULONGLONG RNGSeedVersion;
+
+	//
+	// This value controls assertion failure handling.
+	//
+
+	ULONG GlobalValidationRunlevel;
+
+	volatile LONG TimeZoneBiasStamp;
+
+	//
+	// Reserved (available for reuse).
+	//
+};
+
 
 //----------------------------------------------------------------------------
 //
@@ -179,6 +287,22 @@ struct FromFlags
 	std::string cmd;
 };
 
+#define REQ_IF(_If, _Member) \
+    if (!m_Client || (Status = m_Client->QueryInterface(__uuidof(_If), \
+                                        (PVOID*)&_Member)) != S_OK) \
+    { \
+		Out("Unable to get _If Interface"); \
+        return; \
+    }
+
+
+#define TryToAquire(_x, error) \
+    if(FAILED(_x)); \
+    { \
+      Out("Error during _x \n"); \
+      return; \
+    }
+
 #define EXITPOINTEXT(s) \
 		if(hr != S_OK)		\
 		{ \
@@ -235,9 +359,25 @@ extern std::map<std::wstring, std::wstring> varsDict;
 
 #define GetVar(x) envVars.find(x) == envVars.end() ? L"" : envVars[x]
 
+const char __symbols[] = "abcdefghijklmnopqrstuvwxyz0123456789****************************";
+
 class EXT_CLASS : public ExtExtension
 {
 public:
+	bool ReadSharedData(KUSER_SHARED_DATA_MINI& SharedData)
+	{
+		ZeroMemory(&SharedData, sizeof(SharedData));
+		UINT64 sharedData = 0;
+		ULONG size = 0;
+		HRESULT hr = m_Data->ReadDebuggerData(DEBUG_DATA_SharedUserData, &sharedData, sizeof(sharedData), &size);
+		if (hr != S_OK)
+			return false;
+		hr = m_Data->ReadVirtual(sharedData, &SharedData, sizeof(SharedData), &size);
+		if (hr != S_OK)
+			return false;
+		return true;
+	}
+
 	static std::string Execute(const std::string &Command)
 	{
 		auto_ptr<ExtCaptureOutputA> execContext(new ExtCaptureOutputA());
@@ -371,6 +511,114 @@ public:
 		return domainName + userName;
 	}
 
+
+
+	bool GetTime(SYSTEMTIME& FormattedTime, bool IsTimeLocal = false)
+	{
+		KUSER_SHARED_DATA_MINI sharedData;
+
+		ZeroMemory(&FormattedTime, sizeof(FormattedTime));
+
+		if (!ReadSharedData(sharedData))
+		{
+			return false;
+
+		}
+		
+		if (IsTimeLocal)
+		{
+			INT64 *time1 = (INT64*)&(sharedData.SystemTime);
+			INT64 *time2 = (INT64*)&(sharedData.TimeZoneBias);
+			*time1 -= *time2;
+		}
+		FILETIME time;
+		time.dwLowDateTime = sharedData.SystemTime.LowPart;
+		time.dwHighDateTime = sharedData.SystemTime.High1Time;
+		::FileTimeToSystemTime(&time, &FormattedTime);
+		return true;
+	}
+	UINT64 Timer;
+	UINT64 GetElapsedTime()
+	{
+		UINT64 now = Timer;
+		Timer = GetTickCount64();
+		return Timer - now;
+	}
+
+	void ShowTimer()
+	{
+		NameBuffer[0] = L'\0';
+
+		GetTimeFormatEx(LOCALE_NAME_USER_DEFAULT, TIME_FORCE24HOURFORMAT, NULL, NULL, NameBuffer, MAX_MTNAME);
+		Out("New Timer at: %S\n", NameBuffer);
+
+		bool isFirst = (0 == Timer);
+		UINT64 elapsed = GetElapsedTime();
+		if (!isFirst)
+		{
+			Out("Last timer took %f seconds\n", (float)((float)elapsed / (float)1000));
+		}
+	}
+
+	int LetterToIndex(char Chr)
+	{
+		if (Chr >= 'a' && Chr <= 'z')
+			return Chr - 'a';
+		if (Chr >= L'0' && Chr <= '9')
+			return Chr - '0' + ('z' - 'a') + 1;
+		// should not get here
+		return -1;
+	}
+
+	std::string TagToStr(unsigned int Tag)
+	{
+		std::string TagStr;
+		if ((Tag >> 24) < 36) // Non ascii char means it is 5
+		{
+			// compacted to 6-bits - each part 
+			TagStr += __symbols[(Tag >> 24) & 0x3f];
+			TagStr += __symbols[(Tag >> 18) & 0x3f];
+			TagStr += __symbols[(Tag >> 12) & 0x3f];
+			TagStr += __symbols[(Tag >> 6) & 0x3f];
+			TagStr += __symbols[Tag & 0x3f];
+		}
+		else
+		{
+			TagStr += (char)((Tag >> 24) & 0x7F);
+			TagStr += (char)((Tag >> 16) & 0x7F);
+			TagStr += (char)((Tag >> 8) & 0x7F);
+			TagStr += (char)((Tag) & 0x7F);
+		}
+
+		return TagStr;
+	}
+
+	unsigned int StrToTag(std::string StrTag)
+	{
+
+		if (StrTag.size() == 4)
+		{
+			return (StrTag[0] << 24) + (StrTag[1] << 16) + (StrTag[2] << 8) + (StrTag[3]);
+		}
+
+		if (StrTag.size() == 5)
+		{
+			int sum = 0;
+			for (int i = 0; i <= 4; i++)
+			{
+				sum = sum << 6;
+				sum += LetterToIndex(StrTag[i]);
+
+
+			}
+
+			return sum; 
+		}
+
+		return 0; // It should not come here
+	}
+
+
 	static Thread SessionThreads;
 	void Uninitialize();
 	EXT_COMMAND_METHOD(wver);
@@ -415,6 +663,7 @@ public:
 
 	EXT_COMMAND_METHOD(wk);
 	EXT_COMMAND_METHOD(wopensource);
+	EXT_COMMAND_METHOD(widnauls);
 
 	regex_constants::syntax_option_type GetFlavor(const string& flavor);
 	std::ostringstream regexmatch(const string& Target, const string& Pattern, bool CaseSensitive, const string& Flavor, bool Run, const string& Format);

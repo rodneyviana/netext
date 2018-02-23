@@ -53,6 +53,12 @@
     <ClInclude Include="tinyXml\tinyxml.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="SPCategories.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\DbgModel.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="NetExt.rc">
@@ -130,6 +136,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="sqlcommand.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="idnauls.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SPCategories.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

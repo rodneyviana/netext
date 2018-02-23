@@ -391,11 +391,13 @@ echo lib\$(PlatformShortName)</Command>
   <ItemGroup>
     <ClInclude Include="boost.h" />
     <ClInclude Include="CLRHelper.h" />
+    <ClInclude Include="inc\DbgModel.h" />
     <ClInclude Include="inc\engextcpp.hpp" />
     <ClInclude Include="Indexer.h" />
     <ClInclude Include="NetExt.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="selectparser.h" />
+    <ClInclude Include="SPCategories.h" />
     <ClInclude Include="SpecialCases.h" />
     <ClInclude Include="tinyXml\tinystr.h" />
     <ClInclude Include="tinyXml\tinyxml.h" />
@@ -409,6 +411,7 @@ echo lib\$(PlatformShortName)</Command>
     <ClCompile Include="CLRHelper.cpp" />
     <ClCompile Include="clrstack.cpp" />
     <ClCompile Include="do.cpp" />
+    <ClCompile Include="idnauls.cpp" />
     <ClCompile Include="inc\engextcpp.cpp" />
     <ClCompile Include="Indexer.cpp" />
     <ClCompile Include="NetExt.cpp" />
@@ -417,6 +420,7 @@ echo lib\$(PlatformShortName)</Command>
     <ClCompile Include="select.cpp" />
     <ClCompile Include="selectparser.cpp" />
     <ClCompile Include="socket.cpp" />
+    <ClCompile Include="SPCategories.cpp" />
     <ClCompile Include="SpecialCases.cpp" />
     <ClCompile Include="sqlcommand.cpp" />
     <ClCompile Include="tinyXml\tinystr.cpp" />

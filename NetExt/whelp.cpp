@@ -1,4 +1,4 @@
-// Source Date: Wednesday, January 31, 2018 7:58:54 PM
+// Source Date: Thursday, February 22, 2018 9:12:19 PM
 // Source File: C:\Users\rviana\OneDrive\Projects\netext\NetExt\helptxt.txt
 // This file was generated. Do not modify. Modify Source File instead
 #include "netext.h"
@@ -63,6 +63,8 @@ EXT_COMMAND(whelp,
 		Dml("!<link cmd=\"!whelp wxml\">wxml</link> - Dump a XML document\n");
 		Dml("!<link cmd=\"!whelp wmakesource\">wmakesource</link> - It tries to reflect the current frame into source code\n");
 		Dml("<b>*(new)*</b> !<link cmd=\"!whelp wopensource\">wopensource</link> - Open source file based on the IP provided\n");
+		Dml("<b>*(new)*</b> !<link cmd=\"!whelp widnauls\">widnauls</link> - List iDNA position of a ULS entry filtered by tag, message or category\n");
+		Dml("<b>*(new)*</b> !<link cmd=\"!whelp wconcurrentdict\">wconcurrentdict</link> - Dump a concurrent dictionary\n");
 		Dml("\n");
 		Dml("<b>Misc</b>\n");
 		Dml("<b>----</b>\n");
@@ -70,6 +72,67 @@ EXT_COMMAND(whelp,
 		Dml("<link cmd=\"!whelp expression\">expression</link> syntax\n");
 		Dml("<link cmd=\"!whelp functions\">functions</link> list *new functions*\n");
 		Dml("<link cmd=\"!whelp license\">license</link> see all licenses applied to this product\n");
+		Dml("\n");
+	return;
+	}
+	if(keyword=="widnauls")
+	{
+		Dml("List iDNA position of a ULS entry filtered by tag, message or category. It only works with the new iDNA dump type (.run).\n");
+		Dml("\n");
+		Dml("<b>Syntax:</b>\n");
+		Dml("-------\n");
+		Dml(" \n");
+		Dml("!widnauls -tag &lt;ULS-Tag&gt; [-nomessage] [-message &lt;text&gt;]\n");
+		Dml("Or\n");
+		Dml("!widnauls -tag * [-nomessage] [-category &lt;text&gt;]\n");
+		Dml("\n");
+		Dml("<b>Where:</b>\n");
+		Dml("-tag &lt;ULS-Tag&gt; - is the tag to search for (e.g.: -tag b4ly). Use * for all tags. Required\n");
+		Dml("-nomessage - dump all columns except for the message. This makes the search much faster. Optional\n");
+		Dml("-category &lt;pattern&gt; - Search text in Category or Product and not in message (e.g. -category Claims). Faster processing. Severity not searched. Optional\n");
+		Dml("-message &lt;pattern&gt; - Search text in message and not in category or product (e.g. -message disk is full). Slower processing. Optional\n");
+		Dml("\n");
+		Dml("* Note: &lt;text&gt; is case sensitive\n");
+		Dml("\n");
+		Dml("<b>Example:</b>\n");
+		Dml("----------\n");
+		Dml("\n");
+		Dml("<i>Find all entries of category Database</i>\n");
+		Dml("--------------------------------------------------\n");
+		Dml("\n");
+		Dml("0:004&gt; !widnauls -tag * -category Database\n");
+		Dml("2aa86:1121	10/20/2017 09:26:17.25	SharePoint Foundation	Database	High	8acb	[Forced due to logging gap, Original Level: VerboseEx] Reverting to process identity\n");
+		Dml("2ab4b:26f0	10/20/2017 09:26:17.32	SharePoint Foundation	Database	High	ahjqp	[Forced due to logging gap, Original Level: Verbose] SQL connection time: 32.393 for Data Source=sqlrvianasps;Initial Catalog=WSS_Content;Integrated Security=True;Persist Security Info=False;Enlist=False;Pooling=True;Min Pool Size=0;Max Pool Size=100;PoolBlockingPeriod=Auto;Asynchronous Processing=False;Connection Reset=True;MultipleActiveResultSets=False;Replication=False;Connect Timeout=15;Encrypt=False;TrustServerCertificate=False;Load Balance Timeout=0;Packet Size=8000;Type System Version=Latest;Application Name=\".Net SqlClient Data Provider\";User Instance=False;Context Connection=False;Transaction Binding=\"Implicit Unbind\";ApplicationIntent=ReadWrite;MultiSubnetFailover=False;TransparentNetworkIPResolution=True;ConnectRetryCount=1;ConnectRetryInterval=10;Column Encryption Setting=Disabled\n");
+		Dml("6ef24:1121	10/20/2017 09:26:44.78	SharePoint Foundation	Database	High	8acb	[Forced due to logging gap, Original Level: VerboseEx] Reverting to process identity\n");
+		Dml("70155:34f	10/20/2017 09:26:45.39	SharePoint Foundation	Database	High	ahjqp	[Forced due to logging gap, cached @ 10/20/2017 09:26:44.83, Original Level: Verbose] SQL connection time: 25.404 for Data Source=sqlrvianasps;Initial Catalog=WSS_Content;Integrated Security=True;Persist Security Info=False;Enlist=False;Pooling=True;Min Pool Size=0;Max Pool Size=100;PoolBlockingPeriod=Auto;Asynchronous Processing=False;Connection Reset=True;MultipleActiveResultSets=False;Replication=False;Connect Timeout=15;Encrypt=False;TrustServerCertificate=False;Load Balance Timeout=0;Packet Size=8000;Type System Version=Latest;Application Name=\".Net SqlClient Data Provider\";User Instance=False;Context Connection=False;Transaction Binding=\"Implicit Unbind\";ApplicationIntent=ReadWrite;MultiSubnetFailover=False;TransparentNetworkIPResolution=True;ConnectRetryCount=1;ConnectRetryInterval=10;Column Encryption Setting=Disabled\n");
+		Dml("2947ab:1121	10/20/2017 09:27:52.25	SharePoint Foundation	Database	High	8acb	[Forced due to logging gap, Original Level: VerboseEx] Reverting to process identity\n");
+		Dml("29499c:26f9	10/20/2017 09:27:52.31	SharePoint Foundation	Database	High	ahjqp	[Forced due to logging gap, Original Level: Verbose] SQL connection time: 41.1046 for Data Source=sqlrvianasps;Initial Catalog=WSS_Content;Integrated Security=True;Persist Security Info=False;Enlist=False;Pooling=True;Min Pool Size=0;Max Pool Size=100;PoolBlockingPeriod=Auto;Asynchronous Processing=False;Connection Reset=True;MultipleActiveResultSets=False;Replication=False;Connect Timeout=15;Encrypt=False;TrustServerCertificate=False;Load Balance Timeout=0;Packet Size=8000;Type System Version=Latest;Application Name=\".Net SqlClient Data Provider\";User Instance=False;Context Connection=False;Transaction Binding=\"Implicit Unbind\";ApplicationIntent=ReadWrite;MultiSubnetFailover=False;TransparentNetworkIPResolution=True;ConnectRetryCount=1;ConnectRetryInterval=10;Column Encryption Setting=Disabled\n");
+		Dml("30efda:1121	10/20/2017 09:28:30.25	SharePoint Foundation	Database	High	8acb	[Forced due to logging gap, Original Level: VerboseEx] Reverting to process identity\n");
+		Dml("(...)\n");
+		Dml("4f2618:346	10/20/2017 09:32:57.15	SharePoint Foundation	Database	High	ahjqp	[Forced due to logging gap, cached @ 10/20/2017 09:32:55.99, Original Level: Verbose] SQL connection time: 35.1326 for Data Source=sqlrvianasps;Initial Catalog=WSS_Content;Integrated Security=True;Persist Security Info=False;Enlist=False;Pooling=True;Min Pool Size=0;Max Pool Size=100;PoolBlockingPeriod=Auto;Asynchronous Processing=False;Connection Reset=True;MultipleActiveResultSets=False;Replication=False;Connect Timeout=15;Encrypt=False;TrustServerCertificate=False;Load Balance Timeout=0;Packet Size=8000;Type System Version=Latest;Application Name=\".Net SqlClient Data Provider\";User Instance=False;Context Connection=False;Transaction Binding=\"Implicit Unbind\";ApplicationIntent=ReadWrite;MultiSubnetFailover=False;TransparentNetworkIPResolution=True;ConnectRetryCount=1;ConnectRetryInterval=10;Column Encryption Setting=Disabled\n");
+		Dml("33 Instances\n");
+		Dml("Search took 264.320007 seconds\n");
+		Dml("\n");
+		Dml("\n");
+		Dml("<i>Find all entries of tag ahjqp containing the text 'cached'</i>\n");
+		Dml("-----------------------------------------------------------------------\n");
+		Dml("0:004> !widnauls -tag ahjqp -message cached\n");
+		Dml("70155:34f	10/20/2017 09:26:45.39	SharePoint Foundation	Database	High	ahjqp	[Forced due to logging gap, cached @ 10/20/2017 09:26:44.83, Original Level: Verbose] SQL connection time: 25.404 for Data Source=sqlrvianasps;Initial Catalog=WSS_Content;Integrated Security=True;Persist Security Info=False;Enlist=False;Pooling=True;Min Pool Size=0;Max Pool Size=100;PoolBlockingPeriod=Auto;Asynchronous Processing=False;Connection Reset=True;MultipleActiveResultSets=False;Replication=False;Connect Timeout=15;Encrypt=False;TrustServerCertificate=False;Load Balance Timeout=0;Packet Size=8000;Type System Version=Latest;Application Name=\".Net SqlClient Data Provider\";User Instance=False;Context Connection=False;Transaction Binding=\"Implicit Unbind\";ApplicationIntent=ReadWrite;MultiSubnetFailover=False;TransparentNetworkIPResolution=True;ConnectRetryCount=1;ConnectRetryInterval=10;Column Encryption Setting=Disabled\n");
+		Dml("30fb55:342	10/20/2017 09:28:30.75	SharePoint Foundation	Database	High	ahjqp	[Forced due to logging gap, cached @ 10/20/2017 09:28:30.30, Original Level: Verbose] SQL connection time: 27.4518 for Data Source=sqlrvianasps;Initial Catalog=WSS_Content;Integrated Security=True;Persist Security Info=False;Enlist=False;Pooling=True;Min Pool Size=0;Max Pool Size=100;PoolBlockingPeriod=Auto;Asynchronous Processing=False;Connection Reset=True;MultipleActiveResultSets=False;Replication=False;Connect Timeout=15;Encrypt=False;TrustServerCertificate=False;Load Balance Timeout=0;Packet Size=8000;Type System Version=Latest;Application Name=\".Net SqlClient Data Provider\";User Instance=False;Context Connection=False;Transaction Binding=\"Implicit Unbind\";ApplicationIntent=ReadWrite;MultiSubnetFailover=False;TransparentNetworkIPResolution=True;ConnectRetryCount=1;ConnectRetryInterval=10;Column Encryption Setting=Disabled\n");
+		Dml("311f77:346	10/20/2017 09:28:32.11	SharePoint Foundation	Database	High	ahjqp	[Forced due to logging gap, cached @ 10/20/2017 09:28:31.77, Original Level: Verbose] SQL connection time: 24.4665 for Data Source=sqlrvianasps;Initial Catalog=WSS_Content;Integrated Security=True;Persist Security Info=False;Enlist=False;Pooling=True;Min Pool Size=0;Max Pool Size=100;PoolBlockingPeriod=Auto;Asynchronous Processing=False;Connection Reset=True;MultipleActiveResultSets=False;Replication=False;Connect Timeout=15;Encrypt=False;TrustServerCertificate=False;Load Balance Timeout=0;Packet Size=8000;Type System Version=Latest;Application Name=\".Net SqlClient Data Provider\";User Instance=False;Context Connection=False;Transaction Binding=\"Implicit Unbind\";ApplicationIntent=ReadWrite;MultiSubnetFailover=False;TransparentNetworkIPResolution=True;ConnectRetryCount=1;ConnectRetryInterval=10;Column Encryption Setting=Disabled\n");
+		Dml("312e6d:346	10/20/2017 09:28:32.54	SharePoint Foundation	Database	High	ahjqp	[Forced due to logging gap, cached @ 10/20/2017 09:28:32.18, Original Level: Verbose] SQL connection time: 31.5382 for Data Source=sqlrvianasps;Initial Catalog=WSS_Content;Integrated Security=True;Persist Security Info=False;Enlist=False;Pooling=True;Min Pool Size=0;Max Pool Size=100;PoolBlockingPeriod=Auto;Asynchronous Processing=False;Connection Reset=True;MultipleActiveResultSets=False;Replication=False;Connect Timeout=15;Encrypt=False;TrustServerCertificate=False;Load Balance Timeout=0;Packet Size=8000;Type System Version=Latest;Application Name=\".Net SqlClient Data Provider\";User Instance=False;Context Connection=False;Transaction Binding=\"Implicit Unbind\";ApplicationIntent=ReadWrite;MultiSubnetFailover=False;TransparentNetworkIPResolution=True;ConnectRetryCount=1;ConnectRetryInterval=10;Column Encryption Setting=Disabled\n");
+		Dml("31559f:7cb	10/20/2017 09:22:17.70	SharePoint Foundation	Database	High	ahjqp	[Forced due to logging gap, cached @ 10/20/2017 09:28:33.16, Original Level: Verbose] SQL connection time: 30.9512 for Data Source=sqlrvianasps;Initial Catalog=WSS_Content;Integrated Security=True;Persist Security Info=False;Enlist=False;Pooling=True;Min Pool Size=0;Max Pool Size=100;PoolBlockingPeriod=Auto;Asynchronous Processing=False;Connection Reset=True;MultipleActiveResultSets=False;Replication=False;Connect Timeout=15;Encrypt=False;TrustServerCertificate=False;Load Balance Timeout=0;Packet Size=8000;Type System Version=Latest;Application Name=\".Net SqlClient Data Provider\";User Instance=False;Context Connection=False;Transaction Binding=\"Implicit Unbind\";ApplicationIntent=ReadWrite;MultiSubnetFailover=False;TransparentNetworkIPResolution=True;ConnectRetryCount=1;ConnectRetryInterval=10;Column Encryption Setting=Disabled\n");
+		Dml("32a79b:34f	10/20/2017 09:28:42.20	SharePoint Foundation	Database	High	ahjqp	[Forced due to logging gap, cached @ 10/20/2017 09:28:40.71, Original Level: Verbose] SQL connection time: 30.818 for Data Source=sqlrvianasps;Initial Catalog=WSS_Content;Integrated Security=True;Persist Security Info=False;Enlist=False;Pooling=True;Min Pool Size=0;Max Pool Size=100;PoolBlockingPeriod=Auto;Asynchronous Processing=False;Connection Reset=True;MultipleActiveResultSets=False;Replication=False;Connect Timeout=15;Encrypt=False;TrustServerCertificate=False;Load Balance Timeout=0;Packet Size=8000;Type System Version=Latest;Application Name=\".Net SqlClient Data Provider\";User Instance=False;Context Connection=False;Transaction Binding=\"Implicit Unbind\";ApplicationIntent=ReadWrite;MultiSubnetFailover=False;TransparentNetworkIPResolution=True;ConnectRetryCount=1;ConnectRetryInterval=10;Column Encryption Setting=Disabled\n");
+		Dml("34875c:346	10/20/2017 09:28:58.99	SharePoint Foundation	Database	High	ahjqp	[Forced due to logging gap, cached @ 10/20/2017 09:28:58.64, Original Level: Verbose] SQL connection time: 31.8415 for Data Source=sqlrvianasps;Initial Catalog=WSS_Content;Integrated Security=True;Persist Security Info=False;Enlist=False;Pooling=True;Min Pool Size=0;Max Pool Size=100;PoolBlockingPeriod=Auto;Asynchronous Processing=False;Connection Reset=True;MultipleActiveResultSets=False;Replication=False;Connect Timeout=15;Encrypt=False;TrustServerCertificate=False;Load Balance Timeout=0;Packet Size=8000;Type System Version=Latest;Application Name=\".Net SqlClient Data Provider\";User Instance=False;Context Connection=False;Transaction Binding=\"Implicit Unbind\";ApplicationIntent=ReadWrite;MultiSubnetFailover=False;TransparentNetworkIPResolution=True;ConnectRetryCount=1;ConnectRetryInterval=10;Column Encryption Setting=Disabled\n");
+		Dml("3e1a8c:5b0	10/20/2017 09:30:34.01	SharePoint Foundation	Database	High	ahjqp	[Forced due to logging gap, cached @ 10/20/2017 09:30:32.72, Original Level: Verbose] SQL connection time: 29.3569 for Data Source=sqlrvianasps;Initial Catalog=WSS_Content;Integrated Security=True;Persist Security Info=False;Enlist=False;Pooling=True;Min Pool Size=0;Max Pool Size=100;PoolBlockingPeriod=Auto;Asynchronous Processing=False;Connection Reset=True;MultipleActiveResultSets=False;Replication=False;Connect Timeout=15;Encrypt=False;TrustServerCertificate=False;Load Balance Timeout=0;Packet Size=8000;Type System Version=Latest;Application Name=\".Net SqlClient Data Provider\";User Instance=False;Context Connection=False;Transaction Binding=\"Implicit Unbind\";ApplicationIntent=ReadWrite;MultiSubnetFailover=False;TransparentNetworkIPResolution=True;ConnectRetryCount=1;ConnectRetryInterval=10;Column Encryption Setting=Disabled\n");
+		Dml("40e31c:346	10/20/2017 09:30:53.81	SharePoint Foundation	Database	High	ahjqp	[Forced due to logging gap, cached @ 10/20/2017 09:30:53.28, Original Level: Verbose] SQL connection time: 26.5001 for Data Source=sqlrvianasps;Initial Catalog=WSS_Content;Integrated Security=True;Persist Security Info=False;Enlist=False;Pooling=True;Min Pool Size=0;Max Pool Size=100;PoolBlockingPeriod=Auto;Asynchronous Processing=False;Connection Reset=True;MultipleActiveResultSets=False;Replication=False;Connect Timeout=15;Encrypt=False;TrustServerCertificate=False;Load Balance Timeout=0;Packet Size=8000;Type System Version=Latest;Application Name=\".Net SqlClient Data Provider\";User Instance=False;Context Connection=False;Transaction Binding=\"Implicit Unbind\";ApplicationIntent=ReadWrite;MultiSubnetFailover=False;TransparentNetworkIPResolution=True;ConnectRetryCount=1;ConnectRetryInterval=10;Column Encryption Setting=Disabled\n");
+		Dml("4f2618:346	10/20/2017 09:32:57.15	SharePoint Foundation	Database	High	ahjqp	[Forced due to logging gap, cached @ 10/20/2017 09:32:55.99, Original Level: Verbose] SQL connection time: 35.1326 for Data Source=sqlrvianasps;Initial Catalog=WSS_Content;Integrated Security=True;Persist Security Info=False;Enlist=False;Pooling=True;Min Pool Size=0;Max Pool Size=100;PoolBlockingPeriod=Auto;Asynchronous Processing=False;Connection Reset=True;MultipleActiveResultSets=False;Replication=False;Connect Timeout=15;Encrypt=False;TrustServerCertificate=False;Load Balance Timeout=0;Packet Size=8000;Type System Version=Latest;Application Name=\".Net SqlClient Data Provider\";User Instance=False;Context Connection=False;Transaction Binding=\"Implicit Unbind\";ApplicationIntent=ReadWrite;MultiSubnetFailover=False;TransparentNetworkIPResolution=True;ConnectRetryCount=1;ConnectRetryInterval=10;Column Encryption Setting=Disabled\n");
+		Dml("10 Instances\n");
+		Dml("Search took 10.304000 seconds\n");
+		Dml("\n");
+		Dml("\n");
+		Dml("\n");
+		Dml("\n");
 		Dml("\n");
 	return;
 	}
@@ -1787,6 +1850,34 @@ EXT_COMMAND(whelp,
 		Dml("	System.Object key = 000000015568c658 utf-8\n");
 		Dml("	System.Object val = 000000015568d3d8\n");
 		Dml("	(...)\n");
+		Dml("\n");
+	return;
+	}
+	if(keyword=="wconcurrentdict")
+	{
+		Dml("Dump items from a concurrent dictionary type\n");
+		Dml("\n");
+		Dml("<b>Syntax:</b>\n");
+		Dml("-----------\n");
+		Dml("\n");
+		Dml("!wdict &lt;address&gt;\n");
+		Dml("\n");
+		Dml("<b>Where:</b>\n");
+		Dml("---------\n");
+		Dml("\n");
+		Dml("	<b>&lt;address&gt;</b> - Address of the dictionary.\n");
+		Dml(" \n");
+		Dml("<b>Example:</b>\n");
+		Dml("--------\n");
+		Dml(" \n");
+		Dml("<i>Dumps a concurrent dictionary</i>\n");
+		Dml("------------------------\n");
+		Dml("	0:000&gt; !wconcurrentdict 000000b800a39e20\n");
+		Dml("    Items   : 1\n");
+		Dml("    System.__Canon m_key = 00007ff88aa0c158\n");
+		Dml("    System.__Canon m_value = 000000b8405af8c0 Microsoft.SharePoint.Utilities.SPExecutionTimeCounter\n");
+		Dml("\n");
+		Dml("\n");
 		Dml("\n");
 	return;
 	}

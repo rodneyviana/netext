@@ -110,6 +110,13 @@ bool IsMinidump()
 	
 }
 
+bool IsiDNA()
+{
+	ULONG cls, qlf;
+	g_ExtInstancePtr->m_Control4->GetDebuggeeType(&cls, &qlf);
+	return (qlf == DEBUG_KERNEL_IDNA || qlf == DEBUG_USER_WINDOWS_IDNA);
+}
+
 bool IsValidMemory(CLRDATA_ADDRESS Address, MEMORY_BASIC_INFORMATION64& MemInfo, INT64 Size)
 {
 	static bool isMini = false;
