@@ -1,4 +1,4 @@
-// Source Date: Thursday, February 22, 2018 9:12:19 PM
+// Source Date: Friday, February 23, 2018 6:28:53 PM
 // Source File: C:\Users\rviana\OneDrive\Projects\netext\NetExt\helptxt.txt
 // This file was generated. Do not modify. Modify Source File instead
 #include "netext.h"
@@ -1860,7 +1860,7 @@ EXT_COMMAND(whelp,
 		Dml("<b>Syntax:</b>\n");
 		Dml("-----------\n");
 		Dml("\n");
-		Dml("!wdict &lt;address&gt;\n");
+		Dml("!wconcurrentdict &lt;address&gt;\n");
 		Dml("\n");
 		Dml("<b>Where:</b>\n");
 		Dml("---------\n");

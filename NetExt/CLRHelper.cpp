@@ -101,7 +101,7 @@ bool IsMinidump()
 {
 	ULONG cls, qual, flags = 0;
 	g_ExtInstancePtr->m_Control4->GetDebuggeeType(&cls, &qual);
-	if(cls == DEBUG_USER_WINDOWS_SMALL_DUMP)
+	if(cls == DEBUG_USER_WINDOWS_SMALL_DUMP || qual == DEBUG_KERNEL_IDNA || qual == DEBUG_USER_WINDOWS_IDNA)
 	{
 		g_ExtInstancePtr->m_Control4->GetDumpFormatFlags(&flags);
 		return (flags & DEBUG_FORMAT_USER_SMALL_FULL_MEMORY) == 0;

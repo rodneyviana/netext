@@ -175,12 +175,38 @@ void StackObj::DumpStackObject(bool CacheOnly)
 		return;
 	}
 
+//	if(IsiDNA() && (stackStart - stackEnd) > 100*1024)
+//	{
+//		// cache stack to make things faster
+//		ULONG size = (ULONG)(min((stackStart - stackEnd), 64*1014*1024));
+//		PVOID Addr = NULL;
+//		try
+//		{
+//			ExtRemoteData rd(stackEnd, size);
+//			rd.Read();
+//			int i = 0;
+//			for(i=0;i<(size / sizeof(void*));i+=sizeof(void*))
+//			{
+//				PVOID p=(PVOID)(rd.m_Data + i);
+//				if(p != NULL)
+//					break;
+//			}
+//			stackEnd += i*sizeof(void*); 
+//		} catch(...)
+//		{
+//#if _DEBUG
+//			g_ExtInstancePtr->Out("Exception\n");
+//#endif
+//
+//		}
+	//	
+	//}
 	while(stackEnd <= stackStart)
 	{
 		if(IsInterrupted())
 			return;
 		CLRDATA_ADDRESS addr = ObjDetail::GetPTR(stackEnd);
-		if(/* (addr >= stackEnd && addr <= stackStart) || */ heaps.IsInHeap(addr,&h,&g))
+		if(addr != 0 && heaps.IsInHeap(addr,&h,&g))
 		{
 			if(uniques.find(addr)==uniques.end())
 			{

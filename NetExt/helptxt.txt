@@ -1749,7 +1749,7 @@ Dump items from a concurrent dictionary type
 <b>Syntax:</b>
 -----------
 
-!wdict &lt;address&gt;
+!wconcurrentdict &lt;address&gt;
 
 <b>Where:</b>
 ---------
