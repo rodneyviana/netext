@@ -83,14 +83,24 @@ namespace NetExt.Shim
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
         [PreserveSig]
         int DumpMixedStack();
+        [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
         [PreserveSig]
         int GetTargetTime([Out] out Int64 TargetTicks, [Out] out Int64 UTCTicks, [Out] out MD_NETTime TargetTime, [Out] out MD_NETTime NETTime);
+        [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
         [PreserveSig]
         int DecimalToStr(int lo, int mid, int hi, int flags, [Out] [MarshalAs((UnmanagedType)19)] out string DecimalStr);
+        [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
         [PreserveSig]
         int DecimalToDouble(int lo, int mid, int hi, int flags, [Out] out double DecimalDouble);
+        [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
         [PreserveSig]
         int TicksToStr(Int64 Ticks, int Bias, [Out] [MarshalAs((UnmanagedType)19)] out string DateStr);
+        [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
+        [PreserveSig]
+        int MakeSourceFromIp(ulong IPAddress);
+        [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
+        [PreserveSig]
+        int GetLineRange(ulong IPAddress, [Out] out IMDSourceMapEnum LineMap);
     }
 
     [ComVisible(true)]
@@ -116,6 +126,37 @@ namespace NetExt.Shim
 
 
     }
+
+    [ComVisible(true)]
+    [StructLayout(LayoutKind.Sequential, Pack = 8, CharSet = CharSet.Unicode)]
+    public struct MD_SourceMap
+    {
+        public ulong Start;
+        public ulong End;
+        public bool IsJump;
+        public bool IsCall;
+        public bool IsManaged;
+        public ulong PointTo;
+
+    }
+
+    [ComVisible(true)]
+    [Guid("4462E0AF-B4B2-4F06-9BF9-4FDD05B764B9")]
+    [System.Runtime.InteropServices.TypeLibTypeAttribute((System.Runtime.InteropServices.TypeLibTypeFlags)128)]
+    [System.Runtime.InteropServices.InterfaceTypeAttribute((System.Runtime.InteropServices.ComInterfaceType)1)]
+    public interface IMDSourceMapEnum
+    {
+        [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
+        int GetRange([Out] out ulong Start, [Out] out ulong End);
+        [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
+        int GetCount([Out] out int pCount);
+        [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
+        int Reset();
+        [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
+        [PreserveSig]
+        int Next([Out] [MarshalAs((UnmanagedType)28)] out MD_SourceMap SourceMap);
+    }
+
     [ComVisible(true)]
     [StructLayout(LayoutKind.Sequential, Pack = 8, CharSet = CharSet.Unicode)]
     public struct MD_NETTime

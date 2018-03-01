@@ -1345,6 +1345,76 @@ namespace NetExt.Shim
 
     }
 
+    public class DisassembleLine
+    {
+        public ulong StartOffset { get; set; }
+        public ulong EndOffset { get; set; }
+        public string Line { get; set; }
+        public bool IsJump
+        {
+            get
+            {
+                if (String.IsNullOrWhiteSpace(Line) || IsCall)
+                    return false;
+                string opcode = Line.Split(" ".ToCharArray(), StringSplitOptions.RemoveEmptyEntries)[1];
+                foreach (var op in "0f8;e3;eb;e9;ea".Split(';'))
+                {
+                    if (opcode.StartsWith(op))
+                    {
+                        return true;
+                    }
+                }
+                return false;
+                //  0F 80 - 0F 8F - Long
+                // 70 - 7F Short
+                // E3 
+                // EB - jmp
+                // e9
+                // ff
+                // ea
+            }
+        }
+
+        public bool IsCall
+        {
+            get
+            {
+                string call = Line.Split(" ".ToCharArray(), StringSplitOptions.RemoveEmptyEntries)[2];
+                if (call == "call")
+                    return true;
+                // e8
+                // ff
+                // 9a -> invalid 64b
+                return false;
+            }
+        }
+
+        public override string ToString()
+        {
+            return String.Format("End: {1:x16}, Jump: {2}, Call: {3}: PointTo: {4:x16}: {5}",
+                this.StartOffset, this.EndOffset, this.IsJump, this.IsCall, this.PointTo, this.Line);
+        }
+
+        public bool IsManagedCall
+        {
+            get
+            {
+                if (PointTo == 0)
+                {
+                    return false;
+                }
+                return DebugApi.GetModuleFromIp(PointTo) == null ? false : true;
+            }
+        }
+
+        public ulong PointTo
+        {
+            get;
+            set;
+        }
+
+    }
+
     public class DebugApi
     {
         public const uint DEBUG_ANY_ID = 0xffffffff;
@@ -1486,21 +1556,21 @@ namespace NetExt.Shim
                 if (valVersions == null)
                 {
                     valVersions = new Dictionary<string, string>();
-                    valVersions.Add("30319.36013", "http://referencesource.microsoft.com/Source/30319.36013/Source/");
-                    valVersions.Add("50938.18408", "http://referencesource.microsoft.com/Source/50938.18408/Source/");
-                    valVersions.Add("52213.36213", "http://referencesource.microsoft.com/Source/52213.36213/Source/");
-                    valVersions.Add("51209.34209", "http://referencesource.microsoft.com/Source/51209.34209/Source/");
-                    valVersions.Add("00079.00", "http://referencesource.microsoft.com/Source/00079.00/Source/");
-                    valVersions.Add("00081.00", "http://referencesource.microsoft.com/Source/00081.00/Source/");
-                    valVersions.Add("01586.00", "http://referencesource.microsoft.com/Source/01586.00/Source/");
-                    valVersions.Add("01590.00", "http://referencesource.microsoft.com/Source/01590.00/Source/");
-                    valVersions.Add("01038.00", "http://referencesource.microsoft.com/Source/01038.00/Source/");
-                    valVersions.Add("01040.00", "http://referencesource.microsoft.com/Source/01040.00/Source/");
-                    valVersions.Add("01055.00", "http://referencesource.microsoft.com/Source/01055.00/Source/");
-                    valVersions.Add("02046.00", "http://referencesource.microsoft.com/Source/02046.00/Source/");
-                    valVersions.Add("02053.00", "http://referencesource.microsoft.com/Source/02053.00/Source/");
-                    valVersions.Add("02556.00", "http://referencesource.microsoft.com/Source/02556.00/Source/");
-                    valVersions.Add("02558.00", "http://referencesource.microsoft.com/Source/02558.00/Source/");
+                    valVersions.Add("30319.36013", "https://referencesource.microsoft.com/Source/30319.36013/Source/");
+                    valVersions.Add("50938.18408", "https://referencesource.microsoft.com/Source/50938.18408/Source/");
+                    valVersions.Add("52213.36213", "https://referencesource.microsoft.com/Source/52213.36213/Source/");
+                    valVersions.Add("51209.34209", "https://referencesource.microsoft.com/Source/51209.34209/Source/");
+                    valVersions.Add("00079.00", "https://referencesource.microsoft.com/Source/00079.00/Source/");
+                    valVersions.Add("00081.00", "https://referencesource.microsoft.com/Source/00081.00/Source/");
+                    valVersions.Add("01586.00", "https://referencesource.microsoft.com/Source/01586.00/Source/");
+                    valVersions.Add("01590.00", "https://referencesource.microsoft.com/Source/01590.00/Source/");
+                    valVersions.Add("01038.00", "https://referencesource.microsoft.com/Source/01038.00/Source/");
+                    valVersions.Add("01040.00", "https://referencesource.microsoft.com/Source/01040.00/Source/");
+                    valVersions.Add("01055.00", "https://referencesource.microsoft.com/Source/01055.00/Source/");
+                    valVersions.Add("02046.00", "https://referencesource.microsoft.com/Source/02046.00/Source/");
+                    valVersions.Add("02053.00", "https://referencesource.microsoft.com/Source/02053.00/Source/");
+                    valVersions.Add("02556.00", "https://referencesource.microsoft.com/Source/02556.00/Source/");
+                    valVersions.Add("02558.00", "https://referencesource.microsoft.com/Source/02558.00/Source/");
                 }
                 return valVersions;
             }
@@ -1715,6 +1785,45 @@ namespace NetExt.Shim
             time.dwHighDateTime = (int)(Time >> 32);
             return ConvertDateTime(time);
         }
+
+
+        public static IList<DisassembleLine> Disassemble(ulong Start, ulong End)
+        {
+            List<DisassembleLine> lines = new List<DisassembleLine>();
+
+            int i = 0;
+            ulong curr = Start;
+
+            IDebugControl5 control5 = (IDebugControl5)Client;
+            while (curr < End && i < 1000)
+            {
+                StringBuilder buff = new StringBuilder(1000);
+                uint size = 0;
+                ulong st = curr;
+                int hr = control5.Disassemble(curr, DEBUG_DISASM.EFFECTIVE_ADDRESS,
+                    buff, 1000, out size, out curr);
+                if (hr != (int)HRESULT.S_OK)
+                {
+                    break;
+                }
+                DisassembleLine line = new DisassembleLine() { StartOffset = st, EndOffset = curr - 1, Line = buff.ToString() };
+                if (line.IsJump || line.IsCall)
+                {
+                    string[] parts = line.Line.Split(' ');
+                    line.PointTo = DebugApi.GetExpression(parts[parts.Length - 1]);
+                    if (line.PointTo == 0)
+                        line.PointTo = DebugApi.GetExpression(parts[parts.Length - 2]); // for things like [br=0]
+                }
+                lines.Add(line);
+                i++;
+
+            }
+
+
+            return lines;
+        }
+
+
 
         /*
 0:071> dt KUSER_SHARED_DATA  0x7FFE0000
@@ -2364,6 +2473,24 @@ kernel32!KUSER_SHARED_DATA
                 return IP;
             }
         }
+
+        public static Module GetModuleFromIp(ulong Address)
+        {
+            DEBUG_STACK_FRAME stackFrame = new DEBUG_STACK_FRAME() { InstructionOffset = Address };
+            
+            StackFrame frame = new StackFrame(stackFrame);
+
+            var manMod = frame.ManagedModule;
+            Module mod;
+            if (manMod == null)
+                mod = new Module(frame.Symbol.Split('!')[0]);
+            else
+                mod = new Module(manMod.ImageBase);
+
+            return mod;
+
+        }
+
 
         public static Module ModuleFromScope
         {

@@ -17,7 +17,7 @@ namespace Microsoft.Diagnostics.Runtime.Utilities
     /// </summary>
     public abstract partial class SymbolLocator
     {
-        private static string[] s_microsoftSymbolServers = { "http://msdl.microsoft.com/download/symbols", "http://referencesource.microsoft.com/symbols" };
+        private static string[] s_microsoftSymbolServers = { "http://msdl.microsoft.com/download/symbols", "https://referencesource.microsoft.com/symbols" };
 
         /// <summary>
         /// The raw symbol path.  You should probably use the SymbolPath property instead.

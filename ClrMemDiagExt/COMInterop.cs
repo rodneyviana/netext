@@ -3153,6 +3153,13 @@ namespace NetExt.Shim
 
             try
             {
+                //
+                // GitHub is now requiring TLS 1.2, make sure it is enabled
+                //
+                if(!ServicePointManager.SecurityProtocol.HasFlag(SecurityProtocolType.Tls12))
+                {
+                    ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls12;
+                }
                 WebClient client = new WebClient();
                 string text = client.DownloadString(versionUrl);
                 Regex reg = new Regex(@"VERSION:\s+(\d+)\.(\d+)\.(\d+)\.(\d+)");
@@ -3508,10 +3515,20 @@ namespace NetExt.Shim
             }
         }
 
-
         public int MakeSource()
         {
-            Module mod = DebugApi.ModuleFromScope;
+            return MakeSourceInternal();
+        }
+
+        public int MakeSourceFromIp(ulong IPAddress)
+        {
+            return MakeSourceInternal(IPAddress);
+        }
+
+        public int MakeSourceInternal(ulong IP=0)
+        {
+
+            Module mod = IP == 0 ? DebugApi.ModuleFromScope : DebugApi.GetModuleFromIp(IP);
             if (!mod.IsClr)
             {
                 Exports.WriteLine("Module {0} is not managed. No source will be created.", mod.Name);
@@ -3672,6 +3689,38 @@ namespace NetExt.Shim
 
         }
 
+        public int GetLineRange(ulong IPAddress, [Out] out IMDSourceMapEnum LineMap)
+        {
+            DEBUG_STACK_FRAME fr = new DEBUG_STACK_FRAME() { InstructionOffset = IPAddress };
+            StackFrame frame = new StackFrame(fr);
+            var sourceLocation = frame.SourceLocation;
+            if (!sourceLocation.IsManaged || sourceLocation.End == 0)
+            {
+                LineMap = new MDEnumLineMap(0, 0);
+                return HRESULTS.E_FAIL;
+            }
+
+            LineMap = new MDEnumLineMap(sourceLocation.Start, sourceLocation.End - 1);
+
+            var lines = DebugApi.Disassemble(sourceLocation.Start, sourceLocation.End - 1);
+
+            foreach (var line in lines)
+            {
+                MD_SourceMap map = new MD_SourceMap()
+                {
+                    Start = line.StartOffset,
+                    End = line.EndOffset,
+                    IsJump = line.IsJump,
+                    IsCall = line.IsCall,
+                    IsManaged = line.IsManagedCall,
+                    PointTo = line.PointTo
+                };
+                ((MDEnumLineMap)LineMap).Add(map);
+            }
+            return HRESULTS.S_OK;
+
+        }
+
         public int DumpMixedStack()
         {
             string childSP = "Child-SP".PadRight((int)m_target.PointerSize * 2 + 1);
@@ -3753,6 +3802,66 @@ namespace NetExt.Shim
         }
 
 
+    }
+
+    [ComVisible(true)]
+    [Guid("E2D9461C-0C21-417A-B4BB-95CA826C95A3")]
+    [ClassInterface(ClassInterfaceType.None)]
+    [ComDefaultInterface(typeof(IMDSourceMapEnum))]
+    public class MDEnumLineMap : IMDSourceMapEnum
+    {
+        protected ulong start;
+        protected ulong end;
+        private int index;
+
+        internal List<MD_SourceMap> mapList;
+
+        internal MDEnumLineMap(ulong Start, ulong End)
+        {
+            start = Start;
+            end = End;
+            mapList = new List<MD_SourceMap>();
+            index = 0;
+        }
+
+        internal void Add(MD_SourceMap Entry)
+        {
+            mapList.Add(Entry);
+        }
+
+        public int GetRange(out ulong Start, out ulong End)
+        {
+            Start = start;
+            End = end;
+            return HRESULTS.S_OK;
+        }
+
+        public int GetCount(out int pCount)
+        {
+            pCount = 0;
+            if (mapList == null)
+                return HRESULTS.E_FAIL;
+            pCount = mapList.Count;
+            return HRESULTS.S_OK;
+        }
+
+        public int Reset()
+        {
+            index = 0;
+            return HRESULTS.S_OK;
+        }
+
+        public int Next(out MD_SourceMap SourceMap)
+        {
+            
+            if (mapList == null || index >= mapList.Count)
+            {
+                SourceMap = new MD_SourceMap();
+                return HRESULTS.E_FAIL;
+            }
+            SourceMap = mapList[index++];
+            return HRESULTS.S_OK;
+        }
     }
 
     [ComVisible(true)]
