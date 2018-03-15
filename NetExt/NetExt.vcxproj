@@ -427,6 +427,7 @@ echo lib\$(PlatformShortName)</Command>
     <ClCompile Include="tinyXml\tinyxml.cpp" />
     <ClCompile Include="tinyXml\tinyxmlerror.cpp" />
     <ClCompile Include="tinyXml\tinyxmlparser.cpp" />
+    <ClCompile Include="trace.cpp" />
     <ClCompile Include="wdict.cpp" />
     <ClCompile Include="wheap.cpp" />
     <ClCompile Include="whelp.cpp" />

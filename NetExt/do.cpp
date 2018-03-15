@@ -208,17 +208,21 @@ EXT_COMMAND(wdo,
 				}
 			} else
 			{
+				
 				SVAL s = GetValue(offset,(CorElementType)data.corElementType,data.MethodTable,"<link cmd=\"!wdo %p\">%p</link>","<link cmd=\"!wdo -mt %p %p\">%S</link>", true);
 				string pretty;
 				try
 				{
-					if(IsCorObj((CorElementType)data.corElementType) || data.isString)
-						pretty = SpecialCases::PrettyPrint(ObjDetail::GetPTR(offset),0);
-					else
-						pretty = SpecialCases::PrettyPrint(offset, data.MethodTable);
-					if(pretty.size() > 0)
+					if((CorElementType)data.corElementType != ELEMENT_TYPE_STRING) // Explicit string type was printed already in GetValue
 					{
-						Out(" %s", pretty.c_str());
+						if(IsCorObj((CorElementType)data.corElementType) || data.isString)
+							pretty = SpecialCases::PrettyPrint(ObjDetail::GetPTR(offset),0);
+						else
+							pretty = SpecialCases::PrettyPrint(offset, data.MethodTable);
+						if(pretty.size() > 0)
+						{
+							Out(" %s", pretty.c_str());
+						}
 					}
 				} catch(...)
 				{

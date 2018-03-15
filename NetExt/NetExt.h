@@ -664,6 +664,10 @@ public:
 	EXT_COMMAND_METHOD(wk);
 	EXT_COMMAND_METHOD(wopensource);
 	EXT_COMMAND_METHOD(widnauls);
+	EXT_COMMAND_METHOD(wp);
+	EXT_COMMAND_METHOD(wt);
+
+
 
 	regex_constants::syntax_option_type GetFlavor(const string& flavor);
 	std::ostringstream regexmatch(const string& Target, const string& Pattern, bool CaseSensitive, const string& Flavor, bool Run, const string& Format);

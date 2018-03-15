@@ -153,8 +153,7 @@ namespace NetExt.Shim
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
         int Reset();
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
-        [PreserveSig]
-        int Next([Out] [MarshalAs((UnmanagedType)28)] out MD_SourceMap SourceMap);
+        int Next([Out] out MD_SourceMap SourceMap);
     }
 
     [ComVisible(true)]

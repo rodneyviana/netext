@@ -123,7 +123,7 @@ bool IsValidMemory(CLRDATA_ADDRESS Address, MEMORY_BASIC_INFORMATION64& MemInfo,
 
 	if(isMini == false && IsMinidump())
 	{
-		g_ExtInstancePtr->Out("*WARNING*: This is a minidump. It will not test whether memory is valid or not. This message is only shown once.");
+		g_ExtInstancePtr->Out("*WARNING*: This is a minidump. It will not test whether memory is valid or not. This message is only shown once.\n");
 		isMini = true;
 	}
 
