@@ -391,6 +391,7 @@ echo lib\$(PlatformShortName)</Command>
   <ItemGroup>
     <ClInclude Include="boost.h" />
     <ClInclude Include="CLRHelper.h" />
+    <ClInclude Include="EventCallBacks.h" />
     <ClInclude Include="inc\DbgModel.h" />
     <ClInclude Include="inc\engextcpp.hpp" />
     <ClInclude Include="Indexer.h" />
@@ -411,6 +412,7 @@ echo lib\$(PlatformShortName)</Command>
     <ClCompile Include="CLRHelper.cpp" />
     <ClCompile Include="clrstack.cpp" />
     <ClCompile Include="do.cpp" />
+    <ClCompile Include="EventCallBacks.cpp" />
     <ClCompile Include="idnauls.cpp" />
     <ClCompile Include="inc\engextcpp.cpp" />
     <ClCompile Include="Indexer.cpp" />

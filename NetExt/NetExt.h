@@ -52,7 +52,7 @@
 #endif
 #endif
 
-extern int vsnprintf(char * s, size_t n, const char * format, va_list arg );
+//extern int vsnprintf(char * s, size_t n, const char * format, va_list arg );
 
 using namespace std;
 

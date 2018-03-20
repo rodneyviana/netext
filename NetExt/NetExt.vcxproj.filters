@@ -59,6 +59,9 @@
     <ClInclude Include="inc\DbgModel.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="EventCallBacks.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="NetExt.rc">
@@ -145,6 +148,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="trace.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="EventCallBacks.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
