@@ -585,6 +585,11 @@ namespace Microsoft.Diagnostics.Runtime.Desktop
         }
         #endregion
 
+
+        public override IMethodDescData IP2MD(ulong ip)
+        {
+            return GetMDForIP(ip);
+        }
         internal override ulong GetILForModule(ClrModule module, uint rva)
         {
             ulong ilAddr;
@@ -818,6 +823,8 @@ namespace Microsoft.Diagnostics.Runtime.Desktop
 
             return builder.ToString();
         }
+
+
 
         internal override IMethodDescData GetMDForIP(ulong ip)
         {

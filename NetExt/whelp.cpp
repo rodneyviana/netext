@@ -1,4 +1,4 @@
-// Source Date: Friday, February 23, 2018 6:28:53 PM
+// Source Date: Wednesday, March 21, 2018 7:25:42 PM
 // Source File: C:\Users\rviana\OneDrive\Projects\netext\NetExt\helptxt.txt
 // This file was generated. Do not modify. Modify Source File instead
 #include "netext.h"
@@ -44,6 +44,9 @@ EXT_COMMAND(whelp,
 		Dml("!<link cmd=\"!whelp wtime\">wtime</link> - Show UTC and local time\n");
 		Dml("!<link cmd=\"!whelp wapppool\">wapppool</link> - Display AppPool details\n");
 		Dml("<b>*(new)*</b> !<link cmd=\"!whelp wk\">wk</link> - Dump current thread's stack trace in mixed mode (native and managed)\n");
+		Dml("<b>*(new)*</b> !<link cmd=\"!whelp wp\">wp</link> - Step over managed code (like F10 in Visual Studio)\n");
+		Dml("<b>*(new)*</b> !<link cmd=\"!whelp wt\">wt</link> - Step into managed code (like F11 in Visual Studio)\n");
+		Dml("\n");
 		Dml("\n");
 		Dml("<b>Special</b>\n");
 		Dml("<b>-------</b>\n");
@@ -72,6 +75,50 @@ EXT_COMMAND(whelp,
 		Dml("<link cmd=\"!whelp expression\">expression</link> syntax\n");
 		Dml("<link cmd=\"!whelp functions\">functions</link> list *new functions*\n");
 		Dml("<link cmd=\"!whelp license\">license</link> see all licenses applied to this product\n");
+		Dml("\n");
+	return;
+	}
+	if(keyword=="wp")
+	{
+		Dml("Step over managed code. This is similar to F10 in Visual Studio. \n");
+		Dml("If you use command 'p' in WinDbg it will go over a simple assembly line and\n");
+		Dml("will not understand managed code.\n");
+		Dml("\n");
+		Dml("<b>Syntax:</b>\n");
+		Dml("-------\n");
+		Dml(" \n");
+		Dml("!wp\n");
+		Dml("\n");
+		Dml("<b>Example:</b>\n");
+		Dml("----------\n");
+		Dml("\n");
+		Dml("<i>Step over a managed line</i>\n");
+		Dml("--------------------------------------------------\n");
+		Dml("\n");
+		Dml("0:016&gt; !wp\n");
+		Dml("\n");
+	return;
+	}
+	if(keyword=="wt")
+	{
+		Dml("Step into managed code. This is similar to F11 in Visual Studio. It will follow\n");
+		Dml("all call to methods.\n");
+		Dml("If you use command 't' in WinDbg it will go over a simple assembly line and\n");
+		Dml("will not understand managed code.\n");
+		Dml("\n");
+		Dml("<b>Syntax:</b>\n");
+		Dml("-------\n");
+		Dml(" \n");
+		Dml("!wt\n");
+		Dml("\n");
+		Dml("<b>Example:</b>\n");
+		Dml("----------\n");
+		Dml("\n");
+		Dml("<i>Step into a managed line</i>\n");
+		Dml("--------------------------------------------------\n");
+		Dml("\n");
+		Dml("0:016&gt; !wp\n");
+		Dml("\n");
 		Dml("\n");
 	return;
 	}

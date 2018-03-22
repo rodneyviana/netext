@@ -471,7 +471,10 @@ namespace Microsoft.Diagnostics.Runtime.Desktop
 
             return null;
         }
-
+        public override IMethodDescData IP2MD(ulong ip)
+        {
+            return GetMDForIP(ip);
+        }
         public override ClrMethod GetMethodByAddress(ulong ip)
         {
             IMethodDescData mdData = GetMDForIP(ip);
@@ -1450,7 +1453,7 @@ namespace Microsoft.Diagnostics.Runtime.Desktop
         ulong MetadataLength { get; }
     }
 
-    internal interface IMethodDescData
+    public interface IMethodDescData
     {
         ulong GCInfo { get; }
         ulong MethodDesc { get; }

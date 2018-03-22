@@ -469,28 +469,35 @@ namespace NetExt.Shim
         {
             get
             {
-                string localPath = null;
-                PdbReader reader = GetReaderForFrame(out localPath);
-
-                if (reader == null)
-
-                    return new FileAndLineNumber();
-
-
-                var md = MethodDesc;
-                PdbFunction function = reader.GetFunctionFromToken(md.MetadataToken);
-
-                int ilOffset = ILOffset;
-
-                var nearest = FindNearestLine(function, ilOffset, md.ILOffsetMap);
-                if(!String.IsNullOrEmpty(nearest.File))
+                try
                 {
-                    nearest.IsManaged = IsManaged;
-                    nearest.Address = frame.InstructionOffset;
-                    nearest.LocalPdbPath = localPath;
-                }
+                    string localPath = null;
+                    PdbReader reader = GetReaderForFrame(out localPath);
 
-                return nearest;
+                    if (reader == null)
+                        return new FileAndLineNumber();
+
+
+                    var md = MethodDesc;
+                    PdbFunction function = reader.GetFunctionFromToken(md.MetadataToken);
+
+                    int ilOffset = ILOffset;
+
+                    var nearest = FindNearestLine(function, ilOffset, md.ILOffsetMap);
+                    if (!String.IsNullOrEmpty(nearest.File))
+                    {
+                        nearest.IsManaged = IsManaged;
+                        nearest.Address = frame.InstructionOffset;
+                        nearest.LocalPdbPath = localPath;
+                    }
+
+                    return nearest;
+                }
+                catch
+                {
+                    // No valid location
+                    return new FileAndLineNumber();
+                }
             }
 
         }
@@ -611,7 +618,7 @@ namespace NetExt.Shim
 
 
 
-                        if (ip <= item.EndAddress)
+                        if (ip < item.EndAddress)
 
                             return item.ILOffset;
 
@@ -796,7 +803,11 @@ namespace NetExt.Shim
         {
             get
             {
-                return DebugApi.Runtime.GetMethodByAddress(frame.InstructionOffset);
+                var desc = DebugApi.Runtime.IP2MD(frame.InstructionOffset);
+                if (desc == null)
+                    return null;
+                return DebugApi.Runtime.GetMethodByHandle(desc.MethodDesc);
+
             }
         }
 
@@ -895,7 +906,7 @@ namespace NetExt.Shim
                     Name.ToString().StartsWith("mscorlib"))
                 {
                     DebugApi.INIT_CLRAPI();
-                    ClrMethod met = DebugApi.Runtime.GetMethodByAddress(frame.InstructionOffset);
+                    ClrMethod met = MethodDesc;
                     if (met != null)
                     {
                         Name.Clear();
@@ -909,9 +920,9 @@ namespace NetExt.Shim
                         Name.Append('!');
                         Name.Append(met.GetFullSignature());
 
-                        ulong codeSize = met.ILOffsetMap != null && met.ILOffsetMap.Length > 0 ? (met.ILOffsetMap[met.ILOffsetMap.Length - 1].EndAddress - met.NativeCode)
-                            : displ + 10;
-                        int r = 0;
+                        //ulong codeSize = met.ILOffsetMap != null && met.ILOffsetMap.Length > 0 ? (met.ILOffsetMap[met.ILOffsetMap.Length - 1].EndAddress - met.NativeCode)
+                        //    : displ + 10;
+                        //int r = 0;
                         //r = symbol.AddSyntheticSymbol(met.NativeCode, (uint)codeSize, met.GetFullSignature(),
                         //    DEBUG_ADDSYNTHSYM.DEFAULT, out modid);
                         //DebugApi.DebugWriteLine("Start: {0:%p}, Size: 0x{1:x} ModBase: {2:%p} {3} {4}", met.NativeCode, (uint)codeSize, modid.ModuleBase, Name.ToString(),

@@ -26,6 +26,9 @@
 !||wtime|| - Show UTC and local time
 !||wapppool|| - Display AppPool details
 <b>*(new)*</b> !||wk|| - Dump current thread's stack trace in mixed mode (native and managed)
+<b>*(new)*</b> !||wp|| - Step over managed code (like F10 in Visual Studio)
+<b>*(new)*</b> !||wt|| - Step into managed code (like F11 in Visual Studio)
+
 
 <b>Special</b>
 <b>-------</b>
@@ -54,6 +57,44 @@
 ||expression|| syntax
 ||functions|| list *new functions*
 ||license|| see all licenses applied to this product
+
+##wp
+Step over managed code. This is similar to F10 in Visual Studio. 
+If you use command 'p' in WinDbg it will go over a simple assembly line and
+will not understand managed code.
+
+<b>Syntax:</b>
+-------
+ 
+!wp
+
+<b>Example:</b>
+----------
+
+<i>Step over a managed line</i>
+--------------------------------------------------
+
+0:016&gt; !wp
+
+##wt
+Step into managed code. This is similar to F11 in Visual Studio. It will follow
+all call to methods.
+If you use command 't' in WinDbg it will go over a simple assembly line and
+will not understand managed code.
+
+<b>Syntax:</b>
+-------
+ 
+!wt
+
+<b>Example:</b>
+----------
+
+<i>Step into a managed line</i>
+--------------------------------------------------
+
+0:016&gt; !wp
+
 
 ##widnauls
 List iDNA position of a ULS entry filtered by tag, message or category. It only works with the new iDNA dump type (.run).

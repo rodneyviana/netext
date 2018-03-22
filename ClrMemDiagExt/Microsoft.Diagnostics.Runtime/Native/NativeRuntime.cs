@@ -21,6 +21,11 @@ namespace Microsoft.Diagnostics.Runtime.Native
 
         private ISOSNativeSerializedExceptionSupport _sosNativeSerializedExceptionSupport;
 
+        public override IMethodDescData IP2MD(ulong IP)
+        {
+            throw new NotImplementedException();
+        }
+
         public NativeRuntime(ClrInfo info, DataTargetImpl dt, DacLibrary lib)
             : base(info, dt, lib)
         {

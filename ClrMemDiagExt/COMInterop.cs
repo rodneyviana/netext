@@ -3700,9 +3700,26 @@ namespace NetExt.Shim
                 return HRESULTS.E_FAIL;
             }
 
-            LineMap = new MDEnumLineMap(sourceLocation.Start, sourceLocation.End - 1);
+            if (IPAddress == sourceLocation.End) // Resolves a bug in the edge of the code
+            {
+                fr = new DEBUG_STACK_FRAME() { InstructionOffset = IPAddress + 1};
+                frame = new StackFrame(fr);
+                sourceLocation = frame.SourceLocation;
+                if (!sourceLocation.IsManaged || sourceLocation.End == 0)
+                {
+                    LineMap = new MDEnumLineMap(0, 0);
+                    return HRESULTS.E_FAIL;
+                }
+            }
+
 
             var lines = DebugApi.Disassemble(sourceLocation.Start, sourceLocation.End - 1);
+            ulong codeending = sourceLocation.End - 1;
+            if (lines.Count > 0)
+                codeending = lines[lines.Count - 1].EndOffset;
+
+            LineMap = new MDEnumLineMap(sourceLocation.Start, codeending);
+
 
             foreach (var line in lines)
             {

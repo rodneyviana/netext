@@ -17,6 +17,7 @@ namespace Microsoft.Diagnostics.Runtime
     /// </summary>
     public abstract class ClrRuntime
     {
+        public abstract IMethodDescData IP2MD(ulong IP);
         /// <summary>
         /// In .NET native crash dumps, we have a list of serialized exceptions objects. This property expose them as ClrException objects.
         /// </summary>

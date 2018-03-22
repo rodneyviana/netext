@@ -59,6 +59,11 @@ namespace Microsoft.Diagnostics.Runtime.Desktop
             }
         }
 
+        public override IMethodDescData IP2MD(ulong ip)
+        {
+            return GetMDForIP(ip);
+        }
+
         internal override Dictionary<ulong, List<ulong>> GetDependentHandleMap(CancellationToken cancelToken)
         {
             return new Dictionary<ulong, List<ulong>>();
