@@ -3700,7 +3700,7 @@ namespace NetExt.Shim
                 return HRESULTS.E_FAIL;
             }
 
-            if (IPAddress == sourceLocation.End) // Resolves a bug in the edge of the code
+            if (IPAddress >= sourceLocation.End) // Resolves a bug in the edge of the code
             {
                 fr = new DEBUG_STACK_FRAME() { InstructionOffset = IPAddress + 1};
                 frame = new StackFrame(fr);

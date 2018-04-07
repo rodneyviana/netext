@@ -547,11 +547,13 @@ namespace NetExt.Shim
 
             if (function == null || function.SequencePoints == null)
                 return nearest;
+
             foreach (PdbSequencePointCollection sequenceCollection in function.SequencePoints)
 
             {
                 if (sequenceCollection == null || sequenceCollection.Lines == null)
                     continue;
+
                 foreach (PdbSequencePoint point in sequenceCollection.Lines)
 
                 {
@@ -573,12 +575,22 @@ namespace NetExt.Shim
                             nearest.Start = range.StartAddress;
                             nearest.End = range.EndAddress;
 
+
+                            var nextSeq = sequenceCollection.Lines.FirstOrDefault(m => m.Offset > point.Offset);
+                            if (nextSeq.Offset > range.ILOffset)
+                            {
+                                var nextRange = map.FirstOrDefault(m => m.ILOffset == nextSeq.Offset);
+                                nearest.End = Math.Max(nearest.End, nextRange.StartAddress);
+                            }
+
                         }
                         
 
                     }
+
                     distance = dist;
                 }
+                
 
             }
 

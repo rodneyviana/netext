@@ -626,7 +626,7 @@ namespace CALC
 			return;
 		}
 
-		do_stdstring(SpecialCases::GetRawArray(v.Value.ptr));
+		do_stdstring(SpecialCases::GetRawArray(v.Value.ptr, true));
 	}
 
 	void do_rawobj()
@@ -641,7 +641,7 @@ namespace CALC
 			return;
 		}
 
-		do_stdstring(SpecialCases::GetRawArray(currObj->Address()));
+		do_stdstring(SpecialCases::GetRawArray(currObj->Address(), true));
 	}
 
 	void do_toguid()

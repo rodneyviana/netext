@@ -724,7 +724,7 @@ void SpecialCases::PrintableString(std::string& Str, bool AllowNewLine)
 	std::string tmpString;
 	for(int k=0;k<Str.size();k++)
 	{
-		bool valid = ((Str[k] == 13 || Str[k] == 10) && AllowNewLine) || (Str[k] > 31);
+		bool valid = ((Str[k] == 13 || Str[k] == 10 || Str[k] == 9) && AllowNewLine) || (Str[k] > 31);
 		if(!valid)
 		{
 			char buff[8] = {0};
@@ -850,7 +850,7 @@ std::string SpecialCases::PrettyPrint(CLRDATA_ADDRESS Address, CLRDATA_ADDRESS M
 	return "";
 }
 
-std::string SpecialCases::GetRawArray(CLRDATA_ADDRESS Obj)
+std::string SpecialCases::GetRawArray(CLRDATA_ADDRESS Obj, bool IsNoAdjusted)
 {
 	string result="";
 
@@ -899,7 +899,8 @@ std::string SpecialCases::GetRawArray(CLRDATA_ADDRESS Obj)
 		delete[] rawBuf;
 
 	}
-	PrintableString(result, true);
+	if(!IsNoAdjusted)
+		PrintableString(result, true);
 	return result;
 }
 SVAL SpecialCases::GetDbgVar(int DBGVar)
