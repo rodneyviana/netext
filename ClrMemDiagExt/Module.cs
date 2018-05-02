@@ -30,6 +30,14 @@ namespace NetExt.Shim
         }
     }
 
+    public enum ImageType : ushort
+    {
+        None = 0x0,
+        Pe32bit = 0x10B,
+        Pe64bit = 0x20B,
+    }
+
+
     public class Module
     {
         protected static List<Module> modules = null;
@@ -126,27 +134,185 @@ namespace NetExt.Shim
                 if (!DebugApi.ReadMemory<IMAGE_DOS_HEADER>(BaseAddress, out dosHeader))
                 {
                     DebugApi.WriteLine("[IMAGE_DOS_HEADER] Unable to read memory at %p", BaseAddress);
-                    
-                    
                 }
                 return dosHeader;
             }
         }
 
+        protected ImageType imageType = ImageType.None;
+
+        public ImageType FileImageType
+        {
+            get
+            {
+                if (imageType == ImageType.None)
+                {
+                    var dosHeader = DOSHeader;
+
+                    if (!DebugApi.ReadMemory<IMAGE_NT_HEADERS32>(BaseAddress + (ulong)dosHeader.e_lfanew, out ntHeader32))
+                    {
+                        DebugApi.WriteLine("[IMAGE_NT_HEADERS] Unable to read memory at %p", BaseAddress + (ulong)dosHeader.e_lfanew);
+                        return imageType;
+                    }
+                    if (ntHeader32.Signature != 0x4550)
+                    {
+                        DebugApi.WriteLine("[IMAGE_NT_HEADERS] Invalid header signature at %p", BaseAddress + (ulong)dosHeader.e_lfanew);
+                        return imageType;
+                    }
+                    imageType = (ImageType)ntHeader32.OptionalHeader.Magic;
+                }
+                return imageType;
+            }
+        }
+
+        protected ulong sectionStart = 0;
+
+        protected IMAGE_NT_HEADERS32 ntHeader32 = new IMAGE_NT_HEADERS32();
+        protected IMAGE_NT_HEADERS64 ntHeader = new IMAGE_NT_HEADERS64();
+
+        public ulong SectionStart
+        {
+            get
+            {
+                if (sectionStart == 0)
+                {
+                    sectionStart = BaseAddress + (ulong)DOSHeader.e_lfanew;
+                }
+                return sectionStart;
+            }
+        }
+
+        public ulong RvaToOffset(ulong Rva)
+        {
+
+            var sectionId = SectionStart;
+            uint sections = 0;
+            MEMORY_BASIC_INFORMATION64 mbi = new MEMORY_BASIC_INFORMATION64();
+
+            mbi = DebugApi.AddressType(BaseAddress);
+            if (mbi.Protect == PAGE.NOACCESS)
+            {
+                DebugApi.WriteLine("Unable to read memory at %p", BaseAddress);
+                return 0;
+            }
+
+            bool bIsImage = (mbi.Type == MEM.IMAGE || mbi.Type == MEM.PRIVATE);
+
+            if (FileImageType == ImageType.Pe32bit)
+            {
+                sections = NTHeader32.FileHeader.NumberOfSections;
+                sectionId += (ulong)Marshal.OffsetOf(typeof(IMAGE_NT_HEADERS32), "OptionalHeader") +
+                     NTHeader32.FileHeader.SizeOfOptionalHeader;
+            }
+            if (FileImageType == ImageType.Pe64bit)
+            {
+                sections = NTHeader.FileHeader.NumberOfSections;
+                sectionId += (ulong)Marshal.OffsetOf(typeof(IMAGE_NT_HEADERS64), "OptionalHeader") +
+                     NTHeader.FileHeader.SizeOfOptionalHeader;
+            }
+            for (int i = 0; i < sections; i++)
+            {
+                IMAGE_SECTION_HEADER section = new IMAGE_SECTION_HEADER();
+                if (!DebugApi.ReadMemory<IMAGE_SECTION_HEADER>(sectionId, out section))
+                {
+                    Debug.WriteLine("[RVA] Unable to read IMAGE_SECTION_HEADER");
+                    return 0;
+                }
+
+                if ((Rva >= section.VirtualAddress) &&
+                    (Rva < (section.VirtualAddress + section.SizeOfRawData)))
+                {
+                    // RVA is in this section, we can now resolve it.
+
+                    ulong start = 0;
+                    if (bIsImage)
+                        start = section.VirtualAddress;
+                    else
+                        start = section.PointerToRawData;
+
+                    ulong address = BaseAddress + (ulong)Rva - (ulong)section.VirtualAddress + start; // (ulong)section.PointerToRawData;
+
+
+                    return address;
+                }
+
+                // Next section
+                sectionId += (uint)Marshal.SizeOf(typeof(IMAGE_SECTION_HEADER));
+
+            }
+
+            // RVA could not be found
+            return 0;
+        }
+
+        public IMAGE_NT_HEADERS32 NTHeader32
+        {
+            get
+            {
+                if (FileImageType != ImageType.Pe32bit)
+                {
+                    ntHeader32.Signature = 0;
+                    return ntHeader32;
+                }
+                if (ntHeader32.Signature == 0x00004550)
+                {
+                    return ntHeader32;
+                }
+
+                
+
+                var dosHeader = DOSHeader;
+                if (!dosHeader.isValid)
+                {
+                    ntHeader32.Signature = 0;
+                    return ntHeader32;
+                }
+
+
+                if (FileImageType == ImageType.Pe32bit)
+                {
+                    if (!DebugApi.ReadMemory<IMAGE_NT_HEADERS32>(BaseAddress + (ulong)dosHeader.e_lfanew, out ntHeader32))
+                    {
+                        DebugApi.WriteLine("[IMAGE_NT_HEADERS32] Unable to read memory at %p", BaseAddress + (ulong)dosHeader.e_lfanew);
+                        ntHeader32.Signature = 0;
+                    }
+                }
+                else
+                {
+                    ntHeader32.Signature = 0;
+                }
+
+                return ntHeader32;
+            }
+        }
+        
         public IMAGE_NT_HEADERS64 NTHeader
         {
             get
             {
-                IMAGE_NT_HEADERS64 ntHeader = new IMAGE_NT_HEADERS64();
+                if (FileImageType != ImageType.Pe64bit)
+                {
+                    ntHeader.Signature = 0;
+                    return ntHeader;
+                }
+
+                if (ntHeader.Signature == 0x00004550)
+                {
+                    return ntHeader;
+                }
+
+
                 var dosHeader = DOSHeader;
                 if(!dosHeader.isValid)
                 {
                     ntHeader.Signature = 0;
                     return ntHeader;
                 }
+
+
                 if (!DebugApi.ReadMemory<IMAGE_NT_HEADERS64>(BaseAddress + (ulong)dosHeader.e_lfanew, out ntHeader))
                 {
-                    DebugApi.WriteLine("[MAGE_NT_HEADERS] Unable to read memory at %p", BaseAddress + (ulong)dosHeader.e_lfanew);
+                    DebugApi.WriteLine("[IMAGE_NT_HEADERS] Unable to read memory at %p", BaseAddress + (ulong)dosHeader.e_lfanew);
 
                 }
                 return ntHeader;
@@ -193,7 +359,9 @@ namespace NetExt.Shim
             {
                 IMAGE_COR20_HEADER corHeader = new IMAGE_COR20_HEADER();
                 ulong VirtualAddress = 0;
-                if (IntPtr.Size == 8)
+
+                
+                if (FileImageType == ImageType.Pe64bit)
                 {
                     var opHeader = OptionalHeader;
                     VirtualAddress = opHeader.CLRRuntimeHeader.VirtualAddress;
@@ -207,12 +375,12 @@ namespace NetExt.Shim
                 if (VirtualAddress != 0)
                 {
 
-                    ulong sectionAddr = BaseAddress + VirtualAddress;
+                    ulong sectionAddr = RvaToOffset(VirtualAddress);
 
                     if (!DebugApi.ReadMemory<IMAGE_COR20_HEADER>(sectionAddr, out corHeader))
                     {
 
-                        DebugApi.WriteLine("Fail to read PE section info\n");
+                        DebugApi.WriteLine("[CORHEADER] Fail to read PE section info at %p\n", sectionAddr);
                     }
                     else
                     {
@@ -233,12 +401,29 @@ namespace NetExt.Shim
             {
                 IMAGE_DEBUG_DIRECTORY debugInfo = new IMAGE_DEBUG_DIRECTORY();
 
-                var opHeader = OptionalHeader;
-                if (opHeader.Debug.VirtualAddress != 0)
+                ulong sectionAddr = 0;
+                ulong limit = 0;
+                ulong virtualAddress = 0;
+                if (FileImageType == ImageType.Pe64bit)
+                {
+                    var opHeader = OptionalHeader;
+                    sectionAddr = RvaToOffset(opHeader.Debug.VirtualAddress);
+                    limit = sectionAddr + opHeader.Debug.Size;
+                    virtualAddress = opHeader.Debug.VirtualAddress;
+                }
+
+                if (FileImageType == ImageType.Pe32bit)
+                {
+                    var opHeader32 = OptionalHeader32;
+                    sectionAddr = RvaToOffset(opHeader32.Debug.VirtualAddress);
+                    limit = sectionAddr + opHeader32.Debug.Size;
+                    virtualAddress = opHeader32.Debug.VirtualAddress;
+                }
+
+                if (virtualAddress != 0)
                 {
 
-                    ulong sectionAddr = BaseAddress + OptionalHeader.Debug.VirtualAddress;
-                    ulong limit = sectionAddr + OptionalHeader.Debug.Size;
+
                     while (sectionAddr < limit)
                     {
                         if (!DebugApi.ReadMemory<IMAGE_DEBUG_DIRECTORY>(sectionAddr, out debugInfo))
@@ -326,34 +511,43 @@ namespace NetExt.Shim
 
             bool bIsImage = (mbi.Type == MEM.IMAGE || mbi.Type == MEM.PRIVATE);
 
-            IMAGE_DOS_HEADER dosHeader;
-            if (!DebugApi.ReadMemory<IMAGE_DOS_HEADER>(BaseAddress, out dosHeader))
-            {
-                DebugApi.WriteLine("[IMAGE_DOS_HEADER] Unable to read memory at %p", BaseAddress);
-                return false;
-            }
+            IMAGE_DOS_HEADER dosHeader = DOSHeader;
+
 
             if (!dosHeader.isValid)
             {
-                DebugApi.WriteLine("Invalid image at %p", BaseAddress);
                 return false;
             }
 
-            IMAGE_NT_HEADERS64 Header;
-            if (!DebugApi.ReadMemory<IMAGE_NT_HEADERS64>(BaseAddress + (ulong)dosHeader.e_lfanew, out Header))
-            {
-                DebugApi.WriteLine("[MAGE_NT_HEADERS] Unable to read memory at %p", BaseAddress + (ulong)dosHeader.e_lfanew);
-                return false;
-            }
-
-            ulong sectionAddr = BaseAddress + (ulong)dosHeader.e_lfanew +
-                (ulong)Marshal.OffsetOf(typeof(IMAGE_NT_HEADERS64), "OptionalHeader") +
-                 Header.FileHeader.SizeOfOptionalHeader;
+            // NT PE Headers
+            ulong dwAddr = BaseAddress;
+            ulong dwEnd = 0;  
+            uint nRead;
 
             IMAGE_SECTION_HEADER section = new IMAGE_SECTION_HEADER();
+            ulong sectionAddr = 0;
+            int nSection = 0;  
+            if (FileImageType == ImageType.Pe64bit)
+            {
+                sectionAddr = BaseAddress + (ulong)dosHeader.e_lfanew +
+                    (ulong)Marshal.OffsetOf(typeof(IMAGE_NT_HEADERS64), "OptionalHeader") +
+                     NTHeader.FileHeader.SizeOfOptionalHeader;
+                nSection = NTHeader.FileHeader.NumberOfSections;
+                dwEnd = BaseAddress + NTHeader.OptionalHeader.SizeOfHeaders;
+
+            }
+
+            if (FileImageType == ImageType.Pe32bit)
+            {
+                sectionAddr = BaseAddress + (ulong)dosHeader.e_lfanew +
+                    (ulong)Marshal.OffsetOf(typeof(IMAGE_NT_HEADERS32), "OptionalHeader") +
+                     NTHeader32.FileHeader.SizeOfOptionalHeader;
+                nSection = NTHeader32.FileHeader.NumberOfSections;
+                dwEnd = BaseAddress + NTHeader32.OptionalHeader.SizeOfHeaders;
+
+            }
 
 
-            int nSection = Header.FileHeader.NumberOfSections;
             MemLocation[] memLoc = new MemLocation[nSection];
 
             int indxSec = -1;
@@ -363,7 +557,7 @@ namespace NetExt.Shim
             {
                 if (!DebugApi.ReadMemory<IMAGE_SECTION_HEADER>(sectionAddr, out section))
                 {
-                    DebugApi.WriteLine("Fail to read PE section info\n");
+                    DebugApi.WriteLine("[IMAGE_SECTION_HEADER] Fail to read PE section info at %p\n", sectionAddr);
                     return false;
                 }
 
@@ -383,7 +577,7 @@ namespace NetExt.Shim
 
                 indxSec++;
                 sectionAddr += (ulong)Marshal.SizeOf(section);
-                //PEFile file = new PEFile()
+
             }
 
             uint pageSize;
@@ -391,10 +585,7 @@ namespace NetExt.Shim
 
             byte[] buffer = new byte[pageSize];
 
-            // NT PE Headers
-            ulong dwAddr = BaseAddress;
-            ulong dwEnd = BaseAddress + Header.OptionalHeader.SizeOfHeaders;
-            uint nRead;
+
 
 
             IDebugDataSpaces3 data = (IDebugDataSpaces3)DebugApi.Client;
@@ -419,15 +610,15 @@ namespace NetExt.Shim
 
             for (slot = 0; slot <= indxSec; slot++)
             {
-                if (!DebugApi.IsTaget64Bits)
-                {
+                //if (!DebugApi.IsTaget64Bits)
+                //{
                     if (bIsImage)
                         dwAddr = BaseAddress + (ulong)memLoc[slot].VAAddr;
                     else
                         dwAddr = BaseAddress + (ulong)memLoc[slot].FileAddr;
-                }
-                else
-                    dwAddr = BaseAddress + (ulong)memLoc[slot].VAAddr;
+                //}
+                //else
+                //    dwAddr = BaseAddress + (ulong)memLoc[slot].FileAddr;
                 dwEnd = (ulong)memLoc[slot].FileSize + dwAddr - 1;
 
                 while (dwAddr <= dwEnd)
