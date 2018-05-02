@@ -28,7 +28,7 @@
 <b>*(new)*</b> !||wk|| - Dump current thread's stack trace in mixed mode (native and managed)
 <b>*(new)*</b> !||wp|| - Step over managed code (like F10 in Visual Studio)
 <b>*(new)*</b> !||wt|| - Step into managed code (like F11 in Visual Studio)
-
+<b>*(new)*</b> !||wvar|| - Display process environment variables
 
 <b>Special</b>
 <b>-------</b>
@@ -57,6 +57,33 @@
 ||expression|| syntax
 ||functions|| list *new functions*
 ||license|| see all licenses applied to this product
+
+##wvar
+List process environment variables. It allows filtering the vars.
+
+<b>Syntax:</b>
+-------
+ 
+!wvar [&lt;var-pattern&gt;]
+
+<b>Where:</b>
+----------
+&lt;var-pattern&gt; is the wildcard filter pattern (e.g. !wvar user*). Optional
+
+<b>Example:</b>
+----------
+
+<i>Diplay environment variables starting with 'user'</i>
+----------------------------------------------------
+
+0:016&gt; !wvar user*
+USERDNSDOMAIN=NORTHAMERICA.CORP.CONTOSO.COM
+USERDOMAIN=NORTHAMERICA
+USERDOMAIN_ROAMINGPROFILE=NORTHAMERICA
+USERNAME=rodneyviana
+USERPROFILE=C:\Users\rodneyviana
+
+5 item(s) listed. 62 skipped by the filter
 
 ##wp
 Step over managed code. This is similar to F10 in Visual Studio. 
@@ -284,7 +311,9 @@ Domain Name          : CONTOSO
 ##wmakesource
 If the current frame is managed, it will try to reflect to
 source code in C# and create a symbol file to associate the
-context address with the reflect source code line
+context address with the reflect source code line.
+If an IP (Instruction Pointer) address is specified it will reflect the code
+JITted on the IP.
 
 Why it is useful:
 ================================
@@ -296,8 +325,12 @@ This command leverages ILSpy and PdbRestorer (special thanks to Marek Pokorny
 <b>Syntax:</b>
 -------
  
-!wmakesource
+!wmakesource [&lt;IPAddress&gt;]
 
+
+<b>Where:</b>
+&lt;IPAddress&gt; - is the address of the JITted code to reflect the code=. Optional
+ 
  
 <b>Example:</b>
 ----------

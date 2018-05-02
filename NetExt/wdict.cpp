@@ -1419,11 +1419,26 @@ EXT_COMMAND(wtime,
 
 EXT_COMMAND(wmakesource,
 	"It tries to reflect the current frame into source code. Use '!whelp wmakesource' for detailed help",
-	""
+	 "{;e,o;;IPAddress,IP Address}"
 	)
 {
 		DO_INIT_API;
-		if(pTarget->MakeSource() != S_OK)
+		CLRDATA_ADDRESS ip;
+		if(HasUnnamedArg(0))
+		{
+			ip = GetUnnamedArgU64(0);
+		}
+		HRESULT hr;
+
+		if(NULL != ip)
+		{
+			hr = pTarget->MakeSourceFromIp(ip);
+		} else
+		{
+			hr = pTarget->MakeSource();
+		}
+
+		if(hr != S_OK)
 		{
 			Out("Error generating source and symbols\n");
 		};

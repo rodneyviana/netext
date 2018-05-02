@@ -781,4 +781,34 @@ EXT_COMMAND(wvar,
 		      "{;s,o;;variable,Variable Pattern}")  
 
 { 
+	std::string varName;
+
+	if(HasUnnamedArg(0))
+	{
+		varName.assign(GetUnnamedArgStr(0));
+	}
+
+	auto vars = this->GetProcessEnvVar();
+
+	auto curr = vars.begin();
+	int count = 0;
+	while(curr != vars.end())
+	{
+		if(varName.size() == 0 || MatchPattern(CW2A(curr->first.c_str()), varName.c_str()))
+		{
+			Out("%S=", curr->first.c_str());
+			Out("%S\n", curr->second.c_str());
+			count++;
+		}
+		curr++;
+	}
+
+	if(count == vars.size())
+	{
+		Out("\n%i item(s) listed\n", count);
+	} else
+	{
+		Out("\n%i item(s) listed. %i skipped by the filter", count, vars.size()-count);
+	}
+
 }

@@ -1,4 +1,4 @@
-// Source Date: Friday, April 6, 2018 7:46:39 PM
+// Source Date: Wednesday, May 2, 2018 6:30:03 PM
 // Source File: C:\Users\rviana\OneDrive\Projects\netext\NetExt\helptxt.txt
 // This file was generated. Do not modify. Modify Source File instead
 #include "netext.h"
@@ -46,7 +46,7 @@ EXT_COMMAND(whelp,
 		Dml("<b>*(new)*</b> !<link cmd=\"!whelp wk\">wk</link> - Dump current thread's stack trace in mixed mode (native and managed)\n");
 		Dml("<b>*(new)*</b> !<link cmd=\"!whelp wp\">wp</link> - Step over managed code (like F10 in Visual Studio)\n");
 		Dml("<b>*(new)*</b> !<link cmd=\"!whelp wt\">wt</link> - Step into managed code (like F11 in Visual Studio)\n");
-		Dml("\n");
+		Dml("<b>*(new)*</b> !<link cmd=\"!whelp wvar\">wvar</link> - Display process environment variables\n");
 		Dml("\n");
 		Dml("<b>Special</b>\n");
 		Dml("<b>-------</b>\n");
@@ -75,6 +75,36 @@ EXT_COMMAND(whelp,
 		Dml("<link cmd=\"!whelp expression\">expression</link> syntax\n");
 		Dml("<link cmd=\"!whelp functions\">functions</link> list *new functions*\n");
 		Dml("<link cmd=\"!whelp license\">license</link> see all licenses applied to this product\n");
+		Dml("\n");
+	return;
+	}
+	if(keyword=="wvar")
+	{
+		Dml("List process environment variables. It allows filtering the vars.\n");
+		Dml("\n");
+		Dml("<b>Syntax:</b>\n");
+		Dml("-------\n");
+		Dml(" \n");
+		Dml("!wvar [&lt;var-pattern&gt;]\n");
+		Dml("\n");
+		Dml("<b>Where:</b>\n");
+		Dml("----------\n");
+		Dml("&lt;var-pattern&gt; is the wildcard filter pattern (e.g. !wvar user*). Optional\n");
+		Dml("\n");
+		Dml("<b>Example:</b>\n");
+		Dml("----------\n");
+		Dml("\n");
+		Dml("<i>Diplay environment variables starting with 'user'</i>\n");
+		Dml("----------------------------------------------------\n");
+		Dml("\n");
+		Dml("0:016&gt; !wvar user*\n");
+		Dml("USERDNSDOMAIN=NORTHAMERICA.CORP.CONTOSO.COM\n");
+		Dml("USERDOMAIN=NORTHAMERICA\n");
+		Dml("USERDOMAIN_ROAMINGPROFILE=NORTHAMERICA\n");
+		Dml("USERNAME=rodneyviana\n");
+		Dml("USERPROFILE=C:\\Users\\rodneyviana\n");
+		Dml("\n");
+		Dml("5 item(s) listed. 62 skipped by the filter\n");
 		Dml("\n");
 	return;
 	}
@@ -326,7 +356,9 @@ EXT_COMMAND(whelp,
 	{
 		Dml("If the current frame is managed, it will try to reflect to\n");
 		Dml("source code in C# and create a symbol file to associate the\n");
-		Dml("context address with the reflect source code line\n");
+		Dml("context address with the reflect source code line.\n");
+		Dml("If an IP (Instruction Pointer) address is specified it will reflect the code\n");
+		Dml("JITted on the IP.\n");
 		Dml("\n");
 		Dml("Why it is useful:\n");
 		Dml("================================\n");
@@ -338,8 +370,12 @@ EXT_COMMAND(whelp,
 		Dml("<b>Syntax:</b>\n");
 		Dml("-------\n");
 		Dml(" \n");
-		Dml("!wmakesource\n");
+		Dml("!wmakesource [&lt;IPAddress&gt;]\n");
 		Dml("\n");
+		Dml("\n");
+		Dml("<b>Where:</b>\n");
+		Dml("&lt;IPAddress&gt; - is the address of the JITted code to reflect the code=. Optional\n");
+		Dml(" \n");
 		Dml(" \n");
 		Dml("<b>Example:</b>\n");
 		Dml("----------\n");

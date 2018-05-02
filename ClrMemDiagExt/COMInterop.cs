@@ -3590,7 +3590,11 @@ namespace NetExt.Shim
                 DebugApi.AddToSymPath(symFolder);
                 DebugApi.IgnoreSymbolMismatch();
             }
-            ulong context = DebugApi.AddressFromScope;
+            ulong context = IP;
+            if (IP == 0)
+            {
+                context = DebugApi.AddressFromScope;
+            }
             OpenSource(context);
             return HRESULTS.S_OK;
         }
