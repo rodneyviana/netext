@@ -3454,7 +3454,11 @@ namespace NetExt.Shim
             foreach (var mod in modules)
             {
                 Exports.WriteDml("<link cmd=\"lmv a {0:%p}\">{0:%p}</link> ", mod.BaseAddress);
-                string fileName = IncludePath ? mod.FullPath : mod.Name;
+                string fileName = null;
+                if(IncludePath)
+                   fileName = mod.FullPath;
+                else
+                   fileName = mod.Name;
                 Exports.WriteLine(" {0,25} {1,-25} {2,-3}  {3,-3} {4}", mod.VersionInfo, mod.CompanyName, (int)mod.ClrDebugType >= 4 ? "Yes" : "No", mod.IsClr ? "CLR" : "NAT", fileName);
                 i++;
             }

@@ -2760,7 +2760,7 @@ kernel32!KUSER_SHARED_DATA
         public static unsafe bool ReadMemory<T>(ulong Address, out T Target, bool Force = false)
         {
 
-            if(!Force && AddressType(Address).Protect == PAGE.NOACCESS)
+            if(!DebugApi.IsIDNA && !Force && AddressType(Address).Protect == PAGE.NOACCESS)
             {
                 Target = default(T);
                 return false;

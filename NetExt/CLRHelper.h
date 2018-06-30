@@ -310,9 +310,9 @@ public:
 
 	mdToken Token() { return obj.token; }
 	bool IsValid() { return isValid; }
-	bool IsUnknown() { return (typeName.compare(L"UNKNOWN")); }
-	bool IsFree() { return obj.IsFree; };
-	bool IsArray() { return obj.IsArray; };
+	bool IsUnknown() { return (typeName.compare(L"UNKNOWN") != 0); }
+	bool IsFree() { return obj.IsFree != 0; };
+	bool IsArray() { return obj.IsArray != 0; };
 	bool IsString() 
 	{ 
 		if(!obj.isString)
@@ -335,9 +335,9 @@ public:
 	CLRDATA_ADDRESS InnerMT() { return obj.arrayElementMT; }
 	bool IsValueType() { return isValueType; }
 	DWORD InnerComponentSize() { return obj.elementSize; };
-	DWORD BaseSize() { return obj.BaseSize; }
+	DWORD BaseSize() { return static_cast<DWORD>(obj.BaseSize); }
 	CorElementType InnerComponentType() { return (CorElementType)obj.arrayCorType; };
-	bool IsRuntime() { return obj.isRuntimeType; }
+	bool IsRuntime() { return obj.isRuntimeType == 1; }
 	bool IsDebugModule() { return obj.debuggingFlag >= 4; }
 
 	CLRDATA_ADDRESS ParentMT() {
@@ -778,7 +778,7 @@ public:
 	}
 	CLRDATA_ADDRESS EEClassAddr() { return obj.EEClass; }
 	CLRDATA_ADDRESS MethodTable() { return obj.MethodTable; };
-	DWORD Size() { return obj.size; };
+	DWORD Size() { return static_cast<DWORD>(obj.size); };
 	DWORD Rank() { return obj.rank; };
 	DWORD NumComponents() { return obj.arraySize; }
 
@@ -788,8 +788,8 @@ public:
 	int StaticFieldsCount() { return obj.staticFieldsCount; }
 	int Heap() { return obj.heap; }
 	int Gen() { return obj.generation; }
-	int Module() { return obj.Module; }
-	int Assembly() { return obj.assembly; }
+	CLRDATA_ADDRESS Module() { return obj.Module; }
+	CLRDATA_ADDRESS Assembly() { return obj.assembly; }
 	CLRDATA_ADDRESS Domain() { return obj.appDomain; }
 };
 

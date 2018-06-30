@@ -104,7 +104,7 @@ typedef struct _KSYSTEM_TIME {
 //
 // Adapted from ntextapi.h
 //
-typedef struct KUSER_SHARED_DATA_MINI {
+struct KUSER_SHARED_DATA_MINI {
 
 	//
 	// Current low 32-bit of tick count and tick count multiplier.
@@ -471,13 +471,13 @@ public:
 		UINT64 totalSize = size.GetLong64();
 
 
-		ExtRemoteData data(envVars.GetPtr(), totalSize);
+		ExtRemoteData data(envVars.GetPtr(), static_cast<ULONG>(totalSize));
 		if (!IsValidMemory(data.m_Offset, totalSize))
 		{
 			return varsDict;
 		}
 		byte *buffer = (byte*)calloc(totalSize + 4, sizeof(byte));
-		data.ReadBuffer(buffer, totalSize, true);
+		data.ReadBuffer(buffer, static_cast<ULONG>(totalSize), true);
 		
 		for (wchar_t* strArray = (wchar_t*)buffer; L'\0' != *strArray; strArray += lstrlenW(strArray) + 1)
 		{

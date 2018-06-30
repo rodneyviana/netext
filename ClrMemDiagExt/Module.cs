@@ -37,6 +37,26 @@ namespace NetExt.Shim
         Pe64bit = 0x20B,
     }
 
+    [StructLayoutAttribute(System.Runtime.InteropServices.LayoutKind.Sequential)]
+    public struct IMAGE_IMPORT_MODULE_DIRECTORY
+    {
+
+        /// DWORD->unsigned int
+        public uint dwRVAFunctionNameList;
+
+        /// DWORD->unsigned int
+        public uint dwUseless1;
+
+        /// DWORD->unsigned int
+        public uint dwUseless2;
+
+        /// DWORD->unsigned int
+        public uint dwRVAModuleName;
+
+        /// DWORD->unsigned int
+        public uint dwRVAFunctionAddressList;
+    }
+
 
     public class Module
     {
@@ -120,7 +140,9 @@ namespace NetExt.Shim
             {
                 if (String.IsNullOrWhiteSpace(FullPath))
                     return "";
+                
                 string[] parts = FullPath.Split('\\');
+
                 return parts[parts.Length - 1];
             }
 
@@ -190,13 +212,13 @@ namespace NetExt.Shim
             MEMORY_BASIC_INFORMATION64 mbi = new MEMORY_BASIC_INFORMATION64();
 
             mbi = DebugApi.AddressType(BaseAddress);
-            if (mbi.Protect == PAGE.NOACCESS)
+            if (!DebugApi.IsIDNA && mbi.Protect == PAGE.NOACCESS)
             {
                 DebugApi.WriteLine("Unable to read memory at %p", BaseAddress);
                 return 0;
             }
 
-            bool bIsImage = (mbi.Type == MEM.IMAGE || mbi.Type == MEM.PRIVATE);
+            bool bIsImage = (DebugApi.IsIDNA || mbi.Type == MEM.IMAGE || mbi.Type == MEM.PRIVATE);
 
             if (FileImageType == ImageType.Pe32bit)
             {
