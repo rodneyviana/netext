@@ -92,7 +92,7 @@ EXT_COMMAND(regsearch,
 	
 
 	string cmd(Execute(command));
-	Out(regexsearch(cmd, pattern, not, lowcase, flavor).str().c_str());
+	Out(regexsearch(cmd, pattern, not, lowcase != 0, flavor).str().c_str());
 
 }
 

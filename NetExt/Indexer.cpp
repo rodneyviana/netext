@@ -112,7 +112,7 @@ void Indexer::DumpTypes(string* Type)
 		{
 			g_ExtInstancePtr->Dml("<link cmd=\"!windex -mt %p\">%p</link>", tt->second, tt->second);
 			g_ExtInstancePtr->Out(" %S (%i)\n", mtT[tt->second].typeName.c_str(), mtT[tt->second].Addresses.size());
-			total+=mtT[tt->second].Addresses.size();
+			total+=static_cast<ULONG>(mtT[tt->second].Addresses.size());
 			count++;
 		}
 		tt++;
@@ -374,7 +374,7 @@ void Indexer::AddAddress(DWORD_PTR Address, DWORD_PTR MethodTable, MD_TypeData* 
 			{
 				EEClass::GetArraySizeByMT(MethodTable, &baseSize,
 					&elemSize);
-				obj->elementSize = elemSize;
+				obj->elementSize = static_cast<long>(elemSize);
 				obj->BaseSize = baseSize;
 			} else
 			{
@@ -455,7 +455,7 @@ long SimpleHash(const std::string& Str)
 
 inline bool WriteString(FILE *file, const std::string& Str, bool ZeroTerminated=false)
 {
-	DWORD size=Str.size();
+	DWORD size=static_cast<DWORD>(Str.size());
 	if(ZeroTerminated) size++;
 	if(fwrite(&size,1,sizeof(size),file)!=sizeof(size))
 		return false;
@@ -538,7 +538,7 @@ bool Indexer::SaveIndex(std::string FileName)
 			UINT64 size=mtT[ti->second].size;
 			writebuf(file,(void*)&size,sizeof(size));
 			// number of objects
-			DWORD items = mtT[ti->second].Addresses.size();
+			DWORD items = static_cast<DWORD>(mtT[ti->second].Addresses.size());
 			writebuf(file,(void*)&items,sizeof(items));
 			// pointers
 			DWORD_PTR* addrs=&mtT[ti->second].Addresses[0];
@@ -670,7 +670,7 @@ bool Indexer::WalkHeapAndCache(Indexer *idx, CLRDATA_ADDRESS Start, CLRDATA_ADDR
 		//obj = cache.
 		obj = Cache->GetObj(objAddr);
 		idx->AddAddress(objAddr, obj.MethodTable, &obj);
-		size=obj.size;
+		size=static_cast<DWORD>(obj.size);
 		if(obj.MethodTable == 0)
 		{
 			//if(!quiet) g_ExtInstancePtr->Out("Bad object: %p\n", objAddr);

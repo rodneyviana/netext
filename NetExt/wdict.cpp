@@ -1423,7 +1423,7 @@ EXT_COMMAND(wmakesource,
 	)
 {
 		DO_INIT_API;
-		CLRDATA_ADDRESS ip;
+		CLRDATA_ADDRESS ip = 0;
 		if(HasUnnamedArg(0))
 		{
 			ip = GetUnnamedArgU64(0);

@@ -623,7 +623,7 @@ std::string SpecialCases::GetHexArray(CLRDATA_ADDRESS Obj, bool Padded, int Limi
 	string bytes;
 	std::wstring className = obj.TypeName();
 	char buff[6] = {0};
-	int limit = (Limit == 0 || Limit > obj.NumComponents()) ? obj.NumComponents() : Limit;  
+	int limit = (Limit == 0 || static_cast<DWORD>(Limit) > obj.NumComponents()) ? obj.NumComponents() : Limit;  
 	if(className == L"System.Byte[]" || className == L"System.SByte[]")
 	{
 		for(int i=0;i<limit;i++)
@@ -807,7 +807,7 @@ std::string SpecialCases::PrettyPrint(CLRDATA_ADDRESS Address, CLRDATA_ADDRESS M
 			string tmpString;
 			if(obj.NumComponents() > 0)
 				tmpString = "{ ";
-			for(int i=0;i<min(5,obj.NumComponents());i++)
+			for(int i=0;static_cast<DWORD>(i)<min(5,obj.NumComponents());i++)
 			{
 				if(i>0) tmpString.append(", ");
 				CLRDATA_ADDRESS address = ObjDetail::GetPTR(obj.DataPtr() + i*obj.InnerComponentSize());
@@ -964,7 +964,7 @@ INT64 SpecialCases::DateToTicks(INT64 year, INT64 month, INT64 day)
 	if (year >= 1 && year <= 9999 && month >= 1 && month <= 12)
 	{
 		int* days;
-		if(IsLeapYear(year))
+		if(IsLeapYear(static_cast<int>(year)))
 			days = DaysToMonth366;
 		else
 			days = DaysToMonth365;
@@ -1495,7 +1495,7 @@ void DumpFields(CLRDATA_ADDRESS Address, std::vector<std::string> Fields, CLRDAT
 					(*Vars)[key].fieldName=key;
 					(*Vars)[key].corType = (CorElementType)fields[i].FieldDesc.corElementType;
 					(*Vars)[key].typeName = fields[i].mtName;
-					(*Vars)[key].IsStatic = fields[i].FieldDesc.isStatic;
+					(*Vars)[key].IsStatic = fields[i].FieldDesc.isStatic != 0;
 					(*Vars)[key].Offset = fields[i].FieldDesc.offset;
 					(*Vars)[key].MT = fields[i].FieldDesc.MethodTable;
 					(*Vars)[key].Token = fields[i].FieldDesc.token;
@@ -1563,7 +1563,7 @@ SVAL GetValue(CLRDATA_ADDRESS offset, CorElementType CorType, CLRDATA_ADDRESS Me
 					g_ExtInstancePtr->Dml(ObjectString, addr, addr, addr);
 				}
 				response.Value.ptr=addr;
-				response.DoubleValue = addr;
+				response.DoubleValue = static_cast<double>(addr);
 				response.strValue.assign(NameBuffer);
 				return response;
 			}
@@ -1584,7 +1584,7 @@ SVAL GetValue(CLRDATA_ADDRESS offset, CorElementType CorType, CLRDATA_ADDRESS Me
 				{
 					g_ExtInstancePtr->Out("%S", NameBuffer);
 				}
-				response.Value.b=(bool)u;
+				response.Value.b=static_cast<bool>(u);
 				response.strValue.assign(NameBuffer);
 				response.DoubleValue = (double)u;
 

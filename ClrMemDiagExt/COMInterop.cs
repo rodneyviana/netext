@@ -2362,7 +2362,7 @@ namespace NetExt.Shim
             return sb;
         }
 
-        private static int nsId;
+        private static int nsId = 0;
 
         private static Dictionary<string, string> nsToSchema;
         private static Dictionary<string, string> schemaToNs;
@@ -3461,6 +3461,9 @@ namespace NetExt.Shim
                    fileName = mod.Name;
                 Exports.WriteLine(" {0,25} {1,-25} {2,-3}  {3,-3} {4}", mod.VersionInfo, mod.CompanyName, (int)mod.ClrDebugType >= 4 ? "Yes" : "No", mod.IsClr ? "CLR" : "NAT", fileName);
                 i++;
+                if (DebugApi.CheckControlC())
+                    return HRESULTS.S_OK;
+
             }
             Exports.WriteLine("");
             Exports.WriteLine("{0} module(s) listed, {1} skipped by the filters", i, Module.Modules.Count - i);

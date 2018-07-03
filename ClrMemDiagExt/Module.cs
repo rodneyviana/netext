@@ -525,13 +525,13 @@ namespace NetExt.Shim
             MEMORY_BASIC_INFORMATION64 mbi = new MEMORY_BASIC_INFORMATION64();
 
             mbi = DebugApi.AddressType(BaseAddress);
-            if (mbi.Protect == PAGE.NOACCESS)
+            if (mbi.Protect == PAGE.NOACCESS && !DebugApi.IsIDNA)
             {
                 DebugApi.WriteLine("Unable to read memory at %p", BaseAddress);
                 return false;
             }
 
-            bool bIsImage = (mbi.Type == MEM.IMAGE || mbi.Type == MEM.PRIVATE);
+            bool bIsImage = DebugApi.IsIDNA || (mbi.Type == MEM.IMAGE || mbi.Type == MEM.PRIVATE);
 
             IMAGE_DOS_HEADER dosHeader = DOSHeader;
 
@@ -784,7 +784,7 @@ namespace NetExt.Shim
                 if (size < 2)
                     return "";
                 string str = System.Text.ASCIIEncoding.Unicode.GetString(buffer, 0, (int)size - 2);
-                return str;
+                return str.Replace("\0",""); // Resolves an issue with empty strings
 
             }
 

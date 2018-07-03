@@ -1115,7 +1115,7 @@ public:
 		long GCMode;
 		pRuntime->IsServerGC(&GCMode);
 
-		return GCMode;
+		return GCMode != 0;
 	}
 
 	UINT MaxGeneration()

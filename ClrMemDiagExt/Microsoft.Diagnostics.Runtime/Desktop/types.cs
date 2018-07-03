@@ -1361,9 +1361,9 @@ namespace Microsoft.Diagnostics.Runtime.Desktop
                 if (import != null)
                 {
                     StringBuilder builder = new StringBuilder(256);
-                    int mdTypeDef, sigType, elemType, pchField, pcbSigBlob, pdwCPlusTypeFlag;
+                    int mdTypeDef, /* sigType, */ /* elemType,*/ pchField, /* pcbSigBlob,*/ pdwCPlusTypeFlag;
 
-                    IntPtr ppvSigBlob;
+                    // IntPtr ppvSigBlob;
                     int res = import.GetFieldProps((int)field.FieldToken, out mdTypeDef, builder, builder.Capacity, out pchField, out attr, out fieldSig, out sigLen, out pdwCPlusTypeFlag, out ppValue, out pcchValue);
                     if (res >= 0)
                         name = builder.ToString();

@@ -190,7 +190,7 @@ private:
 	{
 		swprintf(NameBuffer, MAX_MTNAME, L"%p", i);
 		prettyPrint.assign(NameBuffer);
-		DoubleValue = (INT64)i;
+		DoubleValue = static_cast<double>(i);
 	}
 
 public:
@@ -228,7 +228,7 @@ public:
 	{
 		Value.i64 = rs;
 		corBaseType = corType = ELEMENT_TYPE_I8;
-		DoublePrint(rs);
+		DoublePrint(static_cast<double>(rs));
 		Size = sizeof(rs);
 		return *this;
 	}
@@ -245,7 +245,7 @@ public:
 	{
 		Value.u64 = rs;
 		corBaseType = corType = ELEMENT_TYPE_U8;
-		DoublePrint(rs);
+		DoublePrint(static_cast<double>(rs));
 		Size = sizeof(rs);
 		return *this;
 	}
@@ -665,7 +665,7 @@ inline void PrintArrayIndex(CLRDATA_ADDRESS Address, int Start, int Rank)
 		bound *= f;
 		if(bound==0) bound = 1; // to avoid divided by zero in corrupted memory
 	}
-	for(int i=idx.size()-1;i>=0;i--)
+	for(int i=static_cast<int>(idx.size()-1);i>=0;i--)
 	{
 		if(Rank>1)
 			g_ExtInstancePtr->Out("[%u]", (DWORD)idx[i]);

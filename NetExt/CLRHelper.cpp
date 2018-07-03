@@ -419,7 +419,7 @@ std::map<std::wstring,CLRDATA_ADDRESS> EEClass::Chain(bool IncludeInterface)
 					return chain;
 
 				CComPtr<IMDInterface> intF;
-				next = enumInt->Next(&intF);
+				next = enumInt->Next(&intF) != 0;
 
 				if(next)
 				{
@@ -721,7 +721,7 @@ Thread::const_iterator Thread::GetThreadInRange(CLRDATA_ADDRESS Begin, CLRDATA_A
 
 const UINT32 Thread::Size()
 {
-	return threads.size();
+	return static_cast<UINT32>(threads.size());
 }
 const NetExtShim::MD_ThreadData* Thread::operator[](UINT32 i)
 {

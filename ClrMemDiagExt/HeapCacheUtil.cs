@@ -854,7 +854,7 @@ namespace NetExt.HeapCacheUtil
                 IsValidHeap = true;
                 return;
             }
-            heap = runtime.GetHeap();
+            heap = runtime.Heap;
             if (!heap.CanWalkHeap)
             {
                 IsValidHeap = true;
@@ -944,7 +944,7 @@ namespace NetExt.HeapCacheUtil
                 return String.Compare(Text, Pattern, true) == 0;
             }
             */
-            return true;
+            //return true;
         }
         //
         // Use empty string for all objects

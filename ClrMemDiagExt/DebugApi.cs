@@ -806,7 +806,7 @@ namespace NetExt.Shim
 
         private ulong funcEntry;
 
-        private string symbolStr;
+        //private string symbolStr;
         public ulong Displacement
         { set; get;  }
 
@@ -1658,7 +1658,7 @@ namespace NetExt.Shim
 
                 return bestValue;
             }
-            return null;
+
 
         }
 
@@ -2372,7 +2372,7 @@ kernel32!KUSER_SHARED_DATA
                 return false;
             WriteLine("Interrupted by user.");
             throw new Exception("Control-C was pressed");
-            return true;
+            //return true;
 
         }
 
@@ -2760,7 +2760,7 @@ kernel32!KUSER_SHARED_DATA
         public static unsafe bool ReadMemory<T>(ulong Address, out T Target, bool Force = false)
         {
 
-            if(!DebugApi.IsIDNA && !Force && AddressType(Address).Protect == PAGE.NOACCESS)
+            if(!(DebugApi.IsIDNA || Force) && AddressType(Address).Protect == PAGE.NOACCESS)
             {
                 Target = default(T);
                 return false;

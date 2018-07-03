@@ -265,7 +265,7 @@ public:
 			if(::GetModuleFileName((HINSTANCE)&__ImageBase, fileName, MAX_PATH))
 			{
 				wstring path(fileName);
-				unsigned found = path.find_last_of(L"\\");
+				size_t found = path.find_last_of(L"\\");
 				return path.substr(0, found+1);
 				return path;
 			} else
@@ -281,7 +281,7 @@ public:
 			if(::GetModuleFileName(NULL, fileName, MAX_PATH))
 			{
 				wstring path(fileName);
-				unsigned found = path.find_last_of(L"\\");
+				size_t found = path.find_last_of(L"\\");
 				return path.substr(0, found+1);
 				return path;
 			} else
@@ -808,7 +808,7 @@ EXT_COMMAND(wvar,
 		Out("\n%i item(s) listed\n", count);
 	} else
 	{
-		Out("\n%i item(s) listed. %i skipped by the filter", count, vars.size()-count);
+		Out("\n%i item(s) listed. %i skipped by the filter\n", count, vars.size()-count);
 	}
 
 }
