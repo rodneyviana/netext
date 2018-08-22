@@ -513,11 +513,13 @@ namespace NetExt.HeapCacheUtil
             if (Type == null || Type.MetadataToken == 0)
                 return "System.Object";
 
-            return Type.Name.Replace('+','_');
+            return Type.Name == null ? "<UNKNOWN>"+Type.MethodTable.ToString("x16") : Type.Name.Replace('+','_');
         }
 
         public static string AdjustFieldName(string FieldName)
         {
+            if (String.IsNullOrEmpty(FieldName))
+                return "**INVALIDFIELD**";
             if (FieldName.IndexOfAny(new char[] { '<', '>', '+', '$' }) >= 0)
                 return FieldName.Replace('<', '_').Replace('>', '_').Replace('+', '_').Replace('$','_');
             return FieldName;

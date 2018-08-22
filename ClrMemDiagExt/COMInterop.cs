@@ -1442,7 +1442,7 @@ namespace NetExt.Shim
             }
             typeData.corElementType = (int)m_type.ElementType;
             typeData.isArray = m_type.IsArray;
-            typeData.isGeneric = m_type.Name.Contains('<') && m_type.Name.Contains('>') && m_type.Name[0] != '<';
+            typeData.isGeneric = String.IsNullOrEmpty(m_type.Name) ? false : m_type.Name.Contains('<') && m_type.Name.Contains('>') && m_type.Name[0] != '<';
             typeData.isString = m_type.IsString;
             typeData.EEClass = AdHoc.GetEEFromMT(m_type.Heap.Runtime, typeData.MethodTable);
             typeData.isValueType = m_type.IsValueClass;
@@ -1490,7 +1490,7 @@ namespace NetExt.Shim
             pName = null;
             if(m_type == null)
                 return HRESULTS.E_FAIL;
-            pName = m_type.Name.Replace('+','_');
+            pName = m_type.Name == null ? "<UNKNOWN>"+m_type.MethodTable.ToString("x16") : m_type.Name.Replace('+','_');
             return HRESULTS.S_OK;
         }
 
@@ -1504,7 +1504,7 @@ namespace NetExt.Shim
             ClrType runtimeType = m_type.GetRuntimeType(objRef);
             if (runtimeType != null)
             {
-                pName = runtimeType.Name.Replace('+', '_');
+                pName = runtimeType.Name == null ? "<UNKNOWN>" + runtimeType.MethodTable.ToString("x16") : runtimeType.Name.Replace('+', '_');
                 return HRESULTS.S_OK;
             }
 
