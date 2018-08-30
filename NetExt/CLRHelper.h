@@ -995,7 +995,7 @@ public:
 	Heap()
 	{
 		heapPtrs = NULL;
-		currentHeap = -1;
+		currentHeap = 0;
 		valid = AreStructuresValid();
 		
 		

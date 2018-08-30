@@ -161,6 +161,6 @@ EXT_COMMAND(regmatch,
 	
 
 	string cmd(Execute(command));
-	Out(regexmatch(cmd, pattern, lowcase != 0, flavor, run, format).str().c_str());
+	Out(regexmatch(cmd, pattern, lowcase != 0, flavor, run != 0, format).str().c_str());
 
 }

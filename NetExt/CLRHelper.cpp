@@ -266,7 +266,7 @@ std::wstring EEClass::GetEnumString(CLRDATA_ADDRESS& Address)
 	{
 		enumStr = enumName;
 	}
-	return enumName;
+	return enumStr;
 }
 
 void EEClass::Request(CLRDATA_ADDRESS MTOfType)
@@ -315,8 +315,8 @@ void EEClass::EnsureFields()
 {
 	if(fields.empty())
 	{
-
-		if(IsCacheHit = fieldsCache.Exists(eeClassData.EEClass))
+		IsCacheHit = fieldsCache.Exists(eeClassData.EEClass);
+		if(IsCacheHit)
 		{
 			fields = *fieldsCache.Get(eeClassData.EEClass);
 			return;
@@ -1390,7 +1390,8 @@ MD_TypeData DumpHeapCache::GetObj(CLRDATA_ADDRESS Address)
 	// Fix a counting bug for string in .NET 4.0 and beyond
 	if(obj.MethodTable == commonMTs.StringMethodTable() && (!NET2))
 	{
-		obj.arraySize++;
+			obj.arraySize++;
+
 	}
 	return obj;
 };

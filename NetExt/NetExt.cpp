@@ -25,7 +25,7 @@ bool isCLRInit = false;
 
 bool NET2 = false;
 
-
+bool coreCLR = false;
 
 #define MIDL_DEFINE_GUID(type,name,l,w1,w2,b1,b2,b3,b4,b5,b6,b7,b8) \
         const type name = {l,w1,w2,{b1,b2,b3,b4,b5,b6,b7,b8}}
@@ -392,6 +392,12 @@ HRESULT INIT_API()
 	{
 		string clr = EXT_CLASS::Execute("lmv mclr");
 		NET2 = clr.find("Microsoft") == string::npos; 
+		clr = EXT_CLASS::Execute("lmv mcoreclr");
+		if(clr.find("Microsoft") != string::npos)
+		{
+			coreCLR = true;
+			NET2 = false;
+		}
 		HRESULT hr = S_OK;
 		
 		if(pTarget != NULL) hr = E_APPLICATION_ACTIVATION_EXEC_FAILURE;

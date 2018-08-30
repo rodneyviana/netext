@@ -659,7 +659,7 @@ std::string SpecialCases::GetHexArray(CLRDATA_ADDRESS Obj, bool Padded, int Limi
 	}
 	if(className == L"System.Char[]" || className == L"System.Int16[]" || className == L"System.UInt16[]" )
 	{
-		for(int i=0;i<limit;i++)
+		for(unsigned int i=0;i<limit;i++)
 		{
 			ExtRemoteData ptr(obj.DataPtr()+i*obj.InnerComponentSize(), sizeof(unsigned short));
 			if(!IsValidMemory(ptr.m_Offset))
@@ -749,7 +749,10 @@ std::string SpecialCases::PrettyPrint(CLRDATA_ADDRESS Address, CLRDATA_ADDRESS M
 	{
 		SVAL v = GetBoxedValue(Address);
 		if(v.IsValid && v.strValue.size() != 0)
-			return CW2A(v.strValue.c_str());
+		{
+			string ret = CW2A(v.strValue.c_str());
+			return ret;
+		}
 		obj.Request(Address);
 	}
 	if(!obj.IsValid())
@@ -762,13 +765,17 @@ std::string SpecialCases::PrettyPrint(CLRDATA_ADDRESS Address, CLRDATA_ADDRESS M
 	}
 
 	if(obj.IsString())
-		return CW2A(obj.String().c_str());
+	{
+		string ret = CW2A(obj.String().c_str());
+		return ret;
+	}
 
 	if(methName == L"System.DateTime")
 	{
 		ExtRemoteData dt(Address + (MethodTable ? 0 : sizeof(void*)) , sizeof(UINT64));
 		UINT64 ticks = dt.GetUlong64();
-		return CW2A(tickstodatetime(ticks).c_str());
+		string ret = CW2A(tickstodatetime(ticks).c_str());
+		return ret;
 	}
 	if(methName == L"System.TimeSpan")
 	{
@@ -786,13 +793,14 @@ std::string SpecialCases::PrettyPrint(CLRDATA_ADDRESS Address, CLRDATA_ADDRESS M
 		fields.push_back("m_String");
 		varMap fieldV;
 		DumpFields(Address,fields,0,&fieldV);
-
-		return CW2A(fieldV["m_String"].strValue.c_str());
+		string ret = CW2A(fieldV["m_String"].strValue.c_str());
+		return ret;
 	}
 
 	if(methName == L"System.Net.IPEndPoint" || methName == L"System.Net.IPAddress")
 	{
-		return CW2A(SpecialCases::IPAddress(Address).c_str());
+		string ret = CW2A(SpecialCases::IPAddress(Address).c_str());
+		return ret;
 	}
 
 	if(methName == L"System.DBNull")
@@ -1584,7 +1592,7 @@ SVAL GetValue(CLRDATA_ADDRESS offset, CorElementType CorType, CLRDATA_ADDRESS Me
 				{
 					g_ExtInstancePtr->Out("%S", NameBuffer);
 				}
-				response.Value.b=static_cast<bool>(u);
+				response.Value.b=(u != 0);
 				response.strValue.assign(NameBuffer);
 				response.DoubleValue = (double)u;
 

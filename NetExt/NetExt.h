@@ -231,6 +231,7 @@ void CallOutputDml(wchar_t* Text);
 long IsManagedInterrupt();
 
 extern bool NET2;
+extern bool coreCLR;
 HRESULT INIT_API();
 
 
