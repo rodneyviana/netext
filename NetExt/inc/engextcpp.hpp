@@ -2499,7 +2499,7 @@ public:
     {
         return g_Ext->m_PtrSize == 8 ?
             GetData(g_Ext->m_PtrSize) :
-            (LONG)GetData(g_Ext->m_PtrSize);
+            (ULONG)GetData(g_Ext->m_PtrSize);
     }
 
     //

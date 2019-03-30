@@ -143,6 +143,10 @@ bool IsValidMemory(CLRDATA_ADDRESS Address, MEMORY_BASIC_INFORMATION64& MemInfo,
 	}
 	ZeroMemory(&MemInfo, sizeof(MemInfo));
 	g_ExtInstancePtr->m_Data4->QueryVirtual(Address + Size, &MemInfo);
+#ifdef _X86_
+	MemInfo.BaseAddress = MemInfo.BaseAddress & UINT32_MAX;
+	MemInfo.AllocationBase = MemInfo.AllocationBase  & UINT32_MAX;
+#endif
 	return IsValidMemory(Address + Size, MemInfo);
 }
 
@@ -151,6 +155,10 @@ bool IsValidMemory(CLRDATA_ADDRESS Address, INT64 Size)
 	MEMORY_BASIC_INFORMATION64 mi;
 	ZeroMemory(&mi, sizeof(mi));
 	g_ExtInstancePtr->m_Data4->QueryVirtual(Address, &mi);
+#ifdef _X86_
+	mi.BaseAddress = mi.BaseAddress & UINT32_MAX;
+	mi.AllocationBase = mi.AllocationBase  & UINT32_MAX;
+#endif
 	return IsValidMemory(Address, mi, Size);
 }
 

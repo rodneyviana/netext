@@ -2675,7 +2675,7 @@ namespace NetExt.Shim
                 if (Exports.isInterrupted())
                     return HRESULTS.S_FALSE;
 
-                Exports.Write("{0:%p} ", domains[i].Address);
+                Exports.Write("{0:%p} ", m_runtime.PointerSize == 8 ? domains[i].Address : domains[i].Address & UInt32.MaxValue);
                 Exports.Write("{0, -60} ", i == 0 ? "System" : i == 1 ? "Shared" : domains[i].Name);
                 Exports.Write("{0,6:#,#} ", domains[i].Modules.Count);
                 if (!String.IsNullOrEmpty(domains[i].ApplicationBase)) Exports.Write("Base Path: {0} ", domains[i].ApplicationBase);
