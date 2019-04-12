@@ -112,3 +112,5 @@ if($badversion)
   
 }
 
+& pause
+

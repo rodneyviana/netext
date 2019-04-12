@@ -1,4 +1,4 @@
-// Source Date: Wednesday, May 2, 2018 6:30:03 PM
+// Source Date: Thursday, April 11, 2019 7:54:15 PM
 // Source File: C:\Users\rviana\OneDrive\Projects\netext\NetExt\helptxt.txt
 // This file was generated. Do not modify. Modify Source File instead
 #include "netext.h"
@@ -65,9 +65,10 @@ EXT_COMMAND(whelp,
 		Dml("!<link cmd=\"!whelp wsocket\">wsocket</link> - Dump socket information\n");
 		Dml("!<link cmd=\"!whelp wxml\">wxml</link> - Dump a XML document\n");
 		Dml("!<link cmd=\"!whelp wmakesource\">wmakesource</link> - It tries to reflect the current frame into source code\n");
-		Dml("<b>*(new)*</b> !<link cmd=\"!whelp wopensource\">wopensource</link> - Open source file based on the IP provided\n");
-		Dml("<b>*(new)*</b> !<link cmd=\"!whelp widnauls\">widnauls</link> - List iDNA position of a ULS entry filtered by tag, message or category\n");
-		Dml("<b>*(new)*</b> !<link cmd=\"!whelp wconcurrentdict\">wconcurrentdict</link> - Dump a concurrent dictionary\n");
+		Dml("!<link cmd=\"!whelp wopensource\">wopensource</link> - Open source file based on the IP provided\n");
+		Dml("!<link cmd=\"!whelp widnauls\">widnauls</link> - List iDNA position of a ULS entry filtered by tag, message or category\n");
+		Dml("!<link cmd=\"!whelp wconcurrentdict\">wconcurrentdict</link> - Dump a concurrent dictionary\n");
+		Dml("<b>*(new)*</b> !<link cmd=\"!whelp wsql\">wsql</link> - List SQL queries\n");
 		Dml("\n");
 		Dml("<b>Misc</b>\n");
 		Dml("<b>----</b>\n");
@@ -148,6 +149,87 @@ EXT_COMMAND(whelp,
 		Dml("--------------------------------------------------\n");
 		Dml("\n");
 		Dml("0:016&gt; !wt\n");
+		Dml("\n");
+	return;
+	}
+	if(keyword=="wsql")
+	{
+		Dml("Display all SQL Server Commands (System.Data.SqlClient.SqlCommand) or a specific one.\n");
+		Dml("It can be filtered by active or partial command text or display only stored procedure queries\n");
+		Dml("\n");
+		Dml("\n");
+		Dml("<b>Syntax:</b>\n");
+		Dml("!wsql [-sproc] [-active] [-command &lt;partial-name&gt;] [&lt;expr&gt;]\n");
+		Dml("\n");
+		Dml("\n");
+		Dml("<b>Where:</b>\n");
+		Dml("	<b>-sproc</b> Lists only queries thar are stored procedure. Optional\n");
+		Dml("	<b>-active</b> Lists only queries still running. Optional\n");
+		Dml("	<b>-command &lt;partial-name&gt;</b> List only queries when its text matches the pattern (e.g -command *INSERT*INTO*). Optional\n");
+		Dml("	<b>[&lt;expr&gt;]</b> If an address exception is specified it will display only that command. Optional\n");
+		Dml("\n");
+		Dml("<b>Examples:</b>\n");
+		Dml("----------\n");
+		Dml("\n");
+		Dml("<i>List a specific command</i>\n");
+		Dml("------------------------------------\n");
+		Dml("0:000&gt;  !wsql 000000d44804ff78\n");
+		Dml("\n");
+		Dml("Connection String: [Data Source=CONTOSOSQL/A1;Initial Catalog=SharePoint_Config;Integrated Security=True;Persist Security Info=False;Enlist=False;Pooling=True;Min Pool Size=0;Max Pool Size=100;PoolBlockingPeriod=Auto;Asynchronous Processing=False;Connection Reset=True;MultipleActiveResultSets=False;Replication=False;Connect Timeout=15;Encrypt=False;TrustServerCertificate=False;Load Balance Timeout=0;Packet Size=8000;Type System Version=Latest;Application Name=\".Net SqlClient Data Provider\";User Instance=False;Context Connection=False;Transaction Binding=\"Implicit Unbind\";ApplicationIntent=ReadWrite;MultiSubnetFailover=False;TransparentNetworkIPResolution=True;ConnectRetryCount=1;ConnectRetryInterval=10;Column Encryption Setting=Disabled]\n");
+		Dml("\n");
+		Dml("[  0]: 000000d44804ff78  Type: Stored Procedure State: Open      Pool Connection: 1 of 100 \n");
+		Dml("proc_getObjectsByClass\n");
+		Dml("\n");
+		Dml("Parameters:\n");
+		Dml("=============\n");
+		Dml("@RETURN_VALUE=0n0\n");
+		Dml("@ClassId={5669b3e1-5bb4-40d1-a944-2cafe00d8c3f}\n");
+		Dml("@ParentId={e154cb00-7fb9-4902-a7eb-2ceeedef9c3d}\n");
+		Dml("@Name=\n");
+		Dml("@RequestGuid={ab9ec69e-8030-908e-922f-8a38850b9aa3}\n");
+		Dml("\n");
+		Dml("<i>Filter by partial command</i>\n");
+		Dml("------------------------------------\n");
+		Dml("0:000&gt;  !wsql -command *TVP*\n");
+		Dml("Connection String: [&lt;NOT SET OR CLOSED&gt;]\n");
+		Dml("\n");
+		Dml("[  0]: 000000d4480912d8  Type: Stored Procedure State: Closed      \n");
+		Dml("proc_putObjectTVP\n");
+		Dml("\n");
+		Dml("Parameters:\n");
+		Dml("=============\n");
+		Dml("@RETURN_VALUE=0n0\n");
+		Dml("@Id={4efadda2-0b5a-493a-8cb7-ef810c568bc6}\n");
+		Dml("@ParentId={e154cb00-7fb9-4902-a7eb-2ceeedef9c3d}\n");
+		Dml("@ClassId={5669b3e1-5bb4-40d1-a944-2cafe00d8c3f}\n");
+		Dml("@Name=\n");
+		Dml("@Status=0n0\n");
+		Dml("@Version=0n88675\n");
+		Dml("@Properties=&lt;object type=\"Microsoft.SharePoint.Administration.SPLargeListThrottleSettings, Microsoft.SharePoint, Version=15.0.0.0, Culture=neutral, PublicKeyToken=71e9bce111e9429c\"&gt;\n");
+		Dml("@AutoResolveMissingTypes=0\n");
+		Dml("@DependencyIdData=000000D448092100\n");
+		Dml("@DependantId=NULL\n");
+		Dml("@ExistingObject=00000000000000000000000000000000\n");
+		Dml("@NewVersion=00000000000000000000000000000000\n");
+		Dml("@PutObjectReturnValue=00000000000000000000000000000000\n");
+		Dml("@PutDepReturnValue=00000000000000000000000000000000\n");
+		Dml("@RequestGuid={ab9ec69e-8030-908e-922f-8a38850b9aa3}\n");
+		Dml("\n");
+		Dml("[  1]: 000000d44815fa10  Type: Stored Procedure State: Closed      \n");
+		Dml("proc_putObjectTVP\n");
+		Dml("\n");
+		Dml("Parameters:\n");
+		Dml("=============\n");
+		Dml("@RETURN_VALUE=0n0\n");
+		Dml("@Id={2c59db68-8713-472a-8109-cc930e2579f7}\n");
+		Dml("@ParentId={cc5b97d1-d6dd-447b-ad6e-b1e770333be3}\n");
+		Dml("@ClassId={7df3802b-64ff-41a7-8e3c-49ede6000f0c}\n");
+		Dml("@Name=ClaimProviderManager\n");
+		Dml("@Status=0n0\n");
+		Dml("@Version=0n88677\n");
+		Dml("(...)\n");
+		Dml("\n");
+		Dml("5 SQL Commands listed. 93 Skipped by filter\n");
 		Dml("\n");
 		Dml("\n");
 	return;

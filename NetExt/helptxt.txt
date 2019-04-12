@@ -47,9 +47,10 @@
 !||wsocket|| - Dump socket information
 !||wxml|| - Dump a XML document
 !||wmakesource|| - It tries to reflect the current frame into source code
-<b>*(new)*</b> !||wopensource|| - Open source file based on the IP provided
-<b>*(new)*</b> !||widnauls|| - List iDNA position of a ULS entry filtered by tag, message or category
-<b>*(new)*</b> !||wconcurrentdict|| - Dump a concurrent dictionary
+!||wopensource|| - Open source file based on the IP provided
+!||widnauls|| - List iDNA position of a ULS entry filtered by tag, message or category
+!||wconcurrentdict|| - Dump a concurrent dictionary
+<b>*(new)*</b> !||wsql|| - List SQL queries
 
 <b>Misc</b>
 <b>----</b>
@@ -121,6 +122,84 @@ will not understand managed code.
 --------------------------------------------------
 
 0:016&gt; !wt
+
+##wsql
+Display all SQL Server Commands (System.Data.SqlClient.SqlCommand) or a specific one.
+It can be filtered by active or partial command text or display only stored procedure queries
+
+
+<b>Syntax:</b>
+!wsql [-sproc] [-active] [-command &lt;partial-name&gt;] [&lt;expr&gt;]
+
+
+<b>Where:</b>
+	<b>-sproc</b> Lists only queries thar are stored procedure. Optional
+	<b>-active</b> Lists only queries still running. Optional
+	<b>-command &lt;partial-name&gt;</b> List only queries when its text matches the pattern (e.g -command *INSERT*INTO*). Optional
+	<b>[&lt;expr&gt;]</b> If an address is specified it will display only that command. Optional
+
+<b>Examples:</b>
+----------
+
+<i>List a specific command</i>
+------------------------------------
+0:000&gt;  !wsql 000000d44804ff78
+
+Connection String: [Data Source=CONTOSOSQL/A1;Initial Catalog=SharePoint_Config;Integrated Security=True;Persist Security Info=False;Enlist=False;Pooling=True;Min Pool Size=0;Max Pool Size=100;PoolBlockingPeriod=Auto;Asynchronous Processing=False;Connection Reset=True;MultipleActiveResultSets=False;Replication=False;Connect Timeout=15;Encrypt=False;TrustServerCertificate=False;Load Balance Timeout=0;Packet Size=8000;Type System Version=Latest;Application Name=".Net SqlClient Data Provider";User Instance=False;Context Connection=False;Transaction Binding="Implicit Unbind";ApplicationIntent=ReadWrite;MultiSubnetFailover=False;TransparentNetworkIPResolution=True;ConnectRetryCount=1;ConnectRetryInterval=10;Column Encryption Setting=Disabled]
+
+[  0]: 000000d44804ff78  Type: Stored Procedure State: Open  Running Time: 00:00:08    Pool Connection: 1 of 100 
+proc_getObjectsByClass
+
+Parameters:
+=============
+@RETURN_VALUE=0n0
+@ClassId={5669b3e1-5bb4-40d1-a944-2cafe00d8c3f}
+@ParentId={e154cb00-7fb9-4902-a7eb-2ceeedef9c3d}
+@Name=
+@RequestGuid={ab9ec69e-8030-908e-922f-8a38850b9aa3}
+
+<i>Filter by partial command</i>
+------------------------------------
+0:000&gt;  !wsql -command *TVP*
+Connection String: [&lt;NOT SET OR CLOSED&gt;]
+
+[  0]: 000000d4480912d8  Type: Stored Procedure State: Closed      
+proc_putObjectTVP
+
+Parameters:
+=============
+@RETURN_VALUE=0n0
+@Id={4efadda2-0b5a-493a-8cb7-ef810c568bc6}
+@ParentId={e154cb00-7fb9-4902-a7eb-2ceeedef9c3d}
+@ClassId={5669b3e1-5bb4-40d1-a944-2cafe00d8c3f}
+@Name=
+@Status=0n0
+@Version=0n88675
+@Properties=&lt;object type="Microsoft.SharePoint.Administration.SPLargeListThrottleSettings, Microsoft.SharePoint, Version=15.0.0.0, Culture=neutral, PublicKeyToken=71e9bce111e9429c"&gt;
+@AutoResolveMissingTypes=0
+@DependencyIdData=000000D448092100
+@DependantId=NULL
+@ExistingObject=00000000000000000000000000000000
+@NewVersion=00000000000000000000000000000000
+@PutObjectReturnValue=00000000000000000000000000000000
+@PutDepReturnValue=00000000000000000000000000000000
+@RequestGuid={ab9ec69e-8030-908e-922f-8a38850b9aa3}
+
+[  1]: 000000d44815fa10  Type: Stored Procedure State: Closed      
+proc_putObjectTVP
+
+Parameters:
+=============
+@RETURN_VALUE=0n0
+@Id={2c59db68-8713-472a-8109-cc930e2579f7}
+@ParentId={cc5b97d1-d6dd-447b-ad6e-b1e770333be3}
+@ClassId={7df3802b-64ff-41a7-8e3c-49ede6000f0c}
+@Name=ClaimProviderManager
+@Status=0n0
+@Version=0n88677
+(...)
+
+5 SQL Commands listed. 93 Skipped by filter
 
 
 ##widnauls
