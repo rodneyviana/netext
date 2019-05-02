@@ -1,4 +1,5 @@
-﻿using Microsoft.Diagnostics.Runtime.Interop;
+﻿using Microsoft.Diagnostics.Runtime;
+using Microsoft.Diagnostics.Runtime.Interop;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -62,6 +63,30 @@ namespace NetExt.Shim
     {
         protected static List<Module> modules = null;
 
+        protected VersionReader versionReader = null;
+
+        protected VersionReader ManagedVersion
+        {
+            get
+            {
+                if (versionReader == null)
+                {
+                    if(this.Name == null)
+                    {
+                        return null;
+                    }
+                    string[] parts = this.Name.Split('.');
+                    string ext = parts[parts.Length - 1];
+
+                    versionReader = new VersionReader(this, ext);
+                    if (!versionReader.IsValid)
+                        return null;
+                }
+
+                return versionReader;
+            }
+        }
+
         static IDebugSymbols5 symbol = null;
 
         public static IDebugSymbols5 Symbol
@@ -118,6 +143,17 @@ namespace NetExt.Shim
                         }
                     }
                 }
+                // Some Debugger versions lack the managed assemblies in the API
+                if (DebugApi.Runtime != null)
+                {
+                    foreach (var manMod in DebugApi.Runtime.Modules)
+                    {
+                        Module mod = new Module(manMod.ImageBase);
+                        if (mod.IsValid && mod.Index < 0)
+                            modules.Add(mod);                        
+                    }
+                }
+
                 return modules;
             }
         }
@@ -679,7 +715,7 @@ namespace NetExt.Shim
             }
         }
 
-        public uint Index
+        public int Index
         {
             protected set;
             get;
@@ -689,6 +725,12 @@ namespace NetExt.Shim
         {
             get
             {
+                if (Index < 0)
+                {
+                    if(ManagedVersion == null)
+                        return "<INVALID FILE IMAGE>";
+                    return ManagedVersion.Info.FileVersion;
+                }
                 return GetVersionInfo("FileVersion");
             }
             //FileVersion
@@ -698,6 +740,12 @@ namespace NetExt.Shim
         {
             get
             {
+                if (Index < 0)
+                {
+                    if (ManagedVersion == null)
+                        return "<INVALID FILE IMAGE>";
+                    return ManagedVersion.Info.ProductVersion;
+                }
                 return GetVersionInfo("ProductVersion");
             }
         }
@@ -706,6 +754,12 @@ namespace NetExt.Shim
         {
             get
             {
+                if (Index < 0)
+                {
+                    if (ManagedVersion == null)
+                        return "<INVALID FILE IMAGE>";
+                    return ManagedVersion.Info.CompanyName;
+                }
                 return GetVersionInfo("CompanyName");
             }
         }
@@ -714,6 +768,12 @@ namespace NetExt.Shim
         {
             get
             {
+                if (Index < 0)
+                {
+                    if (ManagedVersion == null)
+                        return "<INVALID FILE IMAGE>";
+                    return ManagedVersion.Info.LegalCopyright;
+                }
                 return GetVersionInfo("LegalCopyright");
             }
         }
@@ -722,6 +782,12 @@ namespace NetExt.Shim
         {
             get
             {
+                if (Index < 0)
+                {
+                    if (ManagedVersion == null)
+                        return "<INVALID FILE IMAGE>";
+                    return ManagedVersion.Info.ProductName;
+                }
                 return GetVersionInfo("ProductName");
             }
         }
@@ -729,6 +795,13 @@ namespace NetExt.Shim
         {
             get
             {
+
+                if (Index < 0)
+                {
+                    if (ManagedVersion == null)
+                        return "<INVALID FILE IMAGE>";
+                    return ManagedVersion.Info.OriginalFilename;
+                }
                 return GetVersionInfo("OriginalFilename");
             }
         }
@@ -768,8 +841,8 @@ namespace NetExt.Shim
             uint size = 1000;
             byte[] buffer = new byte[size];
 
-
-            if (Symbol.GetModuleVersionInformation(Index, 0, @"\VarFileInfo\Translation", buffer, size, out size) == (int)HRESULT.S_OK)
+            uint index = (uint)Index;
+            if (Symbol.GetModuleVersionInformation(index, 0, @"\VarFileInfo\Translation", buffer, size, out size) == (int)HRESULT.S_OK)
             {
                 LANGANDCODEPAGE cp = new LANGANDCODEPAGE();
                 cp.SetValue(buffer);
@@ -778,7 +851,7 @@ namespace NetExt.Shim
                     fixed (byte* p = buffer)
                     {
                         IntPtr ptr = (IntPtr)p;
-                        Symbol.GetModuleVersionInformationWide(Index, 0, cp.VarQueryValue(Property), ptr, 1000, out size);
+                        Symbol.GetModuleVersionInformationWide(index, 0, cp.VarQueryValue(Property), ptr, 1000, out size);
                     }
                 }
                 if (size < 2)
@@ -799,7 +872,7 @@ namespace NetExt.Shim
             ulong addr = 0;
             if (Symbol.GetModuleByModuleName2(ModuleName, 0, DEBUG_GETMOD.NO_UNLOADED_MODULES, out index, out addr) == (int)HRESULT.S_OK)
             {
-                Index = index;
+                Index = (int)index;
                 uint size = 1000;
                 StringBuilder buffer = new StringBuilder((int)size);
                 BaseAddress = addr;
@@ -812,6 +885,15 @@ namespace NetExt.Shim
             {
                 FullPath = null;
                 BaseAddress = 0;
+                var module = DebugApi.Runtime.Modules.First(m => { return m.FileName != null && m.FileName.ToUpper().Contains(ModuleName.ToUpper()); });
+                if (module != null)
+                {
+                    BaseAddress = module.ImageBase;
+                    FullPath = module.FileName;
+                    Index = -1;
+                    
+                }
+
             }
         }
 
@@ -821,7 +903,7 @@ namespace NetExt.Shim
             ulong addr = 0;
             if (Symbol.GetModuleByOffset2(Offset, 0, DEBUG_GETMOD.NO_UNLOADED_MODULES, out index, out addr) == (int)HRESULT.S_OK)
             {
-                Index = index;
+                Index = (int)index;
                 uint size = 1000;
                 StringBuilder buffer = new StringBuilder((int)size);
                 BaseAddress = addr;
@@ -834,7 +916,73 @@ namespace NetExt.Shim
             {
                 FullPath = null;
                 BaseAddress = 0;
+                if (DebugApi.Runtime != null)
+                {
+                    var module = GetClrModuleByAddress(Offset);
+                    if (module != null)
+                    {
+                        BaseAddress = module.ImageBase;
+                        FullPath = module.FileName;
+                        Index = -1;
+                    }
+                }
+            }
+
+        }
+
+        public static ClrModule GetClrModuleByAddress(ulong Offset)
+        {
+            return DebugApi.Runtime.Modules.FirstOrDefault(m => { return m.ImageBase == Offset; });
+        }
+       
+    }
+
+    public class VersionReader
+    {
+
+
+        public bool IsValid
+        {
+            private set;
+            get;
+        }
+
+        public Exception LastException
+        {
+            private set;
+            get;
+        }
+
+        public FileVersionInfo Info
+        {
+            get;
+            set;
+
+        }
+        public VersionReader(Module Mod, string Extension)
+        {
+            string tmpFile = Path.GetTempFileName() + "." + Extension;
+            try
+            {
+
+                FileStream fileStream = new FileStream(tmpFile, FileMode.CreateNew);
+                Mod.SaveToStream(fileStream);
+                fileStream.Close();
+                Info = FileVersionInfo.GetVersionInfo(tmpFile);
+                IsValid = true;
+
+
+            }
+            catch (Exception ex)
+            {
+                IsValid = false;
+                LastException = ex;
+            }
+            if (File.Exists(tmpFile))
+            {
+                File.Delete(tmpFile);
             }
         }
     }
+
 }

@@ -1,4 +1,4 @@
-// Source Date: Thursday, April 11, 2019 7:54:15 PM
+// Source Date: Friday, April 12, 2019 4:45:32 PM
 // Source File: C:\Users\rviana\OneDrive\Projects\netext\NetExt\helptxt.txt
 // This file was generated. Do not modify. Modify Source File instead
 #include "netext.h"
@@ -166,7 +166,7 @@ EXT_COMMAND(whelp,
 		Dml("	<b>-sproc</b> Lists only queries thar are stored procedure. Optional\n");
 		Dml("	<b>-active</b> Lists only queries still running. Optional\n");
 		Dml("	<b>-command &lt;partial-name&gt;</b> List only queries when its text matches the pattern (e.g -command *INSERT*INTO*). Optional\n");
-		Dml("	<b>[&lt;expr&gt;]</b> If an address exception is specified it will display only that command. Optional\n");
+		Dml("	<b>[&lt;expr&gt;]</b> If an address is specified it will display only that command. Optional\n");
 		Dml("\n");
 		Dml("<b>Examples:</b>\n");
 		Dml("----------\n");
@@ -177,7 +177,7 @@ EXT_COMMAND(whelp,
 		Dml("\n");
 		Dml("Connection String: [Data Source=CONTOSOSQL/A1;Initial Catalog=SharePoint_Config;Integrated Security=True;Persist Security Info=False;Enlist=False;Pooling=True;Min Pool Size=0;Max Pool Size=100;PoolBlockingPeriod=Auto;Asynchronous Processing=False;Connection Reset=True;MultipleActiveResultSets=False;Replication=False;Connect Timeout=15;Encrypt=False;TrustServerCertificate=False;Load Balance Timeout=0;Packet Size=8000;Type System Version=Latest;Application Name=\".Net SqlClient Data Provider\";User Instance=False;Context Connection=False;Transaction Binding=\"Implicit Unbind\";ApplicationIntent=ReadWrite;MultiSubnetFailover=False;TransparentNetworkIPResolution=True;ConnectRetryCount=1;ConnectRetryInterval=10;Column Encryption Setting=Disabled]\n");
 		Dml("\n");
-		Dml("[  0]: 000000d44804ff78  Type: Stored Procedure State: Open      Pool Connection: 1 of 100 \n");
+		Dml("[  0]: 000000d44804ff78  Type: Stored Procedure State: Open  Running Time: 00:00:08    Pool Connection: 1 of 100 \n");
 		Dml("proc_getObjectsByClass\n");
 		Dml("\n");
 		Dml("Parameters:\n");
