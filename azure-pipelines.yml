@@ -12,7 +12,9 @@ pool:
 variables:
   solution: '**/*.sln'
   buildPlatform: x64
-  buildConfiguration: Release
+  buildConfiguration: Release64
+  buildPlatform1: x86
+  buildConfiguration1: Release32
 
 steps:
 - task: NuGetToolInstaller@1
@@ -20,6 +22,13 @@ steps:
 - task: NuGetCommand@2
   inputs:
     restoreSolution: '$(solution)'
+
+- task: VSBuild@1
+  inputs:
+    solution: '$(solution)'
+    platform: '$(buildPlatform1)'
+    configuration: '$(buildConfiguration1)'
+
 
 - task: VSBuild@1
   inputs:
