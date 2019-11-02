@@ -13,7 +13,7 @@ variables:
   solution: '**/*.sln'
   buildPlatform: 'Any CPU'
   buildConfiguration: 'Release32, Release64'
-  BuildPlatform = 'x86, x64'
+  buildPlatform: 'x86, x64'
 
 
 steps:
