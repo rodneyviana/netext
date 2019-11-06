@@ -885,7 +885,7 @@ namespace NetExt.Shim
             {
                 FullPath = null;
                 BaseAddress = 0;
-                var module = DebugApi.Runtime.Modules.First(m => { return m.FileName != null && m.FileName.ToUpper().Contains(ModuleName.ToUpper()); });
+                var module = DebugApi.Runtime.Modules.FirstOrDefault(m => { return m.FileName != null && m.FileName.ToUpper().Contains(ModuleName.ToUpper()); });
                 if (module != null)
                 {
                     BaseAddress = module.ImageBase;

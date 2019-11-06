@@ -577,7 +577,12 @@ EXT_COMMAND(wver,
 		hr=pInfo->GetRuntimeVersion(&versionStr);
 		EXITPOINT("Unable to retrieve Dac Version");
 		if(versionStr)
-			Out(".NET Version: %S\n", versionStr);
+		{
+			if(coreCLR)
+				Out(".NETCore Version: %S\n", versionStr);
+			else
+				Out(".NET Version: %S\n", versionStr);
+		}
 		Out("NetExt (this extension) Version: %s\n", CVersionInfo::GetVersionString().c_str()); 
 	}
 

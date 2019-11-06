@@ -3001,7 +3001,8 @@ namespace NetExt.Shim
         public int GetRuntimeVersion(out string pVersion)
         {
             Module clr = new Module("clr");
-            Module mscor = new Module("mscorwks");
+
+
             if (clr.IsValid)
             {
                 Version ver = clr.VersionInfo;
@@ -3033,8 +3034,17 @@ namespace NetExt.Shim
 
             }
             pVersion = null;
+            Module mscor = new Module("mscorwks");
             if (!mscor.IsValid)
+            {
+                Module coreCLR = new Module("coreclr");
+                if (coreCLR.IsValid)
+                {
+                    pVersion = coreCLR.Version;
+                    return HRESULTS.S_OK;
+                }
                 return HRESULTS.E_FAIL;
+            }
             pVersion = mscor.Version;
             return HRESULTS.S_OK;
         }
