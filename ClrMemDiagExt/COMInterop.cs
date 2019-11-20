@@ -2187,7 +2187,7 @@ namespace NetExt.Shim
             sb.Append(String.IsNullOrEmpty((string)(attr.name.prefix)) ? "" : (string)(attr.name.prefix) + ":");
             sb.Append(String.IsNullOrEmpty((string)(attr.name.localName)) ? "" : (string)(attr.name.localName));
             //sb.Append(String.IsNullOrEmpty((string)(attr.name.ns)) ? "" : "=\"" + (string)(attr.name.ns) + "\"");
-            sb.Append(String.IsNullOrEmpty((string)(attr.lastChild.data)) ? "" : "=\"" + System.Security.SecurityElement.Escape((string)(attr.lastChild.data)) + "\"");
+            sb.Append(String.IsNullOrEmpty((string)(attr.lastChild.data)) ? "=\"\"" : "=\"" + System.Security.SecurityElement.Escape((string)(attr.lastChild.data)) + "\"");
             return sb;
         }
 
