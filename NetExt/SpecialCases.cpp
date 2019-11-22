@@ -728,7 +728,7 @@ void SpecialCases::PrintableString(std::string& Str, bool AllowNewLine)
 		if(!valid)
 		{
 			char buff[8] = {0};
-			sprintf_s(buff, 8, "\\x%02x", Str[k]);
+			sprintf_s(buff, 8, "\\x%02x", static_cast<BYTE>(Str[k]));
 			tmpString.append(buff);
 		} else
 		{
