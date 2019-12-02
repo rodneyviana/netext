@@ -409,7 +409,7 @@ namespace CALC
 		st.pop();
 		SVAL v=st.top();
 		st.pop();
-		if(!v.IsValid || ((v.IsInt() || v.IsUnsigned()) && v.Value.u64==0) || (v.IsReal() && v.DoubleValue==0) || (v.IsString() && v.strValue == L"(null)")) 
+		if(!v.IsValid || ((v.IsInt() || v.IsUnsigned()) && v.Value.u64==0) || (v.IsReal() && v.DoubleValue==0) || (v.IsString() && NULL == v.Value.ptr)) 
 			st.push(in);
 		else
 			st.push(v);

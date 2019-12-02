@@ -2411,7 +2411,7 @@ SVAL operator!(const SVAL& x)
 	}
 	if(tp==ELEMENT_TYPE_STRING)
 	{
-		v.MakeInvalid();
+		v = (NULL == v.Value.ptr);
 		return v;
 	}
 	SVAL x1;
