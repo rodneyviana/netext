@@ -790,7 +790,7 @@ public:
 	int Gen() { return obj.generation; }
 	CLRDATA_ADDRESS Module() { return obj.Module; }
 	CLRDATA_ADDRESS Assembly() { return obj.assembly; }
-	CLRDATA_ADDRESS Domain() { return obj.appDomain; }
+	CLRDATA_ADDRESS Domain() { return obj.appDomainAddr; }
 };
 
 

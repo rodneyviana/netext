@@ -329,7 +329,7 @@ private:
 
 public:
 	static void LoadDll();
-	static void GetInterface(NetExtShim::IMDTarget **iTarget);
+	static void GetInterface();
 	
 	static void Echo(wchar_t* Message);
 

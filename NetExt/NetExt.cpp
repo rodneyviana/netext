@@ -7,6 +7,8 @@
 
 #include "ClrHelper.h"
 #include "VersionInfo.h"
+#include "CLRHelper.h"
+#include "CLRUtilities.h"
 //
 // From Microsoft.Diagnostics.Runtime
 
@@ -416,7 +418,7 @@ HRESULT INIT_API()
 		using namespace NetExtShim;
 		::CoInitialize(NULL);
 
-		CallCSDll::GetInterface(&pTarget);
+		CallCSDll::GetInterface();
 		if(pTarget)
 		{
 			hr=pTarget->CreateRuntimeFromIXCLR(clrData, &pRuntime);
@@ -437,12 +439,56 @@ HRESULT INIT_API()
 	return E_FAIL;
 }
 
-void CallCSDll::GetInterface(NetExtShim::IMDTarget **iTarget)
+void CallCSDll::GetInterface()
 {
 	LoadDll();
-	if(createFromDebug)
-		createFromDebug(CVersionInfo::GetFilePath().c_str(), g_ExtInstancePtr->m_Client,iTarget); 
 }
+
+
+void CallCSDll::LoadDll()
+{
+	static bool hasInited = false;
+	VARIANT result;
+	CComPtr<NetExtShim::IMDActivator> actObj;
+	if(!hasInited)
+	{
+		CLRUtilities reflection(L"NetExtShim");
+
+		HRESULT hr = reflection.ExecuteStaticMethod(L"NetExt.Shim.Exports", L"GetMDActivator", NULL /* nullArray */, result);
+
+
+
+		if(hr == S_OK)
+		{
+			IUnknown* iu = (IUnknown*)(result.ppunkVal);
+
+			hr = iu->QueryInterface<NetExtShim::IMDActivator>(&actObj);
+		}
+
+		if(hr == S_OK)
+		{
+			hr = actObj->CreateFromIDebugClientAndPath(const_cast<wchar_t*>(CVersionInfo::GetFilePath().c_str()), g_ExtInstancePtr->m_Client, &pTarget);
+		}
+
+		if(hr != S_OK)
+		{
+			g_ExtInstancePtr->Out("ERROR: Unable to get the MDActivator (0x%x)\r", hr);
+			return; // it could not initialize, return
+		}
+
+		ULONG_PTR ptr;
+		actObj->SetOutputCallBack((LONG_PTR)&CallOutput, (LONG_PTR)&CallOutputDml);
+		actObj->SetStopCallBack((LONG_PTR)&IsManagedInterrupt);
+
+		hasInited = true;
+
+
+
+	}
+}
+
+
+/*
 void CallCSDll::LoadDll()
 {
 	static bool hasInited = false;
@@ -489,8 +535,11 @@ void CallCSDll::LoadDll()
 
 	}
 }
+*/
 
-
+//
+//  This method is deprecated
+//
 void CallCSDll::Echo(wchar_t* Message)
 {
 	LoadDll();
@@ -524,11 +573,11 @@ EXT_COMMAND(wupdate,
 	"{{custom}}")
 {
 	using namespace NetExtShim;
-	CComPtr<IMDTarget> tmpTarget; 
+	//CComPtr<IMDTarget> tmpTarget; 
 	::CoInitialize(NULL);
-	CallCSDll::GetInterface(&tmpTarget);
+	CallCSDll::LoadDll();
 	VS_FIXEDFILEINFO fi = CVersionInfo::GetVersionInfo();
-	tmpTarget->CompareVersion(HIWORD (fi.dwProductVersionMS),
+	pTarget->CompareVersion(HIWORD (fi.dwProductVersionMS),
 									LOWORD (fi.dwProductVersionMS),
 									HIWORD (fi.dwProductVersionLS),
 									LOWORD (fi.dwProductVersionLS));
@@ -539,10 +588,10 @@ EXT_COMMAND(wopendownloadpage,
 	"{{custom}}")
 {
 	using namespace NetExtShim;
-	CComPtr<IMDTarget> tmpTarget; 
+
 	::CoInitialize(NULL);
-	CallCSDll::GetInterface(&tmpTarget);
-	tmpTarget->OpenDownloadPage();	
+	CallCSDll::LoadDll();
+	pTarget->OpenDownloadPage();	
 
 }
 

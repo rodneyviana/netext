@@ -23,6 +23,8 @@ namespace NetExt.Shim
     [System.Runtime.InteropServices.InterfaceTypeAttribute((System.Runtime.InteropServices.ComInterfaceType)1)]
     public interface IMDTarget
     {
+
+
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
         int GetRuntimeCount([Out] out int pCount);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
@@ -881,7 +883,7 @@ namespace NetExt.Shim
         public ulong module;
         public int debuggingFlag;
         public ulong assembly;
-        public ulong appDomain;
+        public ulong appDomainAddr;
         public uint token;
         public int rank;
         public int arraySize;       // Only populated when acquired from an object address
@@ -1256,6 +1258,30 @@ namespace NetExt.Shim
     [System.Runtime.InteropServices.InterfaceTypeAttribute((System.Runtime.InteropServices.ComInterfaceType)1)]
     public interface IMDActivator
     {
+        #region IMDActivator_Callbacks
+
+        [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
+        void SetEnumCallBack([MarshalAs(UnmanagedType.FunctionPtr)]EnumObjects EnumCallBack);
+
+        [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
+        void SetStopCallBack([MarshalAs(UnmanagedType.FunctionPtr)]ShouldStop StopCallBack);
+
+        [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
+        void SetOutputCallBack([MarshalAs(UnmanagedType.FunctionPtr)]DebugPrint CallBack,
+            [MarshalAs(UnmanagedType.FunctionPtr)]DebugPrint CallBackDml);
+
+        [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
+        void Echo([MarshalAs(UnmanagedType.LPWStr)]string Message);
+
+        [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
+        void CreateFromIDebugClientAndPath([MarshalAs(UnmanagedType.LPWStr)]string DllPath, [MarshalAs((UnmanagedType)25)] Object iDebugClient,
+            [Out] [MarshalAs((UnmanagedType)28)] out IMDTarget ppTarget);
+
+        [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
+        void Remove();
+
+        #endregion
+
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]
         int CreateFromCrashDump([MarshalAs((UnmanagedType)19)] string crashdump, [Out] [MarshalAs((UnmanagedType)28)] out IMDTarget ppTarget);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType=MethodCodeType.Runtime)]

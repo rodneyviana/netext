@@ -1,4 +1,5 @@
 #pragma once
+#include <comutil.h>
 #include <atlbase.h>
 #include <atlsafe.h>
 #include <metahost.h>
@@ -6,10 +7,10 @@
 #include <string>
 #pragma comment(lib, "mscoree.lib")
 
-/*
-#import <mscorlib.tlb> raw_interfaces_only  high_property_prefixes("_get", "_put", "_putref")  rename("ReportEvent", "InteropServices_ReportEvent")
-*/
-#include "mscorlib.tlh"
+
+#import <mscorlib.tlb> raw_interfaces_only  high_property_prefixes("_get", "_put", "_putref")  auto_rename rename("Thread", "Thread_CLR") rename("StackTrace", "StackTrace_CLR") //rename("ReportEvent", "InteropServices_ReportEvent") 
+
+//#include "mscorlib.tlh"
 
 
 

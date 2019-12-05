@@ -750,6 +750,8 @@ bool DisplayHeapEnum(MatchingAddresses& Addresses, bool Short, UINT Top)
 	return true;
 }
 
+#include "CLRUtilities.h"
+
 void EXT_CLASS::Uninitialize()
 {
 	if(indc)
@@ -757,12 +759,14 @@ void EXT_CLASS::Uninitialize()
 		delete indc;
 		indc=NULL;
 	}
+
 	pAct = NULL;
 	pRuntime = NULL;
 	pHeap = NULL;
 	pRuntimeInfo = NULL;
 	pTarget = NULL;
 	BOOL released = true;
+	/*
 	if(hDll)
 	{
 		released = FreeLibrary(hDll);
@@ -771,5 +775,10 @@ void EXT_CLASS::Uninitialize()
 		else
 			hDll = NULL;
 	}
+	*/
+	CLRUtilities reflection(L"NetExtShim");
+
+	HRESULT hr = reflection.UnloadDomainByName();
+
 	::CoUninitialize();
 }

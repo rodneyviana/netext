@@ -218,7 +218,7 @@ HRESULT CLRUtilities::UnloadDomainByName(wstring DomainName)
 {
 	appDomainName = DomainName;
 	HRESULT hr = FindAppDomain();
-	if (S_OK == appDomain)
+	if (S_OK == hr && (nullptr != appDomain))
 	{
 		return UnloadDomain();
 	}

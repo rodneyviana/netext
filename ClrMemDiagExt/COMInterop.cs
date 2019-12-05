@@ -8,7 +8,7 @@
     Microsoft.Diagnostics.Runtime's developer Lee Culver
 ============================================================================================================*/
 
-#define _X86X64     // DLLEXPORT DOES NOT WORK WITH MSIL  
+#define _X86X64     
 
 using System;
 using System.Collections.Generic;
@@ -17,7 +17,6 @@ using System.Text;
 using System.Runtime.InteropServices;
 using Microsoft.Diagnostics.Runtime;
 using Microsoft.Diagnostics.Runtime.Interop;
-using RGiesecke.DllExport;
 using NetExt.HeapCacheUtil;
 using System.Net;
 using System.Text.RegularExpressions;
@@ -57,13 +56,23 @@ namespace NetExt.Shim
         private static EnumObjects enumCallBack = null;
         private static ShouldStop stopCallBack = null;
 
-        [DllExport(CallingConvention = CallingConvention.Cdecl)]
+        public static IMDActivator pInterface = null;
+
+        [return: MarshalAs(UnmanagedType.Interface)]
+        public static IMDActivator GetMDActivator()
+        {
+            if (pInterface == null)
+            {
+                pInterface = new CLRMDActivator();
+            }
+            return pInterface;
+        }
+
         public static void SetEnumCallBack(EnumObjects EnumCallBack)
         {
             enumCallBack = EnumCallBack;
         }
 
-        [DllExport(CallingConvention = CallingConvention.Cdecl)]
         public static void SetStopCallBack(ShouldStop StopCallBack)
         {
             stopCallBack = StopCallBack;
@@ -86,7 +95,6 @@ namespace NetExt.Shim
 
         }
 
-        [DllExport(CallingConvention = CallingConvention.Cdecl)]
         public static void SetOutputCallBack(DebugPrint CallBack, DebugPrint CallBackDml)
         {
             callBack = CallBack;
@@ -101,8 +109,7 @@ namespace NetExt.Shim
 
         }
 
-        [DllExport(CallingConvention = CallingConvention.Cdecl)]
-        public static void Echo([MarshalAs(UnmanagedType.LPWStr)]string Message)
+        public static void Echo(string Message)
         {
             Out(Message);
         }
@@ -183,9 +190,8 @@ namespace NetExt.Shim
         private static string netExtPath = null;
         private static bool isInit = false;
 
-        [DllExport(CallingConvention = CallingConvention.Cdecl)]
-        public static void CreateFromIDebugClient([MarshalAs(UnmanagedType.LPWStr)]string DllPath, [MarshalAs((UnmanagedType)25)] Object iDebugClient,
-            [Out] [MarshalAs((UnmanagedType)28)] out IMDTarget ppTarget)
+        public static void CreateFromIDebugClient(string DllPath, Object iDebugClient,
+            out IMDTarget ppTarget)
         {
             string path = Path.GetDirectoryName(typeof(Exports).Module.FullyQualifiedName);
             //
@@ -232,17 +238,7 @@ namespace NetExt.Shim
             {
                 if (args.Name.ToLower().Contains("icsharpcode.avalonedit"))
                 {
-                    /*
-                    string codeBase = Assembly.GetExecutingAssembly().CodeBase;
-                    Debug.WriteLine("CodeBase: {0}", codeBase);
-                    UriBuilder uri = new UriBuilder(codeBase);
 
-                    string path = Path.GetDirectoryName(Uri.UnescapeDataString(uri.Path));
-                    Debug.WriteLine("Path: {0}", path);
-
-                     */
-
-                    //Debug.WriteLine(Assembly.GetExecutingAssembly().CodeBase);
                     string fileName = args.Name.Split(',')[0];
                     MDTarget.CopyTools();
                     //
@@ -260,26 +256,7 @@ namespace NetExt.Shim
                     return Assembly.LoadFile(fullPath);
                 }
                 return null;
-                /*
-                                if (args.Name.Contains("Microsoft.Diagnostics.Runtime"))
-                                {
-                                    string assembly = String.Format("{0}{1}.dll", netExtPath, args.Name.Substring(0, args.Name.IndexOf(",")));
-                #if DEBUG
-                                    WriteLine("Trying to load: {0}", assembly);
-                #endif
-                                    return System.Reflection.Assembly.LoadFrom(assembly);
-                                }
-                #if _DEBUG
-                                else
-                                {
 
-                                    WriteLine("Trying to load: {0}", args.Name);
-                                }
-                #endif
-                            }
-            
-                            return null;
-                 */
             }
         }
 
@@ -302,7 +279,6 @@ namespace NetExt.Shim
             }
         }
 
-        [DllExport(CallingConvention = CallingConvention.Cdecl)]
         public static void Remove()
         {
             callBack = null;
@@ -345,6 +321,39 @@ namespace NetExt.Shim
             }
             return HRESULTS.S_OK;
         }
+
+        public void SetEnumCallBack(EnumObjects EnumCallBack)
+        {
+            Exports.SetEnumCallBack(EnumCallBack);
+        }
+
+        public void SetStopCallBack(ShouldStop StopCallBack)
+        {
+           Exports.SetStopCallBack(StopCallBack);
+        }
+
+        public void SetOutputCallBack(DebugPrint CallBack, DebugPrint CallBackDml)
+        {
+            Exports.SetOutputCallBack(CallBack, CallBackDml);
+        }
+
+        public void Echo(string Message)
+        {
+            Exports.Echo(Message);
+        }
+
+        public void CreateFromIDebugClientAndPath(string DllPath, object iDebugClient, out IMDTarget ppTarget)
+        {
+            Exports.CreateFromIDebugClient(DllPath, iDebugClient, out ppTarget);
+        }
+
+        public void Remove()
+        {
+            Exports.Remove();
+        }
+
+
+
     }
 
     [ComVisible(true)]
@@ -1386,7 +1395,7 @@ namespace NetExt.Shim
                 }
                 typeData.isCCW = m_type.IsCCW(objRef);
                 typeData.isRCW = m_type.IsRCW(objRef);
-                typeData.appDomain = AdHoc.GetDomainFromMT(m_type.Heap.Runtime, typeData.MethodTable);
+                typeData.appDomainAddr = AdHoc.GetDomainFromMT(m_type.Heap.Runtime, typeData.MethodTable);
             }
             else
             {
@@ -2082,7 +2091,7 @@ namespace NetExt.Shim
             var exception = m_heap.GetExceptionObject(ObjRef);
             if (exception == null)
             {
-                Exports.WriteLine("No expeception found at {0:%p}", ObjRef);
+                Exports.WriteLine("No exception found at {0:%p}", ObjRef);
                 Exports.WriteLine("");
                 return HRESULTS.S_OK;
             }
