@@ -3428,9 +3428,31 @@ namespace NetExt.Shim
                         return HRESULTS.E_FAIL;
                     }
                     string fileName = Path.Combine(folderToSave, mod.Name);
+
                     if (File.Exists(fileName))
                     {
-                        Exports.WriteLine("File '{0}' already exists. Skipping this file", fileName);
+                        try
+                        {
+                            using (MemoryStream ms = new MemoryStream())
+                            {
+                                mod.SaveToStream(ms);
+                                PEFile pe = new PEFile(ms);
+                                if (!pe.CompareToFile(fileName))
+                                {
+                                    fileName = Path.Combine(folderToSave, Path.GetFileNameWithoutExtension(mod.Name) + "_" + pe.UniqueString + Path.GetExtension(mod.Name));
+                                    Exports.Write("File with same name and different content found. Renaming to {0}. ", Path.GetFileName(fileName));
+                                }
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Exports.WriteLine("Failed to verify '{0}' - {1}: {2}", fileName, ex.GetType().ToString(), ex.Message);
+                        }
+                    }
+
+                    if (File.Exists(fileName))
+                    {
+                        Exports.WriteLine("** File '{0}' with same content already exists. Skipping this file", fileName);
                         f++;
                     }
                     else

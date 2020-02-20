@@ -985,4 +985,221 @@ namespace NetExt.Shim
         }
     }
 
+    #region PE_FILE
+
+    public class PEFile
+    {
+
+        Stream fileStream;
+        protected IMAGE_NT_HEADERS32 ntHeader32 = new IMAGE_NT_HEADERS32();
+        protected IMAGE_NT_HEADERS64 ntHeader = new IMAGE_NT_HEADERS64();
+
+
+
+        protected ImageType imageType = ImageType.None;
+
+        private unsafe bool ReadStream<T>(int Start, out T Target)
+        {
+            fileStream.Position = Start;
+            uint size = (uint)Marshal.SizeOf(typeof(T));
+
+            byte[] bytes = new byte[size];
+
+            this.fileStream.Read(bytes, 0, (int)size);
+            var ptr = Marshal.AllocHGlobal((int)size);
+            Marshal.Copy(bytes, 0, ptr, (int)size);
+            try
+            {
+                Target = (T)Marshal.PtrToStructure(ptr, typeof(T));
+            }
+            catch
+            {
+                Target = default(T);
+                return false;
+            }
+            finally
+            {
+                Marshal.FreeHGlobal(ptr);
+            }
+
+
+            return true;
+        }
+
+        public PEFile(Stream FileStream)
+        {
+            if (FileStream == null)
+                throw new ArgumentException("PEFile: FileStream parameter cannot be null");
+            fileStream = FileStream;
+        }
+
+        IMAGE_DOS_HEADER dosHeader = new IMAGE_DOS_HEADER();
+
+        public IMAGE_DOS_HEADER DOSHeader
+        {
+            get
+            {
+                if (dosHeader.isValid)
+                    return dosHeader;
+                if (ReadStream<IMAGE_DOS_HEADER>(0, out dosHeader) == false || !dosHeader.isValid)
+                {
+                    throw new InvalidDataException("This is not a valid PE file or access was denied");
+                }
+                return dosHeader;
+            }
+        }
+
+        public ImageType FileImageType
+        {
+            get
+            {
+                if (imageType == ImageType.None)
+                {
+                    var dosHeader = DOSHeader;
+
+                    if (!this.ReadStream<IMAGE_NT_HEADERS32>(dosHeader.e_lfanew, out ntHeader32))
+                    {
+                        throw new InvalidDataException(String.Format("PEFile: [IMAGE_NT_HEADERS] Unable to read memory at 0x{0:x}", dosHeader.e_lfanew));
+                    }
+                    if (ntHeader32.Signature != 0x4550)
+                    {
+                        throw new InvalidDataException(String.Format("PEFile: [IMAGE_NT_HEADERS] Invalid header signatureat 0x{0:x}", dosHeader.e_lfanew));
+                    }
+                    imageType = (ImageType)ntHeader32.OptionalHeader.Magic;
+                }
+                return imageType;
+            }
+        }
+
+        public IMAGE_NT_HEADERS32 NTHeader32
+        {
+            get
+            {
+                if (FileImageType != ImageType.Pe32bit)
+                {
+                    ntHeader32.Signature = 0;
+                    return ntHeader32;
+                }
+                if (ntHeader32.Signature == 0x00004550)
+                {
+                    return ntHeader32;
+                }
+
+
+
+                var dosHeader = DOSHeader;
+                if (!dosHeader.isValid)
+                {
+                    ntHeader32.Signature = 0;
+                    return ntHeader32;
+                }
+
+
+                if (FileImageType == ImageType.Pe32bit)
+                {
+                    if (!this.ReadStream<IMAGE_NT_HEADERS32>(dosHeader.e_lfanew, out ntHeader32))
+                    {
+                        throw new InvalidDataException(String.Format("PEFile: [IMAGE_NT_HEADERS32] Invalid header signatureat 0x{0:x}", dosHeader.e_lfanew));
+                    }
+                }
+                else
+                {
+                    ntHeader32.Signature = 0;
+                }
+
+                return ntHeader32;
+            }
+        }
+
+        public IMAGE_NT_HEADERS64 NTHeader
+        {
+            get
+            {
+                if (FileImageType != ImageType.Pe64bit)
+                {
+                    ntHeader.Signature = 0;
+                    return ntHeader;
+                }
+
+                if (ntHeader.Signature == 0x00004550)
+                {
+                    return ntHeader;
+                }
+
+
+                var dosHeader = DOSHeader;
+                if (!dosHeader.isValid)
+                {
+                    ntHeader.Signature = 0;
+                    return ntHeader;
+                }
+
+
+                if (!this.ReadStream<IMAGE_NT_HEADERS64>(dosHeader.e_lfanew, out ntHeader))
+                {
+                    throw new InvalidDataException(String.Format("PEFile: [IMAGE_NT_HEADERS64] Invalid header signature at 0x{0:x}", dosHeader.e_lfanew));
+
+                }
+                return ntHeader;
+            }
+        }
+
+        public bool CompareToFile(string FilePath)
+        {
+            if (!DOSHeader.isValid)
+                return false;
+
+            using (FileStream fs = File.OpenRead(FilePath))
+            {
+                PEFile peFile = new PEFile(fs);
+
+                if (this.FileImageType != peFile.FileImageType)
+                    return false;
+
+                if (NTHeader.Signature != 0)
+                {
+                    return (this.NTHeader.OptionalHeader.CheckSum == peFile.NTHeader.OptionalHeader.CheckSum &&
+                        this.NTHeader.OptionalHeader.SizeOfCode == peFile.NTHeader.OptionalHeader.SizeOfCode &&
+                        this.NTHeader.OptionalHeader.SizeOfImage == peFile.NTHeader.OptionalHeader.SizeOfImage &&
+                        this.NTHeader.FileHeader.TimeDateStamp == peFile.NTHeader.FileHeader.TimeDateStamp);
+                }
+
+                if (NTHeader32.Signature != 0)
+                {
+                    return (this.NTHeader32.OptionalHeader.CheckSum == peFile.NTHeader32.OptionalHeader.CheckSum &&
+                        this.NTHeader32.OptionalHeader.SizeOfCode == peFile.NTHeader32.OptionalHeader.SizeOfCode &&
+                        this.NTHeader32.OptionalHeader.SizeOfImage == peFile.NTHeader32.OptionalHeader.SizeOfImage &&
+                        this.NTHeader32.FileHeader.TimeDateStamp == peFile.NTHeader32.FileHeader.TimeDateStamp);
+                }
+
+            }
+            return false;
+        }
+
+        public string UniqueString
+        {
+            get
+            {
+                if (NTHeader.Signature != 0)
+                {
+                    return String.Format("{0:x}_{1:x}_{2:x}_{3:x}_{4}", this.NTHeader.OptionalHeader.CheckSum,
+                        this.NTHeader.OptionalHeader.SizeOfCode,
+                        this.NTHeader.OptionalHeader.SizeOfImage,
+                        this.NTHeader.FileHeader.TimeDateStamp,
+                        this.FileImageType);
+                }
+
+                if (NTHeader32.Signature != 0)
+                {
+                    return String.Format("{0:x}_{1:x}_{2:x}_{3:x}_{4}", this.NTHeader32.OptionalHeader.CheckSum,
+                        this.NTHeader32.OptionalHeader.SizeOfCode,
+                        this.NTHeader32.OptionalHeader.SizeOfImage,
+                        this.NTHeader32.FileHeader.TimeDateStamp,
+                        this.FileImageType);
+                }
+                return "_Invalid_";
+            }
+        }
+    }
+    #endregion // PE_FILE
 }
