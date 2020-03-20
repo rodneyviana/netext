@@ -169,7 +169,7 @@ namespace ProofOfConcept
                 WriteLine("Version: {0}.{1}.{2}.{3} from {4}", version.Version.Major, version.Version.Minor, version.Version.Patch, version.Version.Revision, version.DacInfo.FileName);
                 latest = version;
             }
-            m_runtime = dataTarget.ClrVersions.Single().CreateRuntime(latest.LocalMatchingDac);
+            m_runtime = dataTarget.ClrVersions[dataTarget.ClrVersions.Count-1].CreateRuntime(latest.LocalMatchingDac);
             ulong strMT, arrMT, freeMT = 0;
             AdHoc.GetCommonMT(m_runtime, out strMT, out arrMT, out freeMT);
 

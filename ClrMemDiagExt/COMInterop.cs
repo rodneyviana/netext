@@ -3157,7 +3157,7 @@ namespace NetExt.Shim
             ppRuntime = null;
             if (m_target == null || m_target.ClrVersions == null)
                 return HRESULTS.E_FAIL;
-            DebugApi.Runtime = m_target.ClrVersions.Single().CreateRuntime(ixCLRProcess);
+            DebugApi.Runtime = m_target.ClrVersions[m_target.ClrVersions.Count-1].CreateRuntime(ixCLRProcess);
             ppRuntime = new MDRuntime(DebugApi.Runtime);
             
             return HRESULTS.S_OK;
