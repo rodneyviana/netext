@@ -400,7 +400,7 @@ public:
 
 	static std::wstring ReadTypedUnicode(CLRDATA_ADDRESS Address)
 	{
-		if (!IsValidMemory(Address, 8 + g_ExtInstancePtr->m_PtrSize))
+		if (!IsValidMemory(Address, g_ExtInstancePtr->m_PtrSize + g_ExtInstancePtr->m_PtrSize))
 		{
 			return L"";
 		}
@@ -408,7 +408,7 @@ public:
 		ExtRemoteData size(Address, sizeof(realSize));
 
 
-		ExtRemoteData stringPtr(Address + 8, g_ExtInstancePtr->m_PtrSize);
+		ExtRemoteData stringPtr(Address + g_ExtInstancePtr->m_PtrSize, g_ExtInstancePtr->m_PtrSize);
 		ZeroMemory(NameBuffer, sizeof(NameBuffer));
 
 		realSize = size.GetUshort();
@@ -469,7 +469,7 @@ public:
 		{
 			return varsDict;
 		}
-		UINT64 totalSize = size.GetLong64();
+		UINT64 totalSize =  size.m_Bytes == 8 ? size.GetUlong64() : size.GetUlong();
 
 
 		ExtRemoteData data(envVars.GetPtr(), static_cast<ULONG>(totalSize));
