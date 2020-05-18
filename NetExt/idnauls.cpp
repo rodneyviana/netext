@@ -53,6 +53,65 @@ void DisplayFound(std::string &FullMessage, std::string& Part)
 
 }
 
+bool IsModuleEverLoaded(wstring ModuleName)
+{
+//#define Out g_ExtInstancePtr->Out
+	auto moduleLower = ModuleName;
+	std::transform(moduleLower.begin(), moduleLower.end(),
+		moduleLower.begin(),
+		towlower);
+#if _DEBUG
+	g_ExtInstancePtr->Out("Query [%s]\n", moduleLower.c_str());
+#endif
+	std::wstring query = L"@$curprocess.TTD.Events.Where(t => t.Type == \"ModuleLoaded\").Where(t => t.Module.Name.ToLower().Contains(\"";
+	query.append(moduleLower);
+	query.append(L"\"))");
+	CComPtr<IHostDataModelAccess> client;
+	HRESULT Status;
+	Status = g_ExtInstancePtr->m_Client->QueryInterface(__uuidof(IHostDataModelAccess), (PVOID*)&client);
+	if (Status != S_OK)
+	{
+		return false;
+	}
+	CComPtr<IDebugHost> pHost;
+	CComPtr<IDataModelManager> pManager;
+	if (FAILED(client->GetDataModel(&pManager, &pHost)))
+	{
+		g_ExtInstancePtr->Out("Data Model could not be acquired\n");
+		return false;
+	}
+
+	CComPtr<IDebugHostEvaluator2> hostEval;
+	CComPtr<IModelObject> spObject;
+	pHost->QueryInterface(IID_PPV_ARGS(&hostEval));
+
+	if (!SUCCEEDED(hostEval->EvaluateExtendedExpression(USE_CURRENT_HOST_CONTEXT, query.c_str(), nullptr, &spObject, nullptr)))
+	{
+		g_ExtInstancePtr->Out("Expression could not be evaluated\n");
+		return false;
+	};
+
+	CComPtr<IModelObject> pListOfBreaks;
+	CComPtr<IIterableConcept> spIterable;
+	if (SUCCEEDED(spObject->GetConcept(__uuidof(IIterableConcept), (IUnknown**)&spIterable, nullptr)))
+	{
+		CComPtr<IModelIterator> spIterator;
+		if (SUCCEEDED(spIterable->GetIterator(spObject, &spIterator)))
+		{
+			CComPtr<IKeyStore> spContainedMetadata;
+			CComPtr<IModelObject> pBreakItem;
+			HRESULT hr = spIterator->GetNext(&pBreakItem, 0, nullptr, &spContainedMetadata);
+			if (hr == E_BOUNDS || hr == E_ABORT)
+			{
+				return false;
+			}
+			return true;
+		}
+	}
+	return false;
+
+
+}
 HRESULT MoveTo(IModelObject *spStart)
 {
 
@@ -127,6 +186,32 @@ EXT_COMMAND(widnauls,
 		return;
 	}
 
+	bool isOnetLoaded = IsModuleEverLoaded(L"onetnative.dll");
+	bool isSPLoaded = IsModuleEverLoaded(L"Microsoft.Office.Server.Native.dll");
+
+		if (!isOnetLoaded && !isSPLoaded)
+	{
+		Out("This process does not contain the necessary SharePoint modules\n");
+		return;
+	}
+
+	std::wstring modules;
+
+	if (isOnetLoaded)
+	{
+		modules.assign(L"\"onetnative!ULSSendFormattedTrace\"");
+	}
+
+	if (isSPLoaded)
+	{
+		if (modules.size() != 0)
+		{
+			modules.append(L", ");
+		}
+		modules.append(L"\"Microsoft_Office_Server_Native!ULSSendFormattedTrace\"");
+	}
+
+
 	if (message && tag == "*")
 	{
 		Out("Warning: When you combine -tag * and -message, it creates a very inefficient query.\n");
@@ -181,14 +266,16 @@ EXT_COMMAND(widnauls,
 
 	if (tag == "*")
 	{
-		swprintf_s(Buffer, MAX_MTNAME, L"@$cursession.TTD.Calls(\"onetnative!ULSSendFormattedTrace\", \"Microsoft_Office_Server_Native!ULSSendFormattedTrace\").Select(c=> new { param1 = c.Parameters[0], param2 = c.Parameters[1], param3 = c.Parameters[2], param4 = c.Parameters[3], start = c.TimeStart, sequence = c.TimeStart.Sequence, steps = c.TimeStart.Steps } )");
+		swprintf_s(Buffer, MAX_MTNAME, L"@$cursession.TTD.Calls(%s).Select(c=> new { param1 = c.Parameters[0], param2 = c.Parameters[1], param3 = c.Parameters[2], param4 = c.Parameters[3], start = c.TimeStart, sequence = c.TimeStart.Sequence, steps = c.TimeStart.Steps } )", modules.c_str());
 	}
 	else
 	{
-		swprintf_s(Buffer, MAX_MTNAME, L"@$cursession.TTD.Calls(\"onetnative!ULSSendFormattedTrace\", \"Microsoft_Office_Server_Native!ULSSendFormattedTrace\").Where(c => c.Parameters[0] == 0x%p).Select(c=> new { param1 = c.Parameters[0], param2 = c.Parameters[1], param3 = c.Parameters[2], param4 = c.Parameters[3], start = c.TimeStart, sequence = c.TimeStart.Sequence, steps = c.TimeStart.Steps } )", tagBin);
+		swprintf_s(Buffer, MAX_MTNAME, L"@$cursession.TTD.Calls(%s).Where(c => c.Parameters[0] == 0x%x).Select(c=> new { param1 = c.Parameters[0], param2 = c.Parameters[1], param3 = c.Parameters[2], param4 = c.Parameters[3], start = c.TimeStart, sequence = c.TimeStart.Sequence, steps = c.TimeStart.Steps } )", modules.c_str(), tagBin);
 	}
 
 	std::wstring query(Buffer);
+
+	Out("The TTD query to obtain a similar result is:\ndx -g %S\n", query.c_str());
 
 #if _DEBUG
 
@@ -288,7 +375,7 @@ EXT_COMMAND(widnauls,
 					Out("Error reading param4");		continue;
 				};
 				hr = Message->GetIntrinsicValue(&vt_message);
-				if (hr = FAILED(pBreakItem->GetKeyValue(L"start", &Start, NULL /* &spContainedMetadata */)))
+				if (FAILED(hr = pBreakItem->GetKeyValue(L"start", &Start, NULL /* &spContainedMetadata */)))
 				{
 					Out("Error reading start"); continue;
 				};
