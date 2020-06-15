@@ -10,7 +10,7 @@
 <b>------------------</b>
 !||windex|| - index and display objects based in different filters like object with of type HttpContext
 !||wstack|| - dump unique stack objects
-!||wheap|| - list objects without indexing and show thottled heap sampling
+!||wheap|| - list objects without indexing and show throttled heap sampling
 !||wgchandle|| - Dump GC root handles
 !||wdae|| - Dump All Exceptions
 

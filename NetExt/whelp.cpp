@@ -28,7 +28,7 @@ EXT_COMMAND(whelp,
 		Dml("<b>------------------</b>\n");
 		Dml("!<link cmd=\"!whelp windex\">windex</link> - index and display objects based in different filters like object with of type HttpContext\n");
 		Dml("!<link cmd=\"!whelp wstack\">wstack</link> - dump unique stack objects\n");
-		Dml("!<link cmd=\"!whelp wheap\">wheap</link> - list objects without indexing and show thottled heap sampling\n");
+		Dml("!<link cmd=\"!whelp wheap\">wheap</link> - list objects without indexing and show throttled heap sampling\n");
 		Dml("!<link cmd=\"!whelp wgchandle\">wgchandle</link> - Dump GC root handles\n");
 		Dml("!<link cmd=\"!whelp wdae\">wdae</link> - Dump All Exceptions\n");
 		Dml("\n");
