@@ -143,7 +143,7 @@ void Indexer::DumpTypesTree(EXT_CLASS *Ext)
 {
 	char fileName[MAX_PATH];
 	char pathName[MAX_PATH];
-	char tempCmd[MAX_MTNAME*2+1];
+	char tempCmd[MAX_MTNAME*3+1];
 	ofstream treeStream;
 	DWORD hr;
 
@@ -175,7 +175,7 @@ void Indexer::DumpTypesTree(EXT_CLASS *Ext)
 
 	while(tt!=typeT.end())
 	{
-		sprintf_s(tempCmd, MAX_MTNAME*2, " {\"%p %S (%i)\"} {\"!windex -mt %p\"}\n", tt->second, mtT[tt->second].typeName.c_str(),
+		sprintf_s(tempCmd, MAX_MTNAME*3, " {\"%p %S (%i)\"} {\"!windex -mt %p\"}\n", tt->second, mtT[tt->second].typeName.c_str(),
 			mtT[tt->second].Addresses.size(), tt->second);
 		treeStream << tempCmd;
 		EEClass cl;
@@ -184,7 +184,7 @@ void Indexer::DumpTypesTree(EXT_CLASS *Ext)
 		std::vector<FieldStore> fields=cl.Fields();
 		for(int i=0;i<fields.size();i++)
 		{
-			sprintf_s(tempCmd, MAX_MTNAME* 2, "  {\"%S (%S) +0n%u Token: %x\"} {\".foreach({$addr} {!windex -short -mt %p}){.echo Address: {$addr}; !wselect %S from {$addr}}\"}\n", fields[i].FieldName.c_str(), fields[i].mtName.c_str(),
+			sprintf_s(tempCmd, MAX_MTNAME* 3, "  {\"%S (%S) +0n%u Token: %x\"} {\".foreach({$addr} {!windex -short -mt %p}){.echo Address: {$addr}; !wselect %S from {$addr}}\"}\n", fields[i].FieldName.c_str(), fields[i].mtName.c_str(),
 				fields[i].FieldDesc.offset, fields[i].FieldDesc.token, tt->second, fields[i].FieldName.c_str());
 			treeStream << tempCmd;
 		}
