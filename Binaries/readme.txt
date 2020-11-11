@@ -7,7 +7,7 @@ https://github.com/rodneyviana/netext
 Getting Started:
 ==================
 No matter whether you are a WinDbg debugger already or not, check this out:
-http://blogs.msdn.com/b/rodneyviana/archive/2015/03/10/getting-started-with-netext.aspx
+https://docs.microsoft.com/en-us/archive/blogs/rodneyviana/getting-started-with-netext
 
 Caution:
 =================

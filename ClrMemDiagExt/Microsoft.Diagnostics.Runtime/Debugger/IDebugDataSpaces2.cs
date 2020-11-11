@@ -202,6 +202,6 @@ namespace Microsoft.Diagnostics.Runtime.Interop
         [PreserveSig]
         int QueryVirtual(
             [In] UInt64 Offset,
-            [Out] out MEMORY_BASIC_INFORMATION64 Info);
+            [Out] IntPtr MEMORY_BASIC_INFORMATION_Info_ALigned);
     }
 }

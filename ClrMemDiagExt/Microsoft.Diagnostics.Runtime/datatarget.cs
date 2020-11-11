@@ -1847,7 +1847,7 @@ namespace Microsoft.Diagnostics.Runtime
 
             SetClientInstance();
             MEMORY_BASIC_INFORMATION64 mem;
-            int hr = _spaces2.QueryVirtual(addr, out mem);
+            int hr = NetExt.Shim.DebugApi.QueryVirtual(addr, out mem);
             vq.BaseAddress = mem.BaseAddress;
             vq.Size = mem.RegionSize;
 
@@ -1902,7 +1902,7 @@ namespace Microsoft.Diagnostics.Runtime
             }
 
             SetClientInstance();
-            return _spaces2.QueryVirtual(addr, out mem);
+            return NetExt.Shim.DebugApi.QueryVirtual(addr, out mem);
         }
 
         internal int GetModuleByModuleName(string image, int start, out uint index, out ulong baseAddress)

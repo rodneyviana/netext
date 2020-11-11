@@ -2742,11 +2742,30 @@ kernel32!KUSER_SHARED_DATA
 
         private static string pFormat = String.Format(":x{0}", Marshal.SizeOf(IntPtr.Zero) * 2);
 
+        public static unsafe int QueryVirtual(ulong Offset, out MEMORY_BASIC_INFORMATION64 Info)
+        {
+            Info = default(MEMORY_BASIC_INFORMATION64);
+            // MEMORY_BASIC_INFORMATION64 structure is explicitly declared to be 16-byte aligned [DECLSPEC_ALIGN(16)] when using Live Target
+            // The lines below is C++ equivalent to this: DECLSPEC_ALIGN(16) MEMORY_BASIC_INFORMATION64 Info
+            var globalAlloc = Marshal.AllocHGlobal(Marshal.SizeOf(Info) + 15);
+            var aligned = new IntPtr((globalAlloc.ToInt64() + 0xf) & ~0xf); // Pointer is 16-byte aligned
+
+            IDebugDataSpaces2 data = (IDebugDataSpaces2)Client;
+            var result = data.QueryVirtual(Offset, aligned);
+            if (result == (int)HRESULT.S_OK)
+            {
+                Info = *(MEMORY_BASIC_INFORMATION64*)aligned.ToPointer();
+            }
+            Marshal.FreeHGlobal(globalAlloc);
+            return result;
+            
+        }
+
         public static MEMORY_BASIC_INFORMATION64 AddressType(ulong Address)
         {
             IDebugDataSpaces2 data = (IDebugDataSpaces2)Client;
-            MEMORY_BASIC_INFORMATION64 mbi = new MEMORY_BASIC_INFORMATION64();
-            int result = data.QueryVirtual(Address,out mbi);
+            MEMORY_BASIC_INFORMATION64 mbi;
+            int result = DebugApi.QueryVirtual(Address,out mbi);
             if(result == (int)HRESULT.S_OK)
             {
                 return mbi;

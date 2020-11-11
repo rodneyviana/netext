@@ -812,7 +812,7 @@ namespace NetExt.Shim
             {
                 try
                 {
-                    Version ver = new System.Version(ProductVersion);
+                    Version ver = ProductVersion != null ? new System.Version(ProductVersion) : new System.Version();
                     return ver;
                 }
                 catch
