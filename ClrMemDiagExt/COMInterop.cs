@@ -607,7 +607,7 @@ namespace NetExt.Shim
 
         public int GetStart(out ulong pAddress)
         {
-            if(m_seg == null)
+            if (m_seg == null)
             {
                 pAddress = 0;
                 return HRESULTS.E_FAIL;
@@ -2052,6 +2052,13 @@ namespace NetExt.Shim
 
         public int EnumerateSegments(out IMDSegmentEnum ppEnum)
         {
+#if DEBUG
+            foreach (var seg in m_heap.Segments)
+            {
+                DebugApi.WriteLine(Exports.pointerFormat("Gen 0: {0:%p} ({1} kb) Gen 1: {2:%p} ({3} kb) Gen 2: {4:%p} ({5} kb) Start: {6:%p} End: {7:%p} "), seg.Gen0Start, seg.Gen0Length / 1024, seg.Gen1Start,
+                    seg.Gen1Length / 1024, seg.Gen2Start, seg.Gen2Length / 1024, seg.Start, seg.End);
+            }
+#endif
             ppEnum = new MDSegmentEnum(m_heap.Segments);
             return HRESULTS.S_OK;
         }
@@ -3152,13 +3159,116 @@ namespace NetExt.Shim
             return HRESULTS.S_OK;
         }
 
+        public static List<ClrRuntime> Runtimes { get; set; }
+        private static int runTimeIndex = -1;
+
+        public int GetCurrentRuntime()
+        {
+            return runTimeIndex;
+        }
+
+        public int SetCurrentRuntime(int Index, out IMDRuntime ppRuntime)
+        {
+
+            ppRuntime = null;
+            if (Index == runTimeIndex)
+                return HRESULTS.S_OK;
+            if (runTimeIndex == -1 || m_target == null || m_target.ClrVersions == null)
+                return HRESULTS.E_FAIL;
+            if (Index < 0 || Index >= Runtimes.Count)
+            {
+                DebugApi.WriteLine("{0} is an invalid Runtime index. Numbers can be between 0 and {1}",
+                    Index, m_target.ClrVersions.Count - 1);
+                return HRESULTS.E_FAIL;
+            }
+
+
+            //DebugApi.Runtime = Runtimes[Index];
+            //ppRuntime = new MDRuntime(DebugApi.Runtime);
+            runTimeIndex = Index;
+            if (localixClrProcess != null)
+            {
+                return CreateRuntimeFromIXCLR(localixClrProcess, out ppRuntime);
+            }
+            else
+            {
+                return HRESULTS.E_FAIL;
+            }
+
+
+        }
+
+        private object localixClrProcess = null;
         public int CreateRuntimeFromIXCLR(object ixCLRProcess, out IMDRuntime ppRuntime)
         {
+            localixClrProcess = ixCLRProcess;
             ppRuntime = null;
             if (m_target == null || m_target.ClrVersions == null)
                 return HRESULTS.E_FAIL;
-            DebugApi.Runtime = m_target.ClrVersions[m_target.ClrVersions.Count-1].CreateRuntime(ixCLRProcess);
+
+
+            if (runTimeIndex != -1 && runTimeIndex < m_target.ClrVersions.Count)
+            {
+#if DEBUG
+                DebugApi.WriteLine("Runtime already set. Initializing {0}: {1}", runTimeIndex, m_target.ClrVersions[runTimeIndex].ModuleInfo.FileName);
+#endif
+                DebugApi.Runtime = m_target.ClrVersions[runTimeIndex].CreateRuntime();
+                ppRuntime = new MDRuntime(DebugApi.Runtime);
+                DebugApi.Runtime.Flush();
+
+                return HRESULTS.S_OK;
+
+            }
+
+            if(Runtimes != null)
+            {
+                  foreach(var runtime in Runtimes)
+                  {
+                      //runtime.Flush();
+                  }
+                  DebugApi.Runtime = null;
+                  ppRuntime = null;
+            }
+            Runtimes = new List<ClrRuntime>();
+
+            int max = -1;
+            int index = 0;
+            for (int i = 0; i < m_target.ClrVersions.Count; i++)
+            {
+              try
+              {
+                  Runtimes.Add(m_target.ClrVersions[i].CreateRuntime());
+                  int threads = Runtimes[Runtimes.Count - 1].Threads.Count;
+#if DEBUG
+                  DebugApi.WriteLine("Initializing {0}: {1}", i, m_target.ClrVersions[i].ModuleInfo.FileName);
+                  DebugApi.WriteLine("+---> Threads: {0}", threads);
+#endif
+                  if(max < threads)
+                  {
+                      index = Runtimes.Count - 1;
+                      max = threads;
+                  }
+               } catch(Exception ex)
+               {
+                   // Only show on first initialization
+                   if (runTimeIndex != -1)
+                   {
+                       DebugApi.WriteLine("Error initializing at least one of the CLR/CLRCore runtimes");
+                       DebugApi.WriteLine("If there is more than one Runtime this can be ignored");
+                       DebugApi.WriteLine(ex.ToString());
+                   }
+
+                }
+            }
+            if(null == Runtimes || Runtimes.Count == 0)
+            {
+                DebugApi.WriteLine("NetExt was unable to find a valid Runtime");
+                return HRESULTS.E_FAIL;
+            }
+            runTimeIndex = index;
+            DebugApi.Runtime = Runtimes[runTimeIndex];
             ppRuntime = new MDRuntime(DebugApi.Runtime);
+            DebugApi.Runtime.Flush();
             
             return HRESULTS.S_OK;
         }

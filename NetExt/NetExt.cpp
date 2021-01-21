@@ -595,20 +595,11 @@ EXT_COMMAND(wopendownloadpage,
 
 }
 
-EXT_COMMAND(wver,
-	"Load .NET and display its version",
-	"{{custom}}")
+void ShowRuntimeInfo(int Index)
 {
-	DO_INIT_API;
-	using namespace NetExtShim;
-	long count;
-	HRESULT hr = pTarget->GetRuntimeCount(&count);
-	EXITPOINT("Error: unable to retrieve the runtime list");
-	Out("Runtime(s) Found: %u\n", count);
-	for(long i=0;i<count;i++)
-	{
+#define Out g_ExtInstancePtr->Out
 		CComPtr<IMDRuntimeInfo> pInfo;
-		hr=pTarget->GetRuntimeInfo(i, &pInfo);
+		HRESULT hr=pTarget->GetRuntimeInfo(Index, &pInfo);
 		EXITPOINT("Unable to retrieve runtime info (unexpected");
 		CComBSTR filename;
 		CComBSTR location;
@@ -616,7 +607,7 @@ EXT_COMMAND(wver,
 		hr = pInfo->GetDacRequestFilename(&filename);
 		EXITPOINT("Unable to retrieve filename (unexpected)");
 		if(filename)
-			Out("%i: Filename: %S ",i,filename);
+			Out("%i: Filename: %S ",Index,filename);
 		hr=pInfo->GetDacLocation(&location);
 		EXITPOINT("Unable to retrieve Dac location");
 		if(location)
@@ -632,9 +623,31 @@ EXT_COMMAND(wver,
 			else
 				Out(".NET Version: %S\n", versionStr);
 		}
-		Out("NetExt (this extension) Version: %s\n", CVersionInfo::GetVersionString().c_str()); 
-	}
+}
 
+EXT_COMMAND(wver,
+	"Load .NET and display its version",
+	"{{custom}}")
+{
+	DO_INIT_API;
+	using namespace NetExtShim;
+	long count;
+	HRESULT hr = pTarget->GetRuntimeCount(&count);
+	EXITPOINT("Error: unable to retrieve the runtime list");
+	Out("Runtime(s) Found: %u\n", count);
+	for(long i=0;i<count;i++)
+	{
+		ShowRuntimeInfo(i);
+
+	}
+	int runIndex = pTarget->GetCurrentRuntime();
+	if(count > 1)
+	{
+		Out("Selected Runtime '%i' because it contains more threads\n", runIndex);
+		Out("Tip: To change selected runtime use !wsetruntime <n>\n");
+
+	}
+	Out("NetExt (this extension) Version: %s\n", CVersionInfo::GetVersionString().c_str()); 
 }
 
 inline void Init()
@@ -869,6 +882,27 @@ EXT_COMMAND(wvar,
 	} else
 	{
 		Out("\n%i item(s) listed. %i skipped by the filter\n", count, vars.size()-count);
+	}
+
+}
+
+EXT_COMMAND(wsetruntime,
+			"Dump object. Use '!whelp wsetruntime' for detailed help",
+			"{;ed,r;;Runtime index}"
+			)
+{
+	int i = GetUnnamedArgU64(0);
+    INIT_API();   
+	NetExtShim::IMDRuntime *runTime = NULL;
+
+	HRESULT hr = pTarget->SetCurrentRuntime(i, &runTime);
+	if(hr == S_OK)
+	{
+		ShowRuntimeInfo(i);
+		pRuntime = runTime;
+	} else
+	{
+		Out("Unable to change Runtime");
 	}
 
 }

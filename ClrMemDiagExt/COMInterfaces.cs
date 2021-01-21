@@ -103,6 +103,11 @@ namespace NetExt.Shim
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
         [PreserveSig]
         int GetLineRange(ulong IPAddress, [Out] out IMDSourceMapEnum LineMap);
+        [PreserveSig]
+        int GetCurrentRuntime();
+        [PreserveSig]
+        int SetCurrentRuntime(int Index, [Out]  out IMDRuntime ppRuntime);
+
     }
 
     [ComVisible(true)]

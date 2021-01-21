@@ -1,4 +1,4 @@
-// Source Date: Friday, April 12, 2019 4:45:32 PM
+// Source Date: Wednesday, January 20, 2021 8:24:06 PM
 // Source File: C:\Users\rviana\OneDrive\Projects\netext\NetExt\helptxt.txt
 // This file was generated. Do not modify. Modify Source File instead
 #include "netext.h"
@@ -28,7 +28,7 @@ EXT_COMMAND(whelp,
 		Dml("<b>------------------</b>\n");
 		Dml("!<link cmd=\"!whelp windex\">windex</link> - index and display objects based in different filters like object with of type HttpContext\n");
 		Dml("!<link cmd=\"!whelp wstack\">wstack</link> - dump unique stack objects\n");
-		Dml("!<link cmd=\"!whelp wheap\">wheap</link> - list objects without indexing and show thottled heap sampling\n");
+		Dml("!<link cmd=\"!whelp wheap\">wheap</link> - list objects without indexing and show throttled heap sampling\n");
 		Dml("!<link cmd=\"!whelp wgchandle\">wgchandle</link> - Dump GC root handles\n");
 		Dml("!<link cmd=\"!whelp wdae\">wdae</link> - Dump All Exceptions\n");
 		Dml("\n");
@@ -43,10 +43,11 @@ EXT_COMMAND(whelp,
 		Dml("!<link cmd=\"!whelp wmodule\">wmodule</link> - List modules based on a pattern\n");
 		Dml("!<link cmd=\"!whelp wtime\">wtime</link> - Show UTC and local time\n");
 		Dml("!<link cmd=\"!whelp wapppool\">wapppool</link> - Display AppPool details\n");
-		Dml("<b>*(new)*</b> !<link cmd=\"!whelp wk\">wk</link> - Dump current thread's stack trace in mixed mode (native and managed)\n");
-		Dml("<b>*(new)*</b> !<link cmd=\"!whelp wp\">wp</link> - Step over managed code (like F10 in Visual Studio)\n");
-		Dml("<b>*(new)*</b> !<link cmd=\"!whelp wt\">wt</link> - Step into managed code (like F11 in Visual Studio)\n");
-		Dml("<b>*(new)*</b> !<link cmd=\"!whelp wvar\">wvar</link> - Display process environment variables\n");
+		Dml("!<link cmd=\"!whelp wk\">wk</link> - Dump current thread's stack trace in mixed mode (native and managed)\n");
+		Dml("!<link cmd=\"!whelp wp\">wp</link> - Step over managed code (like F10 in Visual Studio)\n");
+		Dml("!<link cmd=\"!whelp wt\">wt</link> - Step into managed code (like F11 in Visual Studio)\n");
+		Dml("!<link cmd=\"!whelp wvar\">wvar</link> - Display process environment variables\n");
+		Dml("<b>*(new)*</b> !<link cmd=\"!whelp wsetruntime\">wsetruntime</link> - Select a runtime when more than 1 is in the process\n");
 		Dml("\n");
 		Dml("<b>Special</b>\n");
 		Dml("<b>-------</b>\n");
@@ -76,6 +77,33 @@ EXT_COMMAND(whelp,
 		Dml("<link cmd=\"!whelp expression\">expression</link> syntax\n");
 		Dml("<link cmd=\"!whelp functions\">functions</link> list *new functions*\n");
 		Dml("<link cmd=\"!whelp license\">license</link> see all licenses applied to this product\n");
+		Dml("\n");
+		Dml("#wsetruntime\n");
+		Dml("When more than one runtime is available it lets you switch runtimes\n");
+		Dml("\n");
+		Dml("!wsetruntime [&lt;index&gt;]\n");
+		Dml("\n");
+		Dml("<b>Where:</b>\n");
+		Dml("----------\n");
+		Dml("&lt;id&gt; is the the runtime number (e.g. !wsetruntime 1). Mandatory\n");
+		Dml("\n");
+		Dml("<b>Example:</b>\n");
+		Dml("----------\n");
+		Dml("\n");
+		Dml("0:016&gt; !wver\n");
+		Dml("Runtime(s) Found: 2\n");
+		Dml("<b>0</b>: Filename: mscordaccore_X86_X86_4.700.20.41105.dll \n");
+		Dml(".NETCore Version: 4.8.4261.0\n");
+		Dml("<b>1</b>: Filename: mscordacwks_X86_X86_4.8.4261.00.dll \n");
+		Dml(".NETCore Version: 4.8.4261.0\n");
+		Dml("Selected Runtime '1' because it contains more threads\n");
+		Dml("Tip: To change selected runtime use !wsetruntime <n>\n");
+		Dml("\n");
+		Dml("0:016&gt; !wsetruntime 0\n");
+		Dml("Runtime already set. Initializing 0: D:\\Program Files (x86)\\dotnet\\shared\\Microsoft.NETCore.App\\3.1.8\\coreclr.dll\n");
+		Dml("0: Filename: mscordaccore_X86_X86_4.700.20.41105.dll \n");
+		Dml(".NETCore Version: 4.8.4261.0\n");
+		Dml("\n");
 		Dml("\n");
 	return;
 	}

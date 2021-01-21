@@ -330,34 +330,41 @@ namespace Microsoft.Diagnostics.Runtime.Native
         public ulong highAllocMark;
         public uint isReadOnly;
 
+        public ulong Normalize(ulong Value)
+        {
+            if (IntPtr.Size != 4)
+                return Value;
+            return Value & UInt32.MaxValue;
+        }
+
         public ulong Address
         {
-            get { return segmentAddr; }
+            get { return Normalize(segmentAddr); }
         }
 
         public ulong Next
         {
-            get { return next; }
+            get { return Normalize(next); }
         }
 
         public ulong Start
         {
-            get { return mem; }
+            get { return Normalize(mem); }
         }
 
         public ulong End
         {
-            get { return allocated; }
+            get { return Normalize(allocated); }
         }
 
         public ulong Reserved
         {
-            get { return reserved; }
+            get { return Normalize(reserved); }
         }
 
         public ulong Committed
         {
-            get { return committed; }
+            get { return Normalize(committed); }
         }
     }
 

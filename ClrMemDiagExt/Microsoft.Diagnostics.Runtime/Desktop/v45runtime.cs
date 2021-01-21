@@ -220,11 +220,51 @@ namespace Microsoft.Diagnostics.Runtime.Desktop
             return data;
         }
 
+        internal void NormalizeV4GenData(ref V4GenerationData Data)
+        {
+            Data.StartSegment &= UInt32.MaxValue;
+            Data.AllocationStart &= UInt32.MaxValue;
+            Data.AllocContextPtr &= UInt32.MaxValue;
+            Data.AllocContextLimit &= UInt32.MaxValue;
+        }
+        internal void Normalize32Bits(ref V4HeapDetails Data)
+        {
+            if (IntPtr.Size != 4)
+                return;
+            Data.heapAddr &= UInt32.MaxValue;
+            Data.alloc_allocated &= UInt32.MaxValue;
+
+            Data.mark_array &= UInt32.MaxValue;
+            Data.c_allocate_lh &= UInt32.MaxValue;
+            Data.next_sweep_obj &= UInt32.MaxValue;
+            Data.saved_sweep_ephemeral_seg &= UInt32.MaxValue;
+            Data.saved_sweep_ephemeral_start &= UInt32.MaxValue;
+            Data.background_saved_lowest_address &= UInt32.MaxValue;
+            Data.background_saved_highest_address &= UInt32.MaxValue;
+
+            NormalizeV4GenData(ref Data.generation_table0);
+            NormalizeV4GenData(ref Data.generation_table1);
+            NormalizeV4GenData(ref Data.generation_table2);
+            NormalizeV4GenData(ref Data.generation_table3);
+            Data.ephemeral_heap_segment &= UInt32.MaxValue;
+            Data.finalization_fill_pointers0 &= UInt32.MaxValue;
+            Data.finalization_fill_pointers1 &= UInt32.MaxValue;
+            Data.finalization_fill_pointers2 &= UInt32.MaxValue;
+            Data.finalization_fill_pointers3 &= UInt32.MaxValue;
+            Data.finalization_fill_pointers4 &= UInt32.MaxValue;
+            Data.finalization_fill_pointers5 &= UInt32.MaxValue;
+            Data.finalization_fill_pointers6 &= UInt32.MaxValue;
+            Data.lowest_address &= UInt32.MaxValue;
+            Data.highest_address &= UInt32.MaxValue;
+            Data.card_table &= UInt32.MaxValue;
+        }
+
         internal override IHeapDetails GetSvrHeapDetails(ulong addr)
         {
             V4HeapDetails data;
             if (_sos.GetGCHeapDetails(addr, out data) < 0)
                 return null;
+            Normalize32Bits(ref data);
             return data;
         }
 
@@ -233,6 +273,7 @@ namespace Microsoft.Diagnostics.Runtime.Desktop
             V4HeapDetails data;
             if (_sos.GetGCHeapStaticData(out data) < 0)
                 return null;
+            Normalize32Bits(ref data);
             return data;
         }
 

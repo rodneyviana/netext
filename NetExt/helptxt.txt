@@ -10,7 +10,7 @@
 <b>------------------</b>
 !||windex|| - index and display objects based in different filters like object with of type HttpContext
 !||wstack|| - dump unique stack objects
-!||wheap|| - list objects without indexing and show thottled heap sampling
+!||wheap|| - list objects without indexing and show throttled heap sampling
 !||wgchandle|| - Dump GC root handles
 !||wdae|| - Dump All Exceptions
 
@@ -25,10 +25,11 @@
 !||wmodule|| - List modules based on a pattern
 !||wtime|| - Show UTC and local time
 !||wapppool|| - Display AppPool details
-<b>*(new)*</b> !||wk|| - Dump current thread's stack trace in mixed mode (native and managed)
-<b>*(new)*</b> !||wp|| - Step over managed code (like F10 in Visual Studio)
-<b>*(new)*</b> !||wt|| - Step into managed code (like F11 in Visual Studio)
-<b>*(new)*</b> !||wvar|| - Display process environment variables
+!||wk|| - Dump current thread's stack trace in mixed mode (native and managed)
+!||wp|| - Step over managed code (like F10 in Visual Studio)
+!||wt|| - Step into managed code (like F11 in Visual Studio)
+!||wvar|| - Display process environment variables
+<b>*(new)*</b> !||wsetruntime|| - Select a runtime when more than 1 is in the process
 
 <b>Special</b>
 <b>-------</b>
@@ -58,6 +59,33 @@
 ||expression|| syntax
 ||functions|| list *new functions*
 ||license|| see all licenses applied to this product
+
+#wsetruntime
+When more than one runtime is available it lets you switch runtimes
+
+!wsetruntime [&lt;index&gt;]
+
+<b>Where:</b>
+----------
+&lt;id&gt; is the the runtime number (e.g. !wsetruntime 1). Mandatory
+
+<b>Example:</b>
+----------
+
+0:016&gt; !wver
+Runtime(s) Found: 2
+<b>0</b>: Filename: mscordaccore_X86_X86_4.700.20.41105.dll 
+.NETCore Version: 4.8.4261.0
+<b>1</b>: Filename: mscordacwks_X86_X86_4.8.4261.00.dll 
+.NETCore Version: 4.8.4261.0
+Selected Runtime '1' because it contains more threads
+Tip: To change selected runtime use !wsetruntime <n>
+
+0:016&gt; !wsetruntime 0
+Runtime already set. Initializing 0: D:\Program Files (x86)\dotnet\shared\Microsoft.NETCore.App\3.1.8\coreclr.dll
+0: Filename: mscordaccore_X86_X86_4.700.20.41105.dll 
+.NETCore Version: 4.8.4261.0
+
 
 ##wvar
 List process environment variables. It allows filtering the vars.
