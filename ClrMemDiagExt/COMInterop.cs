@@ -3019,50 +3019,55 @@ namespace NetExt.Shim
             Module clr = new Module("clr");
 
 
-            if (clr.IsValid)
+            if (clr.IsValid && this.m_info.DacInfo.PlatformAgnosticFileName.Contains("mscordacwks"))
             {
                 Version ver = clr.VersionInfo;
                 if (ver.Minor == 0 && ver.Revision <= 17000)
                 {
-                    pVersion = String.Format("{0} ({1})", clr.Version, ".NET 4.0");
+                    pVersion = String.Format(".NET {0} ({1})", clr.Version, ".NET 4.0");
                     return HRESULTS.S_OK;
                 }
                 if (ver.Minor == 0 && ver.Revision <= 18400)
                 {
-                    pVersion = String.Format("{0} ({1})", clr.Version, ".NET 4.5");
+                    pVersion = String.Format(".NET {0} ({1})", clr.Version, ".NET 4.5");
                     return HRESULTS.S_OK;
                 }
 
                 if (ver.Minor == 0 && ver.Revision <= 34000)
                 {
-                    pVersion = String.Format("{0} ({1})", clr.Version, ".NET 4.5.1");
+                    pVersion = String.Format(".NET {0} ({1})", clr.Version, ".NET 4.5.1");
                     return HRESULTS.S_OK;
                 }
 
                 if (ver.Minor == 0)
                 {
-                    pVersion = String.Format("{0} ({1})", clr.Version, ".NET 4.5.2");
+                    pVersion = String.Format(".NET {0} ({1})", clr.Version, ".NET 4.5.2");
                     return HRESULTS.S_OK;
                 }
 
-                pVersion = ver.ToString();
+                pVersion = String.Format(".NET {0}", ver);
                 return HRESULTS.S_OK;
 
             }
             pVersion = null;
-            Module mscor = new Module("mscorwks");
-            if (!mscor.IsValid)
+
+            if (this.m_info.DacInfo.PlatformAgnosticFileName.Contains("mscordaccore"))
             {
                 Module coreCLR = new Module("coreclr");
                 if (coreCLR.IsValid)
                 {
-                    pVersion = coreCLR.Version;
+                    pVersion = String.Format(".NETCore {0}", coreCLR.Version.Replace(',', '.'));
                     return HRESULTS.S_OK;
                 }
                 return HRESULTS.E_FAIL;
             }
-            pVersion = mscor.Version;
-            return HRESULTS.S_OK;
+            Module mscor = new Module("mscorwks");
+            if (mscor.IsValid)
+            {
+                pVersion = String.Format(".NET {0} .NET 2.0", mscor.Version);
+                return HRESULTS.S_OK;
+            }
+            return HRESULTS.E_FAIL;
         }
 
         public int GetDacLocation(out string pLocation)
@@ -3175,7 +3180,7 @@ namespace NetExt.Shim
                 return HRESULTS.S_OK;
             if (runTimeIndex == -1 || m_target == null || m_target.ClrVersions == null)
                 return HRESULTS.E_FAIL;
-            if (Index < 0 || Index >= Runtimes.Count)
+            if (Index < 0 || Index >= m_target.ClrVersions.Count)
             {
                 DebugApi.WriteLine("{0} is an invalid Runtime index. Numbers can be between 0 and {1}",
                     Index, m_target.ClrVersions.Count - 1);
@@ -3185,10 +3190,22 @@ namespace NetExt.Shim
 
             //DebugApi.Runtime = Runtimes[Index];
             //ppRuntime = new MDRuntime(DebugApi.Runtime);
+            var oldIndex = runTimeIndex;
             runTimeIndex = Index;
             if (localixClrProcess != null)
             {
-                return CreateRuntimeFromIXCLR(localixClrProcess, out ppRuntime);
+                var hr = CreateRuntimeFromIXCLR(localixClrProcess, out ppRuntime);
+                if (hr == HRESULTS.E_FAIL)
+                {
+                    runTimeIndex = oldIndex;
+                    if (runTimeIndex != -1)
+                    {
+                        DebugApi.WriteLine("Reverted to Runtime {0}: {1}", runTimeIndex, m_target.ClrVersions[runTimeIndex].DacInfo.PlatformAgnosticFileName);
+                    }
+                    
+                    
+                }
+                return hr;
             }
             else
             {
@@ -3212,11 +3229,21 @@ namespace NetExt.Shim
 #if DEBUG
                 DebugApi.WriteLine("Runtime already set. Initializing {0}: {1}", runTimeIndex, m_target.ClrVersions[runTimeIndex].ModuleInfo.FileName);
 #endif
-                DebugApi.Runtime = m_target.ClrVersions[runTimeIndex].CreateRuntime();
-                ppRuntime = new MDRuntime(DebugApi.Runtime);
-                DebugApi.Runtime.Flush();
+                try
+                {
+                    DebugApi.Runtime = m_target.ClrVersions[runTimeIndex].CreateRuntime();
+                    ppRuntime = new MDRuntime(DebugApi.Runtime);
+                    DebugApi.Runtime.Flush();
+                    return HRESULTS.S_OK;
+                }
+                catch(Exception ex)
+                {
+                    DebugApi.WriteLine("Error initializing Runtime {0}: {1}", runTimeIndex, m_target.ClrVersions[runTimeIndex].DacInfo.PlatformAgnosticFileName);
+                    DebugApi.WriteLine("If there is more than one Runtime this can be ignored");
+                    DebugApi.WriteLine("Error: {0}", ex.Message);
+                    return HRESULTS.E_FAIL;
+                }
 
-                return HRESULTS.S_OK;
 
             }
 
@@ -3240,7 +3267,7 @@ namespace NetExt.Shim
                   Runtimes.Add(m_target.ClrVersions[i].CreateRuntime());
                   int threads = Runtimes[Runtimes.Count - 1].Threads.Count;
 #if DEBUG
-                  DebugApi.WriteLine("Initializing {0}: {1}", i, m_target.ClrVersions[i].ModuleInfo.FileName);
+                  DebugApi.WriteLine("Initializing {0}: {1}", i, m_target.ClrVersions[i].DacInfo.PlatformAgnosticFileName);
                   DebugApi.WriteLine("+---> Threads: {0}", threads);
 #endif
                   if(max < threads)
@@ -3250,13 +3277,10 @@ namespace NetExt.Shim
                   }
                } catch(Exception ex)
                {
-                   // Only show on first initialization
-                   if (runTimeIndex != -1)
-                   {
-                       DebugApi.WriteLine("Error initializing at least one of the CLR/CLRCore runtimes");
-                       DebugApi.WriteLine("If there is more than one Runtime this can be ignored");
-                       DebugApi.WriteLine(ex.ToString());
-                   }
+
+                  DebugApi.WriteLine("Error initializing Runtime {0}: {1}", i, m_target.ClrVersions[i].DacInfo.PlatformAgnosticFileName);
+                  DebugApi.WriteLine("If there is more than one Runtime this can be ignored");
+                  DebugApi.WriteLine("Error: {0}", ex.Message);
 
                 }
             }

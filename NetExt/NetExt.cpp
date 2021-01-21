@@ -618,10 +618,7 @@ void ShowRuntimeInfo(int Index)
 		EXITPOINT("Unable to retrieve Dac Version");
 		if(versionStr)
 		{
-			if(coreCLR)
-				Out(".NETCore Version: %S\n", versionStr);
-			else
-				Out(".NET Version: %S\n", versionStr);
+			Out("+--> %S\n", versionStr);
 		}
 }
 
@@ -638,16 +635,18 @@ EXT_COMMAND(wver,
 	for(long i=0;i<count;i++)
 	{
 		ShowRuntimeInfo(i);
+		Out("\n");
 
 	}
 	int runIndex = pTarget->GetCurrentRuntime();
+
+	Out("NetExt (this extension) Version: %s\n", CVersionInfo::GetVersionString().c_str()); 
 	if(count > 1)
 	{
-		Out("Selected Runtime '%i' because it contains more threads\n", runIndex);
-		Out("Tip: To change selected runtime use !wsetruntime <n>\n");
+		Out("\n*** Selected Runtime '%i' because it contains more threads\n", runIndex);
+		Out("*** Tip: To change selected runtime use !wsetruntime <n>\n");
 
 	}
-	Out("NetExt (this extension) Version: %s\n", CVersionInfo::GetVersionString().c_str()); 
 }
 
 inline void Init()
@@ -898,11 +897,16 @@ EXT_COMMAND(wsetruntime,
 	HRESULT hr = pTarget->SetCurrentRuntime(i, &runTime);
 	if(hr == S_OK)
 	{
+		if(indc)
+		{
+			delete indc;
+			indc=NULL;
+		}
 		ShowRuntimeInfo(i);
 		pRuntime = runTime;
 	} else
 	{
-		Out("Unable to change Runtime");
+		Out("Unable to change Runtime\n");
 	}
 
 }
