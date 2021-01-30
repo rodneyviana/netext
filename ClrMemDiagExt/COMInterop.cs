@@ -3223,7 +3223,20 @@ namespace NetExt.Shim
             if (m_target == null || m_target.ClrVersions == null)
                 return HRESULTS.E_FAIL;
 
-
+            if (m_target.ClrVersions.Count == 1)
+            {
+                try
+                {
+                    DebugApi.Runtime = m_target.ClrVersions[0].CreateRuntime(ixCLRProcess);
+                    ppRuntime = new MDRuntime(DebugApi.Runtime);
+                    runTimeIndex = 0;
+                    Runtimes = new List<ClrRuntime>();
+                    Runtimes.Add(DebugApi.Runtime);
+                    return HRESULTS.S_OK;
+                }
+                catch
+                { }
+            }
             if (runTimeIndex != -1 && runTimeIndex < m_target.ClrVersions.Count)
             {
 #if DEBUG

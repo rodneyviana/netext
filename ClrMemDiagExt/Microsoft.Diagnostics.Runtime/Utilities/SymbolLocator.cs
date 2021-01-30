@@ -615,7 +615,10 @@ namespace Microsoft.Diagnostics.Runtime.Utilities
             var fullDestPath = Path.Combine(symbolCacheDir, pdbIndexPath);
             if (File.Exists(fullDestPath))
                 return fullDestPath;
-
+            // replace .dl_ by .dll
+            //var fullDestPathNoZip = fullDestPath.Substring(0, fullDestPath.Length - 1) + "l";
+            //if (File.Exists(fullDestPathNoZip))
+            //    return fullDestPathNoZip;
             if (serverPath.StartsWith("http:"))
             {
                 var fullUri = serverPath + "/" + pdbIndexPath.Replace('\\', '/');

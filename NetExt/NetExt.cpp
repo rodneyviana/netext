@@ -403,7 +403,7 @@ HRESULT INIT_API()
 		HRESULT hr = S_OK;
 		
 		if(pTarget != NULL) hr = E_APPLICATION_ACTIVATION_EXEC_FAILURE;
-		EXITPOINTEXT("Init was performed but it could not start CLR");
+		EXITPOINTEXT("Init was performed but it could not start CLR\nTry running .cordll -l");
 
 		if(!clrData)
 		{
@@ -413,7 +413,7 @@ HRESULT INIT_API()
 		}
 
 		if(!clrData) hr=E_APPLICATION_ACTIVATION_EXEC_FAILURE;
-		EXITPOINTEXT("Unable to acquire .NET debugger interface");
+		EXITPOINTEXT("Unable to acquire .NET debugger interface\nTry running .cordll -l");
 
 		using namespace NetExtShim;
 		::CoInitialize(NULL);

@@ -1111,13 +1111,13 @@ namespace Microsoft.Diagnostics.Runtime
                         break;
                 }
 
-                string dacLocation = Path.Combine(Path.GetDirectoryName(module.FileName), DacInfo.GetDacFileName(flavor, Architecture));
+                string dacLocation = Path.Combine(Path.GetDirectoryName(module.FileName), DacInfo.GetDacFileName(flavor, IntPtr.Size == 4 ? Architecture.X86 : Architecture.Amd64));
                 if (!File.Exists(dacLocation) || !NativeMethods.IsEqualFileVersion(dacLocation, module.Version))
                     dacLocation = null;
 
                 VersionInfo version = module.Version;
                 string dacAgnosticName = DacInfo.GetDacRequestFileName(flavor, Architecture, Architecture, version);
-                string dacFileName = DacInfo.GetDacRequestFileName(flavor, IntPtr.Size == 4 ? Architecture.X86 : Architecture.Amd64, Architecture, version);
+                string dacFileName = DacInfo.GetDacRequestFileName(flavor, IntPtr.Size == 4 ? Architecture.X86 : Architecture.Amd64, IntPtr.Size == 4 ? Architecture.X86 : Architecture.Amd64, version);
 
                 DacInfo dacInfo = new DacInfo(_dataReader, dacAgnosticName, Architecture)
                 {
