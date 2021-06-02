@@ -295,7 +295,10 @@ namespace Microsoft.Diagnostics.Runtime.Desktop
             ClrType type = Heap.GetTypeByMethodTable(methodDesc.MethodTable);
             if (type == null)
                 return null;
-
+#if DEBUG
+            var p = type.GetMethod(methodDesc.MDToken);
+            var name = p.Name;
+#endif
             return type.GetMethod(methodDesc.MDToken);
         }
 

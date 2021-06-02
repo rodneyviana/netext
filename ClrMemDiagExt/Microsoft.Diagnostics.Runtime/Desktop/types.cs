@@ -1416,7 +1416,7 @@ namespace Microsoft.Diagnostics.Runtime.Desktop
         
         internal override ClrMethod GetMethod(uint token)
         {
-            return Methods.Where(m => m.MetadataToken == token).FirstOrDefault();
+            return Methods.Where(m => m.MetadataToken == token).LastOrDefault();
         }
 
         public override IList<ClrMethod> Methods

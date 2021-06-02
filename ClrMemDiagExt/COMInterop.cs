@@ -3724,9 +3724,9 @@ namespace NetExt.Shim
         {
 
             Module mod = IP == 0 ? DebugApi.ModuleFromScope : DebugApi.GetModuleFromIp(IP);
-            if (!mod.IsClr)
+            if (mod == null || !mod.IsClr)
             {
-                Exports.WriteLine("Module {0} is not managed. No source will be created.", mod.Name);
+                Exports.WriteLine("Module {0} is not managed or could not be found. No source will be created.", mod.Name);
                 Exports.WriteLine("Move to the frame context in the stack where you want the code created (example .frame 3)");
                 return HRESULTS.E_FAIL;
             }

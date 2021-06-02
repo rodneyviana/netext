@@ -463,9 +463,11 @@ namespace Microsoft.Diagnostics.Runtime.Utilities.Pdb
             dir._streams[1].Read(reader, bits);
             Dictionary<string, int> nameIndex = LoadNameIndex(bits, out ver, out sig, out age, out guid);
             int nameStream;
+            List<PdbFunction> funcList = new List<PdbFunction>();
             if (!nameIndex.TryGetValue("/NAMES", out nameStream))
             {
-                throw new PdbException("No `name' stream");
+                return funcList.ToArray(); // It's a public symbol with no method information
+                //throw new PdbException("No `name' stream");
             }
 
             dir._streams[nameStream].Read(reader, bits);
@@ -474,7 +476,7 @@ namespace Microsoft.Diagnostics.Runtime.Utilities.Pdb
             dir._streams[3].Read(reader, bits);
             LoadDbiStream(bits, out modules, out header, readAllStrings);
 
-            List<PdbFunction> funcList = new List<PdbFunction>();
+            
             Dictionary<string, PdbSource> sourceDictionary = new Dictionary<string, PdbSource>();
             if (modules != null)
             {
