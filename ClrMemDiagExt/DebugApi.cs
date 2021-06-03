@@ -914,11 +914,12 @@ namespace NetExt.Shim
                 StringBuilder Name = new StringBuilder(1000);
                 uint size = 0;
                 ulong displ = 0;
-                if (symbol.GetNameByOffset(frame.InstructionOffset, Name, 100, out size, out displ) != (int)HRESULT.S_OK || /* Name.ToString().StartsWith("clr!") || */
+                ClrMethod met = MethodDesc;
+                if (met != null || symbol.GetNameByOffset(frame.InstructionOffset, Name, 100, out size, out displ) != (int)HRESULT.S_OK || /* Name.ToString().StartsWith("clr!") || */
                     Name.ToString().StartsWith("mscorlib"))
                 {
                     DebugApi.INIT_CLRAPI();
-                    ClrMethod met = MethodDesc;
+                    
                     if (met != null)
                     {
                         Name.Clear();

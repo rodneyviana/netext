@@ -75,7 +75,7 @@ namespace NetExt.Shim
         [PreserveSig]
         int DumpModules([MarshalAs(UnmanagedType.LPStr)] string Pattern, [MarshalAs(UnmanagedType.LPStr)] string Company,
             [MarshalAs(UnmanagedType.LPStr)] string folderToSave, bool DebugMode,
-            bool ManagedOnly, bool ExcludeMicrosoft, bool Ordered, bool IncludePath);
+            bool ManagedOnly, bool ExcludeMicrosoft, bool Ordered, bool IncludePath, ulong DomainAddress);
         [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
         [PreserveSig]
         int MakeSource();

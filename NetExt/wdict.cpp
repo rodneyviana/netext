@@ -1355,6 +1355,8 @@ struct ModuleFlags
 	bool fnoms;
 	bool ffullpath;
 	bool fsaveto;
+	bool fdomain;
+	CLRDATA_ADDRESS AppDomain;
 	std::string saveTo;
 	std::string name;
 	std::string company;
@@ -1369,6 +1371,7 @@ EXT_COMMAND(wmodule,
 	"{noms;b,o;;Hide all modules which company attribute is Microsoft Corporation (show non-system modules)}"
 	"{order;b,o;;Sort output bu module name}"
 	"{fullpath;b,o;;Show module full path (instead of just name}"
+	"{domain;e,o;;Only show modules from a particular domain (e.g. -domain 07fff8090)"
 	"{saveto;x,o;;Save the selected modules to a folder. Optional (e.g. -saveto c:\\My Modulestemp\\)}"
 	)
 {
@@ -1383,6 +1386,13 @@ EXT_COMMAND(wmodule,
 		flags.forder = HasArg("order");
 		flags.ffullpath = HasArg("fullpath");
 		flags.fsaveto = HasArg("saveto");
+		flags.fdomain = HasArg("domain");
+		flags.AppDomain = 0;
+
+		if(flags.fdomain)
+		{
+			flags.AppDomain = GetArgU64("domain");
+		}
 
 		if(flags.fname)
 			flags.name = GetArgStr("name");
@@ -1394,7 +1404,7 @@ EXT_COMMAND(wmodule,
 			flags.saveTo = GetArgStr("saveto");
 
 		if(pTarget->DumpModules((LPSTR)flags.name.c_str(), (LPSTR)flags.company.c_str(), (LPSTR)flags.saveTo.c_str(), flags.fdebug,
-            flags.fmanaged, flags.fnoms, flags.forder, flags.ffullpath) != S_OK)
+            flags.fmanaged, flags.fnoms, flags.forder, flags.ffullpath, flags.AppDomain) != S_OK)
 		{
 			Out("UNEXPECTED: Unable to dump modules\n");
 		};

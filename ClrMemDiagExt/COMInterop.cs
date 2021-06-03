@@ -2693,7 +2693,7 @@ namespace NetExt.Shim
 
                 Exports.Write("{0:%p} ", m_runtime.PointerSize == 8 ? domains[i].Address : domains[i].Address & UInt32.MaxValue);
                 Exports.Write("{0, -60} ", i == 0 ? "System" : i == 1 ? "Shared" : domains[i].Name);
-                Exports.Write("{0,6:#,#} ", domains[i].Modules.Count);
+                Exports.WriteDml("<link cmd=\"!wmodule -domain {0:%p}\">{1,6:#,#}</link> ", domains[i].Address, domains[i].Modules.Count);
                 if (!String.IsNullOrEmpty(domains[i].ApplicationBase)) Exports.Write("Base Path: {0} ", domains[i].ApplicationBase);
                 if (!String.IsNullOrEmpty(domains[i].ConfigurationFile)) Exports.Write("Config: {0} ", domains[i].ConfigurationFile);
                 Exports.WriteLine("");
@@ -3524,11 +3524,34 @@ namespace NetExt.Shim
         }
 
         public List<NetExt.Shim.Module> GetModules(string Pattern, string Company, bool DebugMode,
-            bool ManagedOnly, bool ExcludeMicrosoft)
+            bool ManagedOnly, bool ExcludeMicrosoft, ulong DomainAddress)
         {
             List<NetExt.Shim.Module> modules = new List<NetExt.Shim.Module>();
+            var loopModules = NetExt.Shim.Module.Modules;
+            var domain = DebugApi.Runtime.AppDomains.Where(d => d.Address == DomainAddress).FirstOrDefault();
+            if (domain == null && DomainAddress == DebugApi.Runtime.SharedDomain.Address)
+            {
+                domain = DebugApi.Runtime.SharedDomain;
+            }
+            if (domain != null)
+            {
+                loopModules = new List<Module>();
+                foreach(var d in domain.Modules)
+                {
+                    if(d.AppDomains.Where<ClrAppDomain>(ad => ad.Address == DomainAddress).FirstOrDefault() != null)
+                    {
+                        loopModules.Add(new Module(d.ImageBase));
+                    }
+                }
+            }
 
-            foreach (var mod in NetExt.Shim.Module.Modules)
+            if (domain == null && DomainAddress != 0)
+            {
+                return new List<Module>();
+                 
+            }
+
+            foreach (var mod in loopModules)
             {
                 if (DebugMode && (int)mod.ClrDebugType < 4)
                 {
@@ -3558,10 +3581,10 @@ namespace NetExt.Shim
         }
 
         public int DumpModules(string Pattern, string Company, string folderToSave, bool DebugMode,
-            bool ManagedOnly, bool ExcludeMicrosoft, bool Ordered, bool IncludePath)
+            bool ManagedOnly, bool ExcludeMicrosoft, bool Ordered, bool IncludePath, ulong DomainAddress)
         {
             IEnumerable<Module> modules = GetModules(Pattern, Company, DebugMode,
-            ManagedOnly, ExcludeMicrosoft);
+            ManagedOnly, ExcludeMicrosoft, DomainAddress);
 
             if (!String.IsNullOrWhiteSpace(folderToSave))
             {

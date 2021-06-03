@@ -188,7 +188,11 @@ namespace NetExt.Shim
         {
             get
             {
-                IMAGE_DOS_HEADER dosHeader;
+                IMAGE_DOS_HEADER dosHeader = new IMAGE_DOS_HEADER();
+                if (BaseAddress == 0)
+                {
+                    return dosHeader;
+                }
                 if (!DebugApi.ReadMemory<IMAGE_DOS_HEADER>(BaseAddress, out dosHeader))
                 {
                     DebugApi.WriteLine("[IMAGE_DOS_HEADER] Unable to read memory at %p", BaseAddress);
@@ -203,7 +207,7 @@ namespace NetExt.Shim
         {
             get
             {
-                if (imageType == ImageType.None)
+                if (imageType == ImageType.None && BaseAddress != 0)
                 {
                     var dosHeader = DOSHeader;
 
@@ -242,7 +246,8 @@ namespace NetExt.Shim
 
         public ulong RvaToOffset(ulong Rva)
         {
-
+            if (BaseAddress == 0)
+                return 0;
             var sectionId = SectionStart;
             uint sections = 0;
             MEMORY_BASIC_INFORMATION64 mbi = new MEMORY_BASIC_INFORMATION64();
@@ -307,6 +312,8 @@ namespace NetExt.Shim
         {
             get
             {
+                if (BaseAddress == 0)
+                    return new IMAGE_NT_HEADERS32();
                 if (FileImageType != ImageType.Pe32bit)
                 {
                     ntHeader32.Signature = 0;
@@ -348,6 +355,8 @@ namespace NetExt.Shim
         {
             get
             {
+                if (BaseAddress == 0)
+                    return new IMAGE_NT_HEADERS64();
                 if (FileImageType != ImageType.Pe64bit)
                 {
                     ntHeader.Signature = 0;
@@ -381,9 +390,11 @@ namespace NetExt.Shim
         {
             get
             {
+                var opHeader = new IMAGE_OPTIONAL_HEADER32();
+                if (BaseAddress == 0)
+                    return opHeader;
                 ulong sectionAddr = BaseAddress + (ulong)DOSHeader.e_lfanew +
                     (ulong)Marshal.OffsetOf(typeof(IMAGE_NT_HEADERS64), "OptionalHeader");
-                var opHeader = new IMAGE_OPTIONAL_HEADER32();
                 if (!DebugApi.ReadMemory<IMAGE_OPTIONAL_HEADER32>(sectionAddr, out opHeader))
                 {
                     DebugApi.WriteLine("Fail to read PE section info\n");
@@ -398,9 +409,12 @@ namespace NetExt.Shim
         {
             get
             {
+                var opHeader = new IMAGE_OPTIONAL_HEADER64();
+                if (BaseAddress == 0)
+                    return opHeader;
                 ulong sectionAddr = BaseAddress + (ulong)DOSHeader.e_lfanew +
                     (ulong)Marshal.OffsetOf(typeof(IMAGE_NT_HEADERS64), "OptionalHeader");
-                var opHeader = new IMAGE_OPTIONAL_HEADER64();
+                
                 if (!DebugApi.ReadMemory<IMAGE_OPTIONAL_HEADER64>(sectionAddr, out opHeader))
                 {
                     DebugApi.WriteLine("Fail to read PE section info\n");
@@ -416,6 +430,8 @@ namespace NetExt.Shim
             get
             {
                 IMAGE_COR20_HEADER corHeader = new IMAGE_COR20_HEADER();
+                if (BaseAddress == 0)
+                    return corHeader;
                 ulong VirtualAddress = 0;
 
                 
@@ -458,7 +474,8 @@ namespace NetExt.Shim
             get
             {
                 IMAGE_DEBUG_DIRECTORY debugInfo = new IMAGE_DEBUG_DIRECTORY();
-
+                if (BaseAddress == 0)
+                    return debugInfo;
                 ulong sectionAddr = 0;
                 ulong limit = 0;
                 ulong virtualAddress = 0;
@@ -544,6 +561,8 @@ namespace NetExt.Shim
         {
             get
             {
+                if (BaseAddress == 0 && Index < 0)
+                    return true; // dynamic assembly
                 return DotNetVersion.Major != 0;
             }
         }
@@ -729,6 +748,8 @@ namespace NetExt.Shim
                 {
                     if(ManagedVersion == null)
                         return "<INVALID FILE IMAGE>";
+                    if (BaseAddress == 0)
+                        return "NA";
                     return ManagedVersion.Info.FileVersion;
                 }
                 return GetVersionInfo("FileVersion");
@@ -740,10 +761,15 @@ namespace NetExt.Shim
         {
             get
             {
+
                 if (Index < 0)
                 {
                     if (ManagedVersion == null)
                         return "<INVALID FILE IMAGE>";
+                    if (BaseAddress == 0)
+                    {
+                        return null;
+                    }
                     return ManagedVersion.Info.ProductVersion;
                 }
                 return GetVersionInfo("ProductVersion");
@@ -756,6 +782,11 @@ namespace NetExt.Shim
             {
                 if (Index < 0)
                 {
+                    if (BaseAddress == 0)
+                    {
+                        return "NA";
+                    }
+
                     if (ManagedVersion == null)
                         return "<INVALID FILE IMAGE>";
                     return ManagedVersion.Info.CompanyName;
@@ -770,6 +801,11 @@ namespace NetExt.Shim
             {
                 if (Index < 0)
                 {
+                    if (BaseAddress == 0)
+                    {
+                        return "NA";
+                    }
+
                     if (ManagedVersion == null)
                         return "<INVALID FILE IMAGE>";
                     return ManagedVersion.Info.LegalCopyright;
@@ -784,6 +820,11 @@ namespace NetExt.Shim
             {
                 if (Index < 0)
                 {
+                    if (BaseAddress == 0)
+                    {
+                        return "NA";
+                    }
+
                     if (ManagedVersion == null)
                         return "<INVALID FILE IMAGE>";
                     return ManagedVersion.Info.ProductName;
@@ -798,6 +839,11 @@ namespace NetExt.Shim
 
                 if (Index < 0)
                 {
+                    if (BaseAddress == 0)
+                    {
+                        return "NA";
+                    }
+
                     if (ManagedVersion == null)
                         return "<INVALID FILE IMAGE>";
                     return ManagedVersion.Info.OriginalFilename;
@@ -812,6 +858,8 @@ namespace NetExt.Shim
             {
                 try
                 {
+                    if (BaseAddress == 0)
+                        return new System.Version();
                     Version ver = ProductVersion != null ? new System.Version(ProductVersion) : new System.Version();
                     return ver;
                 }
@@ -889,7 +937,7 @@ namespace NetExt.Shim
                 if (module != null)
                 {
                     BaseAddress = module.ImageBase;
-                    FullPath = module.FileName;
+                    FullPath = module.FileName ?? "{dynamic-assembly}";
                     Index = -1;
                     
                 }
@@ -922,7 +970,7 @@ namespace NetExt.Shim
                     if (module != null)
                     {
                         BaseAddress = module.ImageBase;
-                        FullPath = module.FileName;
+                        FullPath = module.FileName ?? "{dynamic-assembly}";
                         Index = -1;
                     }
                 }

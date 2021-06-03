@@ -531,7 +531,7 @@ The types are:
 -------
  
 !wmodule [-debug] [-managed] [-noms] [-order] [-fullpath] [-name &lt;partial-name&gt;]
-         [-company &lt;partial-name&gt;] [-saveto &lt;folder&gt;]
+         [-company &lt;partial-name&gt;] [-saveto &lt;folder&gt;] [-domain &lt;domain-address&gt;]
 
 
 <b>Where:</b>
@@ -542,6 +542,7 @@ The types are:
 	<b>-fullpath</b> It includes the full path to the modules. Optional
 	<b>-name &lt;partial-name&gt;</b> List only modules matching the pattern (e.g -name Contoso.MyLibrary*). Optional
 	<b>-company &lt;partial-name&gt;</b> List only modules from the company in the pattern (e.g -company TailsSpin*). Optional
+	<b>-domain &lt;domain-address&gt;</b> List only modules from the domain (e.g -domain 007f23ac090). Optional
 	<b>-saveto &lt;folder&gt;</b>When present it will save the selected module to an existing folder (e.g. -saveto c:\my mods\). Optional. Must be at the end.
 
 <b>Note:</b> -saveto &lt;folder&gt; must be the last parameter. Do not use quotes.

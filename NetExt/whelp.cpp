@@ -1,4 +1,4 @@
-// Source Date: Wednesday, January 20, 2021 8:24:06 PM
+// Source Date: Wednesday, June 2, 2021 4:22:58 PM
 // Source File: C:\Users\rviana\OneDrive\Projects\netext\NetExt\helptxt.txt
 // This file was generated. Do not modify. Modify Source File instead
 #include "netext.h"
@@ -585,7 +585,7 @@ EXT_COMMAND(whelp,
 		Dml("-------\n");
 		Dml(" \n");
 		Dml("!wmodule [-debug] [-managed] [-noms] [-order] [-fullpath] [-name &lt;partial-name&gt;]\n");
-		Dml("         [-company &lt;partial-name&gt;] [-saveto &lt;folder&gt;]\n");
+		Dml("         [-company &lt;partial-name&gt;] [-saveto &lt;folder&gt;] [-domain &lt;domain-address&gt;]\n");
 		Dml("\n");
 		Dml("\n");
 		Dml("<b>Where:</b>\n");
@@ -596,6 +596,7 @@ EXT_COMMAND(whelp,
 		Dml("	<b>-fullpath</b> It includes the full path to the modules. Optional\n");
 		Dml("	<b>-name &lt;partial-name&gt;</b> List only modules matching the pattern (e.g -name Contoso.MyLibrary*). Optional\n");
 		Dml("	<b>-company &lt;partial-name&gt;</b> List only modules from the company in the pattern (e.g -company TailsSpin*). Optional\n");
+		Dml("	<b>-domain &lt;domain-address&gt;</b> List only modules from the domain (e.g -domain 007f23ac090). Optional\n");
 		Dml("	<b>-saveto &lt;folder&gt;</b>When present it will save the selected module to an existing folder (e.g. -saveto c:\\my mods\\). Optional. Must be at the end.\n");
 		Dml("\n");
 		Dml("<b>Note:</b> -saveto &lt;folder&gt; must be the last parameter. Do not use quotes.\n");
