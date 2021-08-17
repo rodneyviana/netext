@@ -1371,7 +1371,7 @@ EXT_COMMAND(wmodule,
 	"{noms;b,o;;Hide all modules which company attribute is Microsoft Corporation (show non-system modules)}"
 	"{order;b,o;;Sort output bu module name}"
 	"{fullpath;b,o;;Show module full path (instead of just name}"
-	"{domain;e,o;;Only show modules from a particular domain (e.g. -domain 07fff8090)"
+	"{domain;e,o;;Only show modules from a particular domain (e.g. -domain 07fff8090)}"
 	"{saveto;x,o;;Save the selected modules to a folder. Optional (e.g. -saveto c:\\My Modulestemp\\)}"
 	)
 {
