@@ -128,9 +128,18 @@ publish/
 *.Publish.xml
 *.pubxml
 
-# NuGet Packages Directory
-## TODO: If you have NuGet Package Restore enabled, uncomment the next line
-#packages/
+# NuGet Packages
+*.nupkg
+*.snupkg
+# The packages folder can be ignored because of Package Restore
+**/[Pp]ackages/*
+# except build/, which is used as an MSBuild target.
+!**/[Pp]ackages/build/
+# Uncomment if necessary however generally it will be regenerated when needed
+#!**/[Pp]ackages/repositories.config
+# NuGet v3's project.json files produce more ignorable files
+*.nuget.props
+*.nuget.targets
 
 # Windows Azure Build Output
 csx
@@ -213,3 +222,7 @@ pip-log.txt
 
 #Mr Developer
 .mr.developer.cfg
+/.vs
+/ClrMemDiagExt/.vs
+/BuildHelp/.vs
+/ProofOfConcept/.vs
