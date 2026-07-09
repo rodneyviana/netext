@@ -82,7 +82,7 @@ EXT_COMMAND(wheap,
 		}
 		try
 		{
-			auto_ptr<Heap> heap(new Heap());
+			std::unique_ptr<Heap> heap(new Heap());
 			heap->EnumRanges();
 			if(!heap->IsValid())
 			{

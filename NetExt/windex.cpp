@@ -71,7 +71,7 @@ EXT_COMMAND(windex,
 	flags.fsave = HasArg("save");
 	flags.fload = HasArg("load");
 	INIT_API();
-	auto_ptr<Heap> heap(new Heap());
+	std::unique_ptr<Heap> heap(new Heap());
 
 	if(flags.fsave && flags.fload)
 	{

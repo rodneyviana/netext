@@ -7,6 +7,9 @@
 
 #pragma once
 
+// #define BOOST_NO_CXX11_RVALUE_REFERENCES
+// #define BOOST_NO_CXX11_DELETED_FUNCTIONS
+
 #define WIN32_LEAN_AND_MEAN
 #include <winsock2.h>
 #include <ws2tcpip.h>
@@ -33,9 +36,7 @@
 #include <iostream>
 #include <sstream>
 #include <stdarg.h>
-
-
-
+#include <memory>
 
 
 #if _DEBUG
@@ -53,6 +54,13 @@
 #endif
 
 //extern int vsnprintf(char * s, size_t n, const char * format, va_list arg );
+
+// Add this typedef at the top of the file, after includes, to resolve ambiguity for 'byte'
+#ifndef _BYTE_DEFINED
+#define _BYTE_DEFINED
+#undef byte
+typedef unsigned char byte;
+#endif
 
 using namespace std;
 
@@ -347,7 +355,7 @@ public:
 	const NetExtShim::MD_ThreadData* operator[](UINT32 i);
 	bool Request(bool IsOrdered=false);
 	const_iterator GetThreadByAddress(CLRDATA_ADDRESS Address);
-	const_iterator Thread::GetThreadInRange(CLRDATA_ADDRESS Begin, CLRDATA_ADDRESS End);
+	const_iterator GetThreadInRange(CLRDATA_ADDRESS Begin, CLRDATA_ADDRESS End);
 	const_iterator begin();
 	const_iterator end();
 	void Clear() { threads.clear(); }
@@ -381,7 +389,7 @@ public:
 
 	static std::string Execute(const std::string &Command)
 	{
-		auto_ptr<ExtCaptureOutputA> execContext(new ExtCaptureOutputA());
+		std::unique_ptr<ExtCaptureOutputA> execContext(new ExtCaptureOutputA());
 
 		execContext->Execute(Command.c_str());
 		std::string retStr;
@@ -392,7 +400,7 @@ public:
 
 	const char *ExecuteChar(const std::string &Command)
 	{
-		auto_ptr<ExtCaptureOutputA> execContext(new ExtCaptureOutputA());
+		std::unique_ptr<ExtCaptureOutputA> execContext(new ExtCaptureOutputA());
 
 		execContext->Execute(Command.c_str());
 		return execContext->GetTextNonNull();
@@ -477,7 +485,7 @@ public:
 		{
 			return varsDict;
 		}
-		byte *buffer = (byte*)calloc(totalSize + 4, sizeof(byte));
+		unsigned char *buffer = (unsigned char*)calloc(totalSize + 4, sizeof(unsigned char));
 		data.ReadBuffer(buffer, static_cast<ULONG>(totalSize), true);
 		
 		for (wchar_t* strArray = (wchar_t*)buffer; L'\0' != *strArray; strArray += lstrlenW(strArray) + 1)
@@ -671,7 +679,7 @@ public:
 
 	regex_constants::syntax_option_type GetFlavor(const string& flavor);
 	std::ostringstream regexmatch(const string& Target, const string& Pattern, bool CaseSensitive, const string& Flavor, bool Run, const string& Format);
-	std::ostringstream EXT_CLASS::regexsearch(const string& Target, const string& Pattern, bool Not, bool CaseSensitive, const string& Flavor);
+	std::ostringstream regexsearch(const string& Target, const string& Pattern, bool Not, bool CaseSensitive, const string& Flavor);
 	void wfrom_internal(FromFlags flags);
 	void HashInternal(CLRDATA_ADDRESS Addr);
 	void OnSessionAccessible(ULONG64 Argument);
@@ -680,3 +688,10 @@ public:
 
 };
 
+
+std::wstring ToWString(const CComBSTR& b);
+
+
+std::string localCW2A(LPCWSTR lpwstr);
+
+std::wstring localCA2W(LPSTR lpstr);

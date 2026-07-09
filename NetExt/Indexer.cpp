@@ -5,10 +5,12 @@
   Distributed under GNU General Public License version 2 (GPLv2) (http://www.gnu.org/licenses/gpl-2.0.html)
 ============================================================================================================*/
 
+#include "NetExt.h"
 #include "Indexer.h"
 #include <fstream>
 #include <stdio.h>
 #include <locale>
+
 
 Indexer *indc=NULL;
 
@@ -50,7 +52,7 @@ bool Indexer::DoIndex(bool ShowProgress)
 
 	string temp = CalculateSignature();
 	//g_ExtInstancePtr->Out("%s\n",temp.c_str());
-	auto_ptr<Heap> heap(new Heap());
+	unique_ptr<Heap> heap(new Heap());
 	if(signature == temp)
 	{
 		if(ShowProgress)
@@ -67,7 +69,7 @@ bool Indexer::DoIndex(bool ShowProgress)
 		
 		CLRDATA_ADDRESS mn = get<0>(it->second);//heap->GetHeapDetails(0).lowest_address;
 		CLRDATA_ADDRESS mx = UINT64_MAX; // <1>(itend->second); //heap->GetHeapDetails(heap->Count()-1).highest_address;
-		auto_ptr<DumpHeapCache> cache(new DumpHeapCache());
+		unique_ptr<DumpHeapCache> cache(new DumpHeapCache());
 		count=0;
 		size=0;
 		while(it!=heap->ranges.end())
@@ -202,7 +204,7 @@ void Indexer::DumpTypesTree(EXT_CLASS *Ext)
 
 void Indexer::GetByType(std::wstring PartialTypeNames, MatchingAddresses& Addresses)
 {
-	std::string partialNames = CW2A(PartialTypeNames.c_str());
+	std::string partialNames = localCW2A(PartialTypeNames.c_str());
 	vector<std::string> types;
 	VectorSplit(partialNames, types);
 
@@ -531,7 +533,7 @@ bool Indexer::SaveIndex(std::string FileName)
 			// Method Table
 			DWORD_PTR mt=ti->second;
 			writebuf(file,(void*)&mt,sizeof(mt));
-			std::string typestr = CW2A(mtT[ti->second].typeName.c_str());
+			std::string typestr = localCW2A(mtT[ti->second].typeName.c_str());
 			// type size (DWORD) / type name (char*) without 0
 			writestr(file, typestr);
 			// size of objects
@@ -616,7 +618,7 @@ bool Indexer::LoadIndex(std::string FileName, bool IgnoreSignature)
 			std::string typestr;
 			// type size (DWORD) / type name (char*) without 0
 			readstr(file, typestr);
-			std::wstring wtypestr = CA2W(typestr.c_str());
+			std::wstring wtypestr = localCA2W((LPSTR)typestr.c_str());
 			// size of objects
 			UINT64 size=0;
 			readbuf(file,&size,sizeof(size));

@@ -37,7 +37,7 @@ std::wstring GetMethodName(CLRDATA_ADDRESS MethodTable)
 			CComBSTR typeName;
 			if(type->GetName(&typeName) == S_OK)
 			{
-				std::wstring tmpString = typeName;
+				std::wstring tmpString = ToWString(typeName);
 				return tmpString;
 			}
 		}
@@ -51,7 +51,7 @@ std::wstring GetMethodDesc(CLRDATA_ADDRESS MethodDesc)
 		CComBSTR methodName;;
 		if(pRuntime->GetMethodNameByMD(MethodDesc, &methodName) == S_OK)
 		{
-			std::wstring tmpString =methodName;
+			std::wstring tmpString = ToWString(methodName);
 			return tmpString;
 		}
 	}
@@ -208,7 +208,7 @@ bool SimpleCache<I,T>::Exists(const I &Index)
 template<class I, class T>
 const T* SimpleCache<I,T>::Get(const I &Index)
 {
-	std::map<I,T>::const_iterator it;
+	typename std::map<I,T>::const_iterator it;
 	it=cacheMap.find(Index);
 	if(it==cacheMap.end())
 		return NULL;
@@ -375,8 +375,8 @@ void EEClass::EnsureFields()
 			hr=type->GetRawFieldTypeAndName(i, &typeName, &fieldName);
 			if(hr == S_OK)
 			{
-				std::wstring fieldStr = fieldName;
-				std::wstring typeStr = typeName;
+				std::wstring fieldStr = ToWString(fieldName);
+				std::wstring typeStr = ToWString(typeName);
 				store.Create(rawFields[i],rawFields[i].token, typeStr, fieldStr); 
 
 				fields.push_back(store);
@@ -400,7 +400,7 @@ bool EEClass::Implement(std::wstring TypeName, bool IncludeInterface)
 	{
 		if(IsInterrupted())
 			return false;
-		if(g_ExtInstancePtr->MatchPattern(CW2A(it->first.c_str()), CW2A(TypeName.c_str())))
+		if(g_ExtInstancePtr->MatchPattern(localCW2A(it->first.c_str()).c_str(), localCW2A(TypeName.c_str()).c_str()))
 		{
 			return true;
 		}
@@ -434,7 +434,7 @@ std::map<std::wstring,CLRDATA_ADDRESS> EEClass::Chain(bool IncludeInterface)
 
 					CComBSTR name;
 					intF->GetName(&name);
-					std::wstring tmpStr = name;
+					std::wstring tmpStr = ToWString(name);
 					chain.emplace(tmpStr, 0);
 					if(mtStr.size() > 0)
 						mtStr.append(L" ");

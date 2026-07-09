@@ -9,8 +9,35 @@
 #ifndef _CLR_HELPER_
 #define _CLR_HELPER_
 
-#include "boost.h"
+/*
+#include <boost/none.hpp>
+#include <boost/config/warning_disable.hpp>
+#include <boost/spirit/include/qi.hpp>
+#include <boost/spirit/include/phoenix_core.hpp>
+#include <boost/spirit/include/phoenix_operator.hpp>
+#include <boost/spirit/include/phoenix_object.hpp>
+#include <boost/fusion/include/adapt_struct.hpp>
+#include <boost/fusion/include/io.hpp>
+#include <boost/spirit/include/classic.hpp>
+// #include <boost/spirit/core.hpp>
+// #include <boost/spirit/symbols/symbols.hpp>
+#include <iostream>
+#include <boost/algorithm/string.hpp>
+#include <boost/algorithm/string/replace.hpp>
+#include <boost/algorithm/string/case_conv.hpp>
+#include <boost/lexical_cast.hpp>
+
+#include <iostream>
+*/
 #include "NetExt.h"
+#include "boost.h"
+
+// Add this typedef at the top of the file, after includes, to resolve ambiguity for 'byte'
+#ifndef _BYTE_DEFINED
+#define _BYTE_DEFINED
+#undef byte
+typedef unsigned char byte;
+#endif
 
 const WCHAR* PrintValue(CLRDATA_ADDRESS offset, CorElementType CorType, CLRDATA_ADDRESS MethodTable=0,const char* ObjectString = NULL, const char* ValueTypeString=NULL, bool Print = false );
 
@@ -39,7 +66,7 @@ struct LANGUACODEPAGE
 	unsigned int wLanguage;
 	unsigned int wCodePage;
 
-	void SetValue(byte* Bytes, int Index = 0)
+	void SetValue(uint8_t* Bytes, int Index = 0)
 	{
 		wLanguage = Bytes[Index] + ((unsigned int)(Bytes[Index + 1]) << 8);
 		wCodePage = Bytes[Index + 2] + ((unsigned int)(Bytes[Index + 3]) << 8);
@@ -94,7 +121,7 @@ public:
 	{
 		ModuleVersion fi = { 0 };
 		ULONG size = 1000;
-		byte buffer[1000] = { 0 };
+		uint8_t buffer[1000] = { 0 };
 
 		HRESULT hr = g_ExtInstancePtr->m_Symbols3->GetModuleVersionInformation(Index, 0, "\\VarFileInfo\\Translation", buffer, size, &size);
 
@@ -149,7 +176,7 @@ public:
 
 struct Compare
 {
-	bool operator() (const time_t& left, const time_t& right)
+	bool operator() (const time_t& left, const time_t& right) const
 	{
 		return left < right;
 	}
@@ -419,7 +446,7 @@ public:
 			return L"#INVALIDRUNTIMENAME#";
 
 		}
-		wstring str = rtName;
+		wstring str = ToWString(rtName);
 		return str;
 	}
 
@@ -471,7 +498,7 @@ public:
 		{
 			if(str == NULL)
 				return L"(null)";
-			std::wstring temp = str;
+			std::wstring temp = ToWString(str);
 			return temp;
 		}
 		return L"<<INVALIDSTRING>>";
@@ -497,7 +524,7 @@ public:
 		{
 			return L"<<INVALID STRING OBJECT>>";
 		}
-		std::wstring tempStr = str;
+		std::wstring tempStr = ToWString(str);
 		return tempStr;
 	}
 
@@ -769,7 +796,7 @@ public:
 		CComBSTR tmp;
 		if(type->GetFilename(&tmp) == S_OK)
 		{
-			wstring fname = tmp;
+			wstring fname = ToWString(tmp);
 			return fname;
 		}
 		else

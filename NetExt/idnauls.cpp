@@ -433,7 +433,7 @@ EXT_COMMAND(widnauls,
 						{
 							
 							Buffer[MAX_MTNAME - 1] = L'\0';
-							fullMess = CW2A(Buffer);
+							fullMess = localCW2A(Buffer);
 							if (mess.size() > 0)
 							{
 								show = fullMess.find(mess) != std::string::npos;

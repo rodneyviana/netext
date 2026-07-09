@@ -16,7 +16,7 @@ void CLRUtilities::Dispose()
 wstring CLRUtilities::GetFilePath()
 {
 	WCHAR fileName[MAX_PATH];
-	if (::GetModuleFileName((HINSTANCE)&__ImageBase, fileName, MAX_PATH))
+	if (::GetModuleFileNameW((HINSTANCE)&__ImageBase, fileName, MAX_PATH))
 	{
 		wstring path(fileName);
 		size_t found = path.find_last_of(L"\\");

@@ -78,7 +78,7 @@ EXT_COMMAND(regsearch,
 {
 	
 	int lowcase = HasArg("case");
-	int not = HasArg("not");
+	int notF = HasArg("not");
 	string flavor("ecmascript");
 	if(HasArg("flavor"))
 		flavor.assign(GetArgStr("flavor", false));
@@ -87,12 +87,12 @@ EXT_COMMAND(regsearch,
 	string command(GetUnnamedArgStr(1));
 
 
-	Out("Parameters - case: %i, flavor: %s, not: %i, pattern: %s, command: %s", lowcase, flavor.c_str(), not, pattern.c_str(), command.c_str()  );
+	Out("Parameters - case: %i, flavor: %s, not: %i, pattern: %s, command: %s", lowcase, flavor.c_str(), notF, pattern.c_str(), command.c_str()  );
 
 	
 
 	string cmd(Execute(command));
-	Out(regexsearch(cmd, pattern, not != 0, lowcase != 0, flavor).str().c_str());
+	Out(regexsearch(cmd, pattern, notF != 0, lowcase != 0, flavor).str().c_str());
 
 }
 

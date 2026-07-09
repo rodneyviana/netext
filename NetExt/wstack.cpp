@@ -54,7 +54,7 @@ EXT_COMMAND(wstack,
 
 		try
 		{
-			auto_ptr<StackObj> stacks(new StackObj());
+			std::unique_ptr<StackObj> stacks(new StackObj());
 			//stacks->Initialize();
 			//Out("Stack Start: %p\n", stacks->stackStart);
 			//Out("Stack End: %p\n", stacks->stackEnd);

@@ -71,6 +71,25 @@ CComPtr<NetExtShim::IMDRuntime> pRuntime;
 CComPtr<NetExtShim::IMDRuntimeInfo> pRuntimeInfo;
 CComPtr<NetExtShim::IMDHeap> pHeap;
 
+
+std::wstring ToWString(const CComBSTR& b)
+{
+	// b can be NULL; Length() will be 0 in that case
+	return std::wstring(static_cast<BSTR>(b), b.Length());
+}
+
+std::string localCW2A(LPCWSTR lpwstr)
+{
+	ATL::CW2A tmp(lpwstr);
+	return std::string(tmp);
+}
+
+std::wstring localCA2W(LPSTR lpstr)
+{
+	ATL::CA2W tmp(lpstr);
+	return std::wstring(tmp);
+}
+
 	std::string tickstotimespan(UINT64 Ticks)
 	{
 		// Number of 100ns ticks per time unit
@@ -179,9 +198,9 @@ CComPtr<NetExtShim::IMDHeap> pHeap;
 		if(FileTimeToSystemTime( &ft, &st ))
 		{
 			//st.wYear-= 1600; // starting year in .NET is 1/1/1600
-			GetDateFormat( LOCALE_USER_DEFAULT, DATE_SHORTDATE, &st, NULL,
+			GetDateFormatW( LOCALE_USER_DEFAULT, DATE_SHORTDATE, &st, NULL,
 							szLocalDate, 255 );
-			GetTimeFormat( LOCALE_USER_DEFAULT, 0, &st, NULL, szLocalTime, 255 );
+			GetTimeFormatW( LOCALE_USER_DEFAULT, 0, &st, NULL, szLocalTime, 255 );
 			//wsprintf( L"%s %s\n", szLocalDate, szLocalTime );
 			std::wstring dt=szLocalDate;
 			dt.append(L" ");
@@ -200,34 +219,34 @@ CComPtr<NetExtShim::IMDHeap> pHeap;
 
 	std::wstring formatnumber(UINT64 Number)
 	{
-		NUMBERFMT nf;
+		NUMBERFMTW nf;
 		nf.NumDigits = 0;
 		nf.Grouping = 3;
-		nf.lpThousandSep = L",";
-		nf.lpDecimalSep = L".";
+		nf.lpThousandSep = (wchar_t*)L",";
+		nf.lpDecimalSep = (wchar_t*)L".";
 		nf.NegativeOrder = false;
 		nf.LeadingZero = false;
 		wchar_t str[101], str1[101];
 		str1[0]='\0';
 		swprintf_s(str, 100, L"%I64u", Number);
 
-		if(GetNumberFormat(NULL, NULL, str, &nf, str1, 100) == 0)
+		if(GetNumberFormatW(NULL, NULL, str, &nf, str1, 100) == 0)
 			return L"#INVALID";
 		return str1;
 	};
 	std::wstring formatnumber(double Number)
 	{
-		NUMBERFMT nf;
+		NUMBERFMTW nf;
 		nf.NumDigits = 2;
 		nf.Grouping = 3;
-		nf.lpThousandSep = L",";
-		nf.lpDecimalSep = L".";
+		nf.lpThousandSep = (wchar_t*)L",";
+		nf.lpDecimalSep = (wchar_t*)L".";
 		nf.NegativeOrder = false;
 		nf.LeadingZero = false;
 		wchar_t str[101], str1[101];
 		swprintf_s(str, 100, L"%f", Number);
 		str1[0]='\0';
-		if(GetNumberFormat(NULL, NULL, str, &nf, str1, 100) == 0)
+		if(GetNumberFormatW(NULL, NULL, str, &nf, str1, 100) == 0)
 			return L"#INVALID";
 		return str1;
 	};
@@ -264,7 +283,7 @@ public:
 	static wstring GetFilePath()
 	{
 			WCHAR fileName[MAX_PATH];
-			if(::GetModuleFileName((HINSTANCE)&__ImageBase, fileName, MAX_PATH))
+			if(::GetModuleFileNameW((HINSTANCE)&__ImageBase, fileName, MAX_PATH))
 			{
 				wstring path(fileName);
 				size_t found = path.find_last_of(L"\\");
@@ -280,7 +299,7 @@ public:
 	static wstring GetExePath()
 	{
 			WCHAR fileName[MAX_PATH];
-			if(::GetModuleFileName(NULL, fileName, MAX_PATH))
+			if(::GetModuleFileNameW(NULL, fileName, MAX_PATH))
 			{
 				wstring path(fileName);
 				size_t found = path.find_last_of(L"\\");

@@ -6,7 +6,7 @@
 ============================================================================================================*/
 
 #ifndef _CLASSDEF_
-
+#include "NetExt.h"
 #include "Indexer.h"
 #include "SpecialCases.h"
 #include <boost/algorithm/string.hpp>
@@ -20,6 +20,7 @@
 
 using namespace std;
 using namespace boost::spirit;
+using namespace boost::spirit::classic;
 #define EVAL_DEBUG 0
 
 #define mycout cout
@@ -70,7 +71,7 @@ namespace CALC
 	{
 		fsqrt,
 		fint,
-		fmax,
+		fmaxm,
 		fcontains,
 		faddr,
 		fitems,
@@ -421,7 +422,7 @@ namespace CALC
 		st.pop();
 		SVAL s=st.top();
 		st.pop();
-		do_int(g_ExtInstancePtr->MatchPattern(CW2A(s.strValue.c_str()), CW2A(pat.strValue.c_str()), false));
+		do_int(g_ExtInstancePtr->MatchPattern(localCW2A(s.strValue.c_str()).c_str(), localCW2A(pat.strValue.c_str()).c_str(), false));
 	}
 	void do_todbgvar() { SVAL v=st.top(); st.pop(); SVAL dv=st.top(); st.pop(); do_int(SpecialCases::SetDbgVar(dv.Value.i32, v));}
 	void do_fromdbgvar() { SVAL v=st.top(); st.pop(); st.push(SpecialCases::GetDbgVar(v.Value.i32)); }
@@ -586,7 +587,7 @@ namespace CALC
 		std::vector<FieldStore> fields = currObj->GetFieldsByName("*");
 		for(int i=0; i<fields.size();i++)
 		{
-			if(g_ExtInstancePtr->MatchPattern(CW2A(fields[i].mtName.c_str()), CW2A(v.strValue.size() == 0 ? v.prettyPrint.c_str() : v.strValue.c_str()), false))
+			if(g_ExtInstancePtr->MatchPattern(localCW2A(fields[i].mtName.c_str()).c_str(), localCW2A(v.strValue.size() == 0 ? v.prettyPrint.c_str() : v.strValue.c_str()).c_str(), false))
 			{
 				do_int(1);
 				return;
@@ -809,7 +810,7 @@ namespace CALC
 	{
 		SVAL f=st.top(); st.pop();
 		SVAL a=st.top(); st.pop();
-		f.fieldName = CW2A(a.strValue.c_str());
+		f.fieldName = localCW2A(a.strValue.c_str());
 		st.push(f);
 	}
 
@@ -1107,7 +1108,7 @@ namespace CALC
 			v.MakeInvalid();
 			st.push(v);
 		}
-		wstring str1 = str;
+		wstring str1 = ToWString(str);
 		do_stdstring(str1);
 
 	}
@@ -1171,7 +1172,7 @@ namespace CALC
 				assert_param(1);
 				do_toint();
 				break;
-			case fmax:
+			case fmaxm:
 				assert_param(2);
 				do_max();
 				break;
@@ -1512,19 +1513,19 @@ using namespace CALC;
 //
 ////////////////////////////////////////////////////////////////////////////
 
-struct calculator : public grammar<calculator>
+struct calculator : public classic::grammar<calculator>
 {
     template <typename ScannerT>
     struct definition
     {
         definition(calculator const& self)
         {
-			uint_parser<UINT64, 16> const
-			hex64_p   = uint_parser<UINT64, 16>();
+			classic::uint_parser<UINT64, 16> const
+			hex64_p   = classic::uint_parser<UINT64, 16>();
 			funcsym.add
 				("$sqrt", fsqrt)
 				("$int", fint)
-				("$max", fmax)
+				("$max", fmaxm)
 				("$contains", fcontains)
 				("$addr", faddr)
 				("$items",fitems)
@@ -1771,7 +1772,7 @@ void EXT_CLASS::wfrom_internal(FromFlags flags)
 		Out("Parameter Error: You cannot use -obj and -array together\n");
 	}
 
-	auto_ptr<Heap> heap(new Heap());
+	std::unique_ptr<Heap> heap(new Heap());
 	if(!heap->IsValid())
 	{
 		Out("Error: Unable to get heap info\n");

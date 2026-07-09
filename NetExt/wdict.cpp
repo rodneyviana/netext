@@ -844,7 +844,7 @@ EXT_COMMAND(whttp,
 				if(printIt && flags.frunning && (fieldV["_response._completed"].Value.b || fieldV["_finishPipelineRequestCalled"].Value.b)) printIt = false;
 				if(printIt && flags.fstatus && (fieldV["_response._statusCode"].Value.i32 != flags.status)) printIt = false;
 				if(printIt && flags.fnotstatus && (fieldV["_response._statusCode"].Value.i32 == flags.status)) printIt = false;
-				if(printIt && flags.fverb && !g_ExtInstancePtr->MatchPattern(flags.verb.c_str(), CW2A(fieldV["_request._httpMethod"].strValue.c_str())))
+				if(printIt && flags.fverb && !g_ExtInstancePtr->MatchPattern(flags.verb.c_str(), localCW2A(fieldV["_request._httpMethod"].strValue.c_str()).c_str()))
 					printIt = false;
 				
 			}
