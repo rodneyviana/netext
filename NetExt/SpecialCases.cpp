@@ -1254,7 +1254,7 @@ void DumpFields(CLRDATA_ADDRESS Address, std::vector<std::string> Fields, CLRDAT
 		ObjDetail tempObj;
 		vector<string> fieldsDepth;
 		bool p=boost::spirit::qi::parse(Fields[s].begin(), Fields[s].end(),
-			+(boost::spirit::qi::alnum | '_' | ':' | '$' | '[' | ']' | '*' | '?') % '.' ,
+			+boost::spirit::qi::char_("a-zA-Z0-9_:$[]*?") % '.' ,
 			fieldsDepth);
 		if(fieldsDepth.size() <= 1)
 		{

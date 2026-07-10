@@ -55,7 +55,7 @@ namespace sqlparser
 	void Split(const std::string& Str, std::vector<std::string>& Splitted)
 	{
 		bool p=boost::spirit::qi::parse(Str.begin(), Str.end(),
-			+(boost::spirit::qi::alnum | '_' | ':' | '$' | '[' | ']' | '*' | '?') % '.' ,
+			+boost::spirit::qi::char_("a-zA-Z0-9_:$[]*?") % '.' ,
 			Splitted);
 	}
 }

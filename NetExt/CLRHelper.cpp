@@ -1023,7 +1023,7 @@ void FieldsFill()
 void VectorSplit(std::string Str, std::vector<string> &Vec)
 {
 	bool p=boost::spirit::qi::parse(Str.begin(), Str.end(),
-		+(boost::spirit::qi::alnum | '_' | ':' | '.' | '[' | ']' | '*' | '?') % ',',
+		+boost::spirit::qi::char_("a-zA-Z0-9_:.[]*?") % ',',
 		Vec);
 }
 
@@ -1033,7 +1033,7 @@ std::wstring ObjDetail::GetFieldValueByName(std::string FieldName, ObjDetail& Ob
 {
 	vector<string> fieldsDepth;
 	bool p=boost::spirit::qi::parse(FieldName.begin(), FieldName.end(),
-		+(boost::spirit::qi::alnum | '_' | ':' | '$' | '[' | ']' | '*' | '?') % '.' ,
+		+boost::spirit::qi::char_("a-zA-Z0-9_:$[]*?") % '.' ,
 		fieldsDepth);
 	if(!p)
 		return L"<<Invalid>>";
