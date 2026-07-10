@@ -388,6 +388,36 @@ namespace Microsoft.Diagnostics.Runtime.Desktop
                         segment = GetSegmentData(segment.Next);
                     }
                 }
+
+                // With GC regions (default since .NET 7) gen0 and gen1 have their own region chains that
+                // are not reachable from the gen2 chain walked above (in segment-mode GC gen0/gen1 live
+                // inside the ephemeral segment of that chain, and these two heads are equal - detected here).
+                if (heaps[i].Gen0StartSegment != 0 && heaps[i].Gen0StartSegment != heaps[i].Gen1StartSegment)
+                {
+                    ulong[] regionChains = { heaps[i].Gen1StartSegment, heaps[i].Gen0StartSegment };
+                    foreach (ulong chainHead in regionChains)
+                    {
+                        if (!addresses.Add(chainHead))
+                            continue;
+
+                        segment = GetSegmentData(chainHead);
+                        while (segment != null)
+                        {
+                            yield return new MemoryRegion(this, segment.Start, segment.Committed - segment.Start, ClrMemoryRegionType.GCSegment, (uint)i, GCSegmentType.Ephemeral);
+
+                            if (segment.Committed <= segment.Reserved)
+                                yield return new MemoryRegion(this, segment.Committed, segment.Reserved - segment.Committed, ClrMemoryRegionType.ReservedGCSegment, (uint)i, GCSegmentType.Ephemeral);
+
+                            if (segment.Address == segment.Next || segment.Address == 0)
+                                break;
+
+                            if (!addresses.Add(segment.Next))
+                                break;
+
+                            segment = GetSegmentData(segment.Next);
+                        }
+                    }
+                }
             }
 
             // Enumerate handle table regions.
@@ -1256,16 +1286,32 @@ namespace Microsoft.Diagnostics.Runtime.Desktop
         internal ulong Gen2Start { get { return ActualHeap.Gen2Start; } }
         internal ulong FirstLargeSegment { get { return ActualHeap.FirstLargeHeapSegment; } }
         internal ulong FirstSegment { get { return ActualHeap.FirstHeapSegment; } }
+        internal ulong Gen0StartSegment { get { return ActualHeap.Gen0StartSegment; } }
+        internal ulong Gen1StartSegment { get { return ActualHeap.Gen1StartSegment; } }
         internal ulong FQStart { get { return ActualHeap.FQAllObjectsStart; } }
         internal ulong FQStop { get { return ActualHeap.FQAllObjectsStop; } }
         internal ulong FQLiveStart { get { return ActualHeap.FQRootsStart; } }
         internal ulong FQLiveStop { get { return ActualHeap.FQRootsEnd; } }
 
-        internal SubHeap(IHeapDetails heap, int heapNum, Dictionary<ulong,ulong> allocPointers)
+        /// <summary>
+        /// Head of the POH (pinned object heap, gen4) region chain, or 0 when unavailable. The classic
+        /// DacpGcHeapDetails struct is frozen at 4 generations for compat, so this comes separately via
+        /// ISOSDacInterface8 (only present on .NET 5+ DACs).
+        /// </summary>
+        internal ulong Gen4StartSegment { get; private set; }
+
+        /// <summary>
+        /// True when this heap uses GC regions (default since .NET 7): each generation has its own
+        /// region chain, rather than gen0/gen1 living inside the gen2 chain's ephemeral segment.
+        /// </summary>
+        internal bool HasRegions { get { return Gen0StartSegment != 0 && Gen0StartSegment != Gen1StartSegment; } }
+
+        internal SubHeap(IHeapDetails heap, int heapNum, Dictionary<ulong,ulong> allocPointers, ulong gen4StartSegment = 0)
         {
             ActualHeap = heap;
             HeapNum = heapNum;
             AllocPointers = allocPointers;
+            Gen4StartSegment = gen4StartSegment;
         }
     }
 
@@ -1358,6 +1404,11 @@ namespace Microsoft.Diagnostics.Runtime.Desktop
     {
         ulong FirstHeapSegment { get; }
         ulong FirstLargeHeapSegment { get; }
+        // Heads of the gen0/gen1 region chains. In segment-mode GC both point at the ephemeral segment
+        // (gen0 and gen1 live inside it), which is how regions mode is detected: with GC regions
+        // (default since .NET 7) each generation has its OWN chain and these differ from each other.
+        ulong Gen0StartSegment { get; }
+        ulong Gen1StartSegment { get; }
         ulong EphemeralSegment { get; }
         ulong EphemeralEnd { get; }
         ulong EphemeralAllocContextPtr { get; }

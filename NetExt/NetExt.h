@@ -240,6 +240,7 @@ long IsManagedInterrupt();
 
 extern bool NET2;
 extern bool coreCLR;
+extern bool isLinuxTarget;
 HRESULT INIT_API();
 
 

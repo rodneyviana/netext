@@ -881,30 +881,27 @@ namespace Microsoft.Diagnostics.Runtime
             SubHeap[] heaps;
             if (runtime.GetHeaps(out heaps))
             {
+                // With GC regions (default since .NET 7) each generation has its OWN chain of regions;
+                // the classic walk of just the gen2 + LOH chains silently drops every gen0/gen1/POH
+                // region (on a real dump that was 27MB of 29MB of objects). The seen-set guards against
+                // cycles and against chains that share a tail.
+                HashSet<ulong> seen = new HashSet<ulong>();
                 var segments = new List<HeapSegment>();
                 foreach (var heap in heaps)
                 {
                     if (heap != null)
                     {
-                        ISegmentData seg = runtime.GetSegmentData(heap.FirstLargeSegment);
-                        while (seg != null)
+                        bool regions = heap.HasRegions;
+                        AddSegments(runtime, segments, heap, heap.FirstLargeSegment, true, regions ? 3 : -1, seen);
+                        AddSegments(runtime, segments, heap, heap.FirstSegment, false, regions ? 2 : -1, seen);
+                        if (regions)
                         {
-                            var segment = new HeapSegment(runtime, seg, heap, true, this);
-                            segments.Add(segment);
-
-                            UpdateSegmentData(segment);
-                            seg = runtime.GetSegmentData(seg.Next);
+                            AddSegments(runtime, segments, heap, heap.Gen1StartSegment, false, 1, seen);
+                            AddSegments(runtime, segments, heap, heap.Gen0StartSegment, false, 0, seen);
                         }
 
-                        seg = runtime.GetSegmentData(heap.FirstSegment);
-                        while (seg != null)
-                        {
-                            var segment = new HeapSegment(runtime, seg, heap, false, this);
-                            segments.Add(segment);
-
-                            UpdateSegmentData(segment);
-                            seg = runtime.GetSegmentData(seg.Next);
-                        }
+                        // POH (gen4) exists on .NET 5+ regardless of regions; 0 when the DAC can't report it.
+                        AddSegments(runtime, segments, heap, heap.Gen4StartSegment, true, 4, seen);
                     }
                 }
 
@@ -913,6 +910,25 @@ namespace Microsoft.Diagnostics.Runtime
             else
             {
                 _segments = new ClrSegment[0];
+            }
+        }
+
+        private void AddSegments(RuntimeBase runtime, List<HeapSegment> segments, SubHeap heap, ulong address, bool large, int regionGeneration, HashSet<ulong> seen)
+        {
+            if (address == 0 || !seen.Add(address))
+                return;
+
+            ISegmentData seg = runtime.GetSegmentData(address);
+            while (seg != null)
+            {
+                var segment = new HeapSegment(runtime, seg, heap, large, this, regionGeneration);
+                segments.Add(segment);
+
+                UpdateSegmentData(segment);
+                if (seg.Next == 0 || !seen.Add(seg.Next))
+                    break;
+
+                seg = runtime.GetSegmentData(seg.Next);
             }
         }
 
@@ -1080,10 +1096,17 @@ namespace Microsoft.Diagnostics.Runtime
         public override ulong ReservedEnd { get { return _segment.Reserved; } }
         public override ulong CommittedEnd { get { return _segment.Committed; } }
 
+        // Boundary layout: gen0 = [Gen0Start, End), gen1 = [Gen1Start, Gen0Start), gen2 = [Start, Gen1Start).
+        // With GC regions a segment belongs ENTIRELY to one generation (_regionGeneration >= 0) - the
+        // ephemeral gen-splitting below only applies to segment-mode GC, where gen0/gen1/gen2 share the
+        // ephemeral segment. LOH (3) and POH (4) regions fall out as all-gen2 ranges with IsLarge set.
         public override ulong Gen0Start
         {
             get
             {
+                if (_regionGeneration >= 0)
+                    return _regionGeneration == 0 ? Start : End;
+
                 if (IsEphemeral)
                     return _subHeap.Gen0Start;
                 else
@@ -1095,6 +1118,9 @@ namespace Microsoft.Diagnostics.Runtime
         {
             get
             {
+                if (_regionGeneration >= 0)
+                    return _regionGeneration <= 1 ? Start : End;
+
                 if (IsEphemeral)
                     return _subHeap.Gen1Start;
                 else
@@ -1261,16 +1287,20 @@ namespace Microsoft.Diagnostics.Runtime
         }
 
         public override bool IsEphemeral { get { return _segment.Address == _subHeap.EphemeralSegment; ; } }
-        internal HeapSegment(RuntimeBase clr, ISegmentData segment, SubHeap subHeap, bool large, HeapBase heap)
+        internal HeapSegment(RuntimeBase clr, ISegmentData segment, SubHeap subHeap, bool large, HeapBase heap, int regionGeneration = -1)
         {
             _clr = clr;
             _large = large;
             _segment = segment;
             _heap = heap;
             _subHeap = subHeap;
+            _regionGeneration = regionGeneration;
         }
 
         private bool _large;
+        // The generation this GC region belongs to (0-4), or -1 for segment-mode GC where the
+        // generation boundaries are derived from the subheap's ephemeral pointers instead.
+        private int _regionGeneration;
         private RuntimeBase _clr;
         private ISegmentData _segment;
         private SubHeap _subHeap;

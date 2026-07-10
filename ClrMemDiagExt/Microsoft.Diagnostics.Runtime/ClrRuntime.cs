@@ -899,6 +899,15 @@ namespace Microsoft.Diagnostics.Runtime
             }
         }
 
+        /// <summary>
+        /// Returns the head of the POH (pinned object heap, gen4) region chain for the given heap, or 0
+        /// when the DAC predates ISOSDacInterface8 (pre-.NET 5). heapAddress is 0 for workstation GC.
+        /// </summary>
+        internal virtual ulong GetPOHStartSegment(ulong heapAddress)
+        {
+            return 0;
+        }
+
         internal bool GetHeaps(out SubHeap[] heaps)
         {
             heaps = new SubHeap[HeapCount];
@@ -916,7 +925,7 @@ namespace Microsoft.Diagnostics.Runtime
                     if (heap == null)
                         continue;
 
-                    heaps[i] = new SubHeap(heap, i, allocContexts);
+                    heaps[i] = new SubHeap(heap, i, allocContexts, GetPOHStartSegment(heapList[i]));
                     if (heap.EphemeralAllocContextPtr != 0)
                         heaps[i].AllocPointers[heap.EphemeralAllocContextPtr] = heap.EphemeralAllocContextLimit;
 
@@ -931,7 +940,7 @@ namespace Microsoft.Diagnostics.Runtime
                 if (heap == null)
                     return false;
 
-                heaps[0] = new SubHeap(heap, 0, allocContexts);
+                heaps[0] = new SubHeap(heap, 0, allocContexts, GetPOHStartSegment(0));
                 heaps[0].AllocPointers[heap.EphemeralAllocContextPtr] = heap.EphemeralAllocContextLimit;
 
                 return true;

@@ -98,21 +98,71 @@ vector<ULONG> StackObj::IsInStack(CLRDATA_ADDRESS addr)
 
 }
 
+// Returns the current thread's stack range as [StackLimit, StackBase) (low, high). On Windows targets
+// this comes from the TEB. Linux targets have no TEB (dbgeng reports 0), so the bounds are derived from
+// the stack pointer instead: the VMA containing RSP is the thread's stack mapping.
+static bool GetStackBounds(CLRDATA_ADDRESS& StackBase, CLRDATA_ADDRESS& StackLimit)
+{
+	StackBase = StackLimit = 0;
+
+	if(!isLinuxTarget)
+	{
+		NT_TIB teb;
+		ZeroMemory(&teb, sizeof(teb));
+		ULONG64 tebAddr = 0;
+
+		if(SUCCEEDED(g_ExtInstancePtr->m_System->GetCurrentThreadTeb(&tebAddr)) && tebAddr != 0)
+		{
+			ExtRemoteData rteb(tebAddr, sizeof(teb));
+			rteb.ReadBuffer(&teb, sizeof(teb));
+			StackBase = (CLRDATA_ADDRESS)teb.StackBase;
+			StackLimit = (CLRDATA_ADDRESS)teb.StackLimit;
+			if(StackBase != 0 && StackLimit < StackBase)
+				return true;
+		}
+	}
+
+	// No (usable) TEB: start from the stack pointer. Walking from RSP up to the top of its memory
+	// region covers the live portion of the stack (below RSP is dead space on a downward-growing stack).
+	ULONG64 rsp = 0;
+	if(FAILED(g_ExtInstancePtr->m_Registers->GetStackOffset(&rsp)) || rsp == 0)
+		return false;
+
+	MEMORY_BASIC_INFORMATION64 mbi;
+	ZeroMemory(&mbi, sizeof(mbi));
+	if(SUCCEEDED(g_ExtInstancePtr->m_Data4->QueryVirtual(rsp, &mbi)) && mbi.RegionSize != 0)
+	{
+		StackLimit = (CLRDATA_ADDRESS)(rsp & ~0xFULL);
+		StackBase = (CLRDATA_ADDRESS)(mbi.BaseAddress + mbi.RegionSize);
+		if(StackLimit < StackBase)
+			return true;
+	}
+
+	// QueryVirtual may not be answerable for this dump format: probe page-by-page upward from RSP
+	// until memory stops being readable (capped at the 8MB default Linux stack rlimit).
+	const ULONG64 pageSize = 0x1000;
+	const ULONG64 maxScan = 0x800000;
+	ULONG64 page = rsp & ~(pageSize - 1);
+	ULONG64 top = page;
+	UCHAR probe;
+	ULONG cb = 0;
+	while(top - page < maxScan &&
+	      SUCCEEDED(g_ExtInstancePtr->m_Data->ReadVirtual(top, &probe, sizeof(probe), &cb)) && cb == sizeof(probe))
+	{
+		top += pageSize;
+	}
+
+	if(top == page)
+		return false;
+
+	StackLimit = (CLRDATA_ADDRESS)(rsp & ~0xFULL);
+	StackBase = (CLRDATA_ADDRESS)top;
+	return true;
+}
+
 void StackObj::DumpStackObject(bool CacheOnly)
 {
-	NT_TIB teb;
-	ZeroMemory(&teb, sizeof(teb));
-	ULONG64 tebAddr=0;
-
-	HRESULT status = g_ExtInstancePtr->m_System->GetCurrentThreadTeb(&tebAddr);
-
-	if(SUCCEEDED(status))
-	{
-		ExtRemoteData rteb(tebAddr, sizeof(teb));
-		rteb.ReadBuffer(&teb, sizeof(teb));
-		stackStart = (CLRDATA_ADDRESS)teb.StackBase;
-		stackEnd = (CLRDATA_ADDRESS)teb.StackLimit;
-	} else
+	if(!GetStackBounds(stackStart, stackEnd))
 	{
 		if(!CacheOnly) g_ExtInstancePtr->Err("Unable to get stack limits\n");
 		return;

@@ -299,6 +299,7 @@
     </Compile>
     <Compile Include="Microsoft.Diagnostics.Runtime\Utilities\command.cs" />
     <Compile Include="Microsoft.Diagnostics.Runtime\Utilities\DumpReader.cs" />
+    <Compile Include="Microsoft.Diagnostics.Runtime\Utilities\ElfBuildId.cs" />
     <Compile Include="Microsoft.Diagnostics.Runtime\Utilities\PDB\BitAccess.cs" />
     <Compile Include="Microsoft.Diagnostics.Runtime\Utilities\PDB\BitSet.cs" />
     <Compile Include="Microsoft.Diagnostics.Runtime\Utilities\PDB\CvInfo.cs" />

@@ -2043,6 +2043,16 @@ namespace Microsoft.Diagnostics.Runtime.Desktop
             get { return generation_table3.StartSegment; }
         }
 
+        public ulong Gen0StartSegment
+        {
+            get { return generation_table0.StartSegment; }
+        }
+
+        public ulong Gen1StartSegment
+        {
+            get { return generation_table1.StartSegment; }
+        }
+
         public ulong EphemeralSegment
         {
             get { return ephemeral_heap_segment; }
@@ -2584,6 +2594,16 @@ namespace Microsoft.Diagnostics.Runtime.Desktop
         public ulong FirstLargeHeapSegment
         {
             get { return generation_table3.StartSegment; }
+        }
+
+        public ulong Gen0StartSegment
+        {
+            get { return generation_table0.StartSegment; }
+        }
+
+        public ulong Gen1StartSegment
+        {
+            get { return generation_table1.StartSegment; }
         }
 
         public ulong EphemeralSegment

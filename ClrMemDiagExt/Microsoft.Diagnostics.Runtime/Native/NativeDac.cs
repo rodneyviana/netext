@@ -400,6 +400,17 @@ namespace Microsoft.Diagnostics.Runtime.Native
             get { return generation_table3.StartSegment; }
         }
 
+        // .NET Native never uses GC regions; reporting gen0 == gen1 keeps SubHeap.HasRegions false.
+        public ulong Gen0StartSegment
+        {
+            get { return generation_table0.StartSegment; }
+        }
+
+        public ulong Gen1StartSegment
+        {
+            get { return generation_table1.StartSegment; }
+        }
+
         public ulong EphemeralSegment
         {
             get { return ephemeral_heap_segment; }

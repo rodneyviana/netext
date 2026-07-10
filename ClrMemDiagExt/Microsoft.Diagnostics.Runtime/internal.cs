@@ -702,6 +702,13 @@ namespace Microsoft.Diagnostics.Runtime
                                        [In, MarshalAs(UnmanagedType.Interface)] IDacDataTarget data,
                                        [Out, MarshalAs(UnmanagedType.IUnknown)] out object ppObj);
 
+        // Cross-OS/cDAC binaries are built against CoreCLR's PAL rather than the plain Win32 CRT, so
+        // their real init logic lives behind a PAL_InitializeDLL export instead of running automatically
+        // via the normal Windows loader's implicit DllMain call. Classic Windows-only mscordacwks.dll/
+        // mscordaccore.dll never export this, so this delegate is simply unused for them.
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        internal delegate int DllMainDelegate(IntPtr hModule, int reason, IntPtr reserved);
+
 
         [DllImport("kernel32.dll")]
         internal static extern IntPtr GetProcAddress(IntPtr hModule, string procedureName);

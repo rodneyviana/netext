@@ -346,4 +346,21 @@ namespace Microsoft.Diagnostics.Runtime
                     IntPtr outBufferSize,
                     out IntPtr outBuffer);
     }
+
+    // Additive QueryInterface-only surface a cross-OS/cDAC data-access module may ask for on top of
+    // IDacDataTarget. Existing DACs (mscordacwks.dll/mscordaccore.dll) never query for these, so
+    // implementing them is backward compatible: QueryInterface simply fails for anything that doesn't ask.
+    [ComImport, InterfaceType(ComInterfaceType.InterfaceIsIUnknown), Guid("b760bf44-9377-4597-8be7-58083bdc5146")]
+    internal interface ICLRRuntimeLocator
+    {
+        [PreserveSig]
+        int GetRuntimeBase(out ulong address);
+    }
+
+    [ComImport, InterfaceType(ComInterfaceType.InterfaceIsIUnknown), Guid("17d5b8c6-34a9-407f-af4f-a930201d4e02")]
+    internal interface ICLRContractLocator
+    {
+        [PreserveSig]
+        int GetContractDescriptor(out ulong address);
+    }
 }
