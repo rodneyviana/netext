@@ -277,6 +277,41 @@ namespace Microsoft.Diagnostics.Runtime.Desktop
             return data;
         }
 
+        internal override ulong GetPOHStartSegment(ulong heapAddress)
+        {
+            // The classic DacpGcHeapDetails struct is frozen at 4 generations for compat, so the POH
+            // (gen4, .NET 5+) chain head is only reachable through ISOSDacInterface8's variable-length
+            // generation table. Older DACs fail the QueryInterface and we report "no POH".
+            ISOSDac8 sos8 = _sos as ISOSDac8;
+            if (sos8 == null)
+                return 0;
+
+            try
+            {
+                int needed;
+                int hr = heapAddress != 0
+                    ? sos8.GetGenerationTableSvr(heapAddress, 0, null, out needed)
+                    : sos8.GetGenerationTable(0, null, out needed);
+
+                if (hr < 0 || needed < 5)
+                    return 0;
+
+                V4GenerationData[] table = new V4GenerationData[needed];
+                hr = heapAddress != 0
+                    ? sos8.GetGenerationTableSvr(heapAddress, needed, table, out needed)
+                    : sos8.GetGenerationTable(needed, table, out needed);
+
+                if (hr < 0)
+                    return 0;
+
+                return table[4].StartSegment;
+            }
+            catch
+            {
+                return 0;
+            }
+        }
+
         internal override ulong[] GetServerHeapList()
         {
             uint needed;
@@ -1011,6 +1046,32 @@ namespace Microsoft.Diagnostics.Runtime.Desktop
 
     [UnmanagedFunctionPointer(CallingConvention.StdCall)]
     internal delegate void ModuleMapTraverse(uint index, ulong methodTable, IntPtr token);
+
+    // ISOSDacInterface8 (.NET 5+): exposes the variable-length generation table, which is the only way
+    // to reach the POH (gen4) region chain - the classic DacpGcHeapDetails struct is frozen at 4
+    // generations for compat. Vtable order mirrors dacprivate.h / modern ClrMD's SOSDac8.
+    [ComImport, InterfaceType(ComInterfaceType.InterfaceIsIUnknown), Guid("c12f35a9-e55c-4520-a894-b3dc5165dfce")]
+    internal interface ISOSDac8
+    {
+        [PreserveSig]
+        int GetNumberGenerations(out int pGenerations);
+
+        // WKS
+        [PreserveSig]
+        int GetGenerationTable(int cGenerations, [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 0)] V4GenerationData[] pGenerationData, out int pNeeded);
+        [PreserveSig]
+        int GetFinalizationFillPointers(int cFillPointers, [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 0)] ulong[] pFillPointers, out int pNeeded);
+
+        // SVR
+        [PreserveSig]
+        int GetGenerationTableSvr(ulong heapAddr, int cGenerations, [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 1)] V4GenerationData[] pGenerationData, out int pNeeded);
+        [PreserveSig]
+        int GetFinalizationFillPointersSvr(ulong heapAddr, int cFillPointers, [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 1)] ulong[] pFillPointers, out int pNeeded);
+
+        [PreserveSig]
+        int GetAssemblyLoadContext(ulong methodTable, out ulong assemblyLoadContext);
+    }
+
     [ComImport, InterfaceType(ComInterfaceType.InterfaceIsIUnknown), Guid("436f00f2-b42a-4b9f-870c-e73db66ae930")]
 
     internal interface ISOSDac

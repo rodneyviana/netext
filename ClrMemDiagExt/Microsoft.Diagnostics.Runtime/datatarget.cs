@@ -132,6 +132,18 @@ namespace Microsoft.Diagnostics.Runtime
             if (dac != null && !File.Exists(dac))
                 dac = null;
 
+            // An ELF/Mach-O target has no PE timestamp+filesize to key the classic lookup on, so try the
+            // build-id path first when we have one (Linux/macOS targets only - BuildId is null otherwise).
+            // The server archives the cross-OS DAC under its plain name ("mscordaccore.dll"), NOT under the
+            // version-decorated request name in DacInfo.FileName - the version there is all zeros for an
+            // ELF module anyway (no PE version resource to build it from). Confirmed against WinDbg's own
+            // cache layout: mscordaccore.dll\elf-buildid-coreclr-<hash>\mscordaccore.dll
+            if (dac == null && !string.IsNullOrEmpty(DacInfo.BuildId))
+            {
+                string dacSimpleName = DacInfo.GetDacFileName(Flavor, DacInfo.TargetArchitecture);
+                dac = _dataTarget.SymbolLocator.FindBinaryByBuildId(dacSimpleName, "coreclr", DacInfo.BuildId);
+            }
+
             if (dac == null)
                 dac = _dataTarget.SymbolLocator.FindBinary(DacInfo);
 
@@ -609,6 +621,13 @@ namespace Microsoft.Diagnostics.Runtime
         /// The architecture (x86 or amd64) being targeted
         /// </summary>
         public Architecture TargetArchitecture { get; set; }
+
+        /// <summary>
+        /// The ELF/Mach-O build-id of the runtime module, hex-encoded (e.g. "e93bca00aebe0940591ad329c637d2f0940d2f30").
+        /// Only set for Linux/macOS targets - there is no PE timestamp+filesize to match a DAC against for those,
+        /// so this is the key used to locate the correct cross-OS DAC instead. Null for Windows/Desktop targets.
+        /// </summary>
+        public string BuildId { get; set; }
 
         /// <summary>
         /// Constructs a DacInfo object with the appropriate properties initialized
@@ -1090,9 +1109,11 @@ namespace Microsoft.Diagnostics.Runtime
             List<ClrInfo> versions = new List<ClrInfo>();
             foreach (ModuleInfo module in EnumerateModules())
             {
+                // Linux/macOS targets load libcoreclr.so/.dylib; GetFileNameWithoutExtension strips only
+                // the last extension, so both collapse to "libcoreclr" here (the "lib" prefix stays).
                 string clrName = Path.GetFileNameWithoutExtension(module.FileName).ToLower();
 
-                if (clrName != "clr" && clrName != "mscorwks" && clrName != "coreclr" && clrName != "mrt100_app")
+                if (clrName != "clr" && clrName != "mscorwks" && clrName != "coreclr" && clrName != "mrt100_app" && clrName != "libcoreclr")
                     continue;
 
                 ClrFlavor flavor;
@@ -1103,6 +1124,7 @@ namespace Microsoft.Diagnostics.Runtime
                         break;
 
                     case "coreclr":
+                    case "libcoreclr":
                         flavor = ClrFlavor.Core;
                         break;
 
@@ -1115,6 +1137,15 @@ namespace Microsoft.Diagnostics.Runtime
                 if (!File.Exists(dacLocation) || !NativeMethods.IsEqualFileVersion(dacLocation, module.Version))
                     dacLocation = null;
 
+                // An ELF module has no PE timestamp+filesize to key a DAC lookup on (module.Version below
+                // comes back empty for it too - there is no PE version resource to read). The build-id is
+                // the real match key for these targets, mirroring what modern ClrMD/WinDbg use (confirmed
+                // live: WinDbg cached the cross-OS DAC for this exact dump under "elf-buildid-coreclr-<hash>").
+                string buildId = null;
+                byte[] buildIdBytes;
+                if (ElfBuildId.TryGetBuildId(_dataReader, module.ImageBase, out buildIdBytes))
+                    buildId = ElfBuildId.ToHexString(buildIdBytes);
+
                 VersionInfo version = module.Version;
                 string dacAgnosticName = DacInfo.GetDacRequestFileName(flavor, Architecture, Architecture, version);
                 string dacFileName = DacInfo.GetDacRequestFileName(flavor, IntPtr.Size == 4 ? Architecture.X86 : Architecture.Amd64, IntPtr.Size == 4 ? Architecture.X86 : Architecture.Amd64, version);
@@ -1124,7 +1155,8 @@ namespace Microsoft.Diagnostics.Runtime
                     FileSize = module.FileSize,
                     TimeStamp = module.TimeStamp,
                     FileName = dacFileName,
-                    Version = module.Version
+                    Version = module.Version,
+                    BuildId = buildId
                 };
 
                 versions.Add(new ClrInfo(this, flavor, module, dacInfo, dacLocation));
@@ -1185,6 +1217,24 @@ namespace Microsoft.Diagnostics.Runtime
             if (_library == IntPtr.Zero)
                 throw new ClrDiagnosticsException("Failed to load dac: " + dacDll);
 
+            // Cross-OS/cDAC binaries (a Windows-hosted mscordaccore built against Linux/macOS target
+            // layout, or mscordaccore_universal) are PAL-based and need their PAL bootstrapped by hand
+            // via a manual DllMain(DLL_PROCESS_ATTACH) call before CLRDataCreateInstance is safe to use.
+            // Classic Windows-only DACs never export PAL_InitializeDLL, so this is a no-op for them.
+            IntPtr palInitAddr = NativeMethods.GetProcAddress(_library, "DAC_PAL_InitializeDLL");
+            if (palInitAddr == IntPtr.Zero)
+                palInitAddr = NativeMethods.GetProcAddress(_library, "PAL_InitializeDLL");
+
+            if (palInitAddr != IntPtr.Zero)
+            {
+                IntPtr dllMainAddr = NativeMethods.GetProcAddress(_library, "DllMain");
+                if (dllMainAddr == IntPtr.Zero)
+                    throw new ClrDiagnosticsException("Failed to obtain dac DllMain");
+
+                NativeMethods.DllMainDelegate dllMain = (NativeMethods.DllMainDelegate)Marshal.GetDelegateForFunctionPointer(dllMainAddr, typeof(NativeMethods.DllMainDelegate));
+                dllMain(_library, /*DLL_PROCESS_ATTACH*/ 1, IntPtr.Zero);
+            }
+
             IntPtr addr = NativeMethods.GetProcAddress(_library, "CLRDataCreateInstance");
             _dacDataTarget = new DacDataTarget(dataTarget);
 
@@ -1219,7 +1269,7 @@ namespace Microsoft.Diagnostics.Runtime
         }
     }
 
-    internal class DacDataTarget : IDacDataTarget, IMetadataLocator, ICorDebug.ICorDebugDataTarget
+    internal class DacDataTarget : IDacDataTarget, IMetadataLocator, ICorDebug.ICorDebugDataTarget, ICLRRuntimeLocator, ICLRContractLocator
     {
         private DataTargetImpl _dataTarget;
         private IDataReader _dataReader;
@@ -1231,6 +1281,31 @@ namespace Microsoft.Diagnostics.Runtime
             _dataReader = _dataTarget.DataReader;
             _modules = dataTarget.EnumerateModules().ToArray();
             Array.Sort(_modules, delegate (ModuleInfo a, ModuleInfo b) { return a.ImageBase.CompareTo(b.ImageBase); });
+        }
+
+        // Only asked for by a cross-OS/cDAC data-access module (see ICLRRuntimeLocator/ICLRContractLocator
+        // above); classic per-version DACs never QueryInterface for these.
+        public int GetRuntimeBase(out ulong address)
+        {
+            ModuleInfo runtimeModule = _modules.FirstOrDefault(m => m.IsRuntime);
+            address = runtimeModule?.ImageBase ?? 0;
+            return address != 0 ? 0 /*S_OK*/ : unchecked((int)0x80004005) /*E_FAIL*/;
+        }
+
+        public int GetContractDescriptor(out ulong address)
+        {
+            // The cDAC contract descriptor export only exists in .NET 9+ runtimes; for anything older
+            // this resolves nothing and we return E_FAIL, which the caller treats as "no contract
+            // descriptor available" and falls back to the classic per-version DAC matching path.
+            address = 0;
+            ModuleInfo runtimeModule = _modules.FirstOrDefault(m => m.IsRuntime);
+            if (runtimeModule == null)
+                return unchecked((int)0x80004005) /*E_FAIL*/;
+
+            if (!Microsoft.Diagnostics.Runtime.Utilities.ElfExportSymbol.TryGetExportSymbol(_dataReader, runtimeModule.ImageBase, "DotNetRuntimeContractDescriptor", out address))
+                return unchecked((int)0x80004005) /*E_FAIL*/;
+
+            return 0 /*S_OK*/;
         }
 
 

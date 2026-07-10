@@ -135,19 +135,36 @@ bool IsValidMemory(CLRDATA_ADDRESS Address, MEMORY_BASIC_INFORMATION64& MemInfo,
 		return true;
 	}
 
+	//
+	// Linux targets: dbgeng cannot always answer QueryVirtual for ELF core dumps, which leaves
+	// MemInfo zeroed and would fail the region check below for perfectly valid addresses. Probe the
+	// memory directly instead - a readable byte is the best definition of "valid" a core dump gives.
+	//
+	if(isLinuxTarget && MemInfo.RegionSize == 0)
+	{
+		UCHAR probe = 0;
+		ULONG cb = 0;
+		return SUCCEEDED(g_ExtInstancePtr->m_Data->ReadVirtual(Address, &probe, sizeof(probe), &cb)) && cb == sizeof(probe);
+	}
+
 	if (!(Address >= MemInfo.BaseAddress && Address < (MemInfo.BaseAddress + MemInfo.RegionSize)))
 		return false;
 	if (0 == Size)
 	{
 		return true;
 	}
+	//
+	// Check the LAST byte of the range, not one past it: a range that ends exactly at the top of a
+	// mapping (e.g. a full thread stack) has Address + Size outside the mapping, which fails
+	// spuriously on targets where dbgeng cannot describe unmapped addresses (Linux core dumps).
+	//
 	ZeroMemory(&MemInfo, sizeof(MemInfo));
-	g_ExtInstancePtr->m_Data4->QueryVirtual(Address + Size, &MemInfo);
+	g_ExtInstancePtr->m_Data4->QueryVirtual(Address + Size - 1, &MemInfo);
 #ifdef _X86_
 	MemInfo.BaseAddress = MemInfo.BaseAddress & UINT32_MAX;
 	MemInfo.AllocationBase = MemInfo.AllocationBase  & UINT32_MAX;
 #endif
-	return IsValidMemory(Address + Size, MemInfo);
+	return IsValidMemory(Address + Size - 1, MemInfo);
 }
 
 bool IsValidMemory(CLRDATA_ADDRESS Address, INT64 Size)

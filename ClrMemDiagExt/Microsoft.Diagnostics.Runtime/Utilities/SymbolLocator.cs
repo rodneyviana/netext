@@ -209,6 +209,22 @@ namespace Microsoft.Diagnostics.Runtime.Utilities
         }
 
         /// <summary>
+        /// Attempts to locate a binary via its ELF/Mach-O build-id (used for Linux/macOS targets, which have
+        /// no PE timestamp+filesize to index by - see DacInfo.BuildId). This function will then copy the
+        /// file locally to the symbol cache and return the location of the local file on disk.
+        /// Default implementation returns null; DefaultSymbolLocator is the one that implements this.
+        /// </summary>
+        /// <param name="fileName">The filename that the binary is indexed under (e.g. "mscordaccore.dll").</param>
+        /// <param name="component">The symbol-store component tag the build-id is archived under (e.g. "coreclr").</param>
+        /// <param name="buildId">The hex-encoded build-id, as produced by ElfBuildId.ToHexString.</param>
+        /// <param name="checkProperties">Whether or not to validate the properties of the binary after download.</param>
+        /// <returns>A full path on disk (local) of where the binary was copied to, null if it was not found.</returns>
+        public virtual string FindBinaryByBuildId(string fileName, string component, string buildId, bool checkProperties = false)
+        {
+            return null;
+        }
+
+        /// <summary>
         /// Attempts to locate the pdb for a given module.
         /// </summary>
         /// <param name="module">The module to locate the pdb for.</param>
@@ -532,6 +548,45 @@ namespace Microsoft.Diagnostics.Runtime.Utilities
 
             SetFileEntry(missingFiles, entry, null);
             return null;
+        }
+
+        /// <summary>
+        /// Attempts to locate a binary via its ELF/Mach-O build-id.  Unlike the PE timestamp+filesize path,
+        /// a build-id lookup only makes sense against a symbol server (there is no local-directory analog),
+        /// so plain directory elements in the symbol path are skipped here.
+        /// </summary>
+        public override string FindBinaryByBuildId(string fileName, string component, string buildId, bool checkProperties = false)
+        {
+            if (string.IsNullOrEmpty(buildId))
+                return null;
+
+            fileName = Path.GetFileName(fileName).ToLower();
+
+            string indexPath = null;
+            foreach (SymPathElement element in SymPathElement.GetElements(SymbolPath))
+            {
+                if (!element.IsSymServer)
+                    continue;
+
+                if (indexPath == null)
+                    indexPath = GetIndexPathByBuildId(fileName, component, buildId);
+
+                string target = TryGetFileFromServer(element.Target, indexPath, element.Cache ?? SymbolCache);
+                if (target != null)
+                {
+                    Trace(String.Format("Found '{0}' via build-id '{1}' on server '{2}'.  Copied to '{3}'.", fileName, buildId, element.Target, target));
+                    return target;
+                }
+
+                Trace(String.Format("Server '{0}' did not have file '{1}' with build-id '{2}'.", element.Target, fileName, buildId));
+            }
+
+            return null;
+        }
+
+        private static string GetIndexPathByBuildId(string fileName, string component, string buildId)
+        {
+            return fileName + @"\elf-buildid-" + component + "-" + buildId + @"\" + fileName;
         }
 
         private static string GetIndexPath(string fileName, int buildTimeStamp, int imageSize)
