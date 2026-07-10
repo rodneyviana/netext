@@ -85,7 +85,7 @@ namespace sqlparser
 
 
 			//top = lexeme[lit("top") >> double_];
-			field_name =  lexeme[!digit >> *(alnum | '_' | '.' | ':' | '$' | '[' | ']' | '*' | '?')] ;
+			field_name =  lexeme[!digit >> *char_("a-zA-Z0-9_.:$[]*?")] ;
 			field_items =  field_name % ',';
 			//decimals = lexeme[-'0' >> char_("nN") >> +char_("0123456789")];
 			//hexav = +char_("0123456789abcdefABCDEF");
@@ -93,7 +93,7 @@ namespace sqlparser
 			obj = +char_;
             start =
                 +lit("wselect")
-				>> -(lit("mt") >> +(alnum | '\'' | '$' | '(' | ')'))
+				>> -(lit("mt") >> +char_("a-zA-Z0-9'$()"))
                 >> field_items 
                 >> lit("from") 
                 >>  (obj | sources) 

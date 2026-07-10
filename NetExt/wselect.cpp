@@ -130,7 +130,7 @@ EXT_COMMAND(wselect,
 			ObjDetail tempObj;
 			vector<string> fieldsDepth;
 			bool p=boost::spirit::qi::parse(sql._fieldlist[s].begin(), sql._fieldlist[s].end(),
-				+(boost::spirit::qi::alnum | '_' | ':' | '$' | '[' | ']' | '*' | '?') % '.' ,
+				+boost::spirit::qi::char_("a-zA-Z0-9_:$[]*?") % '.' ,
 				fieldsDepth);
 			if(fieldsDepth.size() <= 1)
 				fields = obj.GetFieldsByName(sql._fieldlist[s]);

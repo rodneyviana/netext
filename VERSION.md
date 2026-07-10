@@ -1,5 +1,16 @@
 # NetExt Version History
 
+## 3.0.1.5000
+
+### Parser fixes (Boost.Spirit upgrade regression)
+
+- Fixed `!wselect`, `!windex -type` / `-typename`, and dotted field-path parsing (`!wdo`, `!wfrom`, field expressions): with the upgraded Boost.Spirit, bare character literals in qi alternatives (`alnum | '_' | '.' | ...`) no longer synthesize the matched character into the parsed string, so characters such as `.`, `_`, `:`, `$`, `[`, `]` were silently turned into `\x00`. All affected grammars now use `char_("...")` character-set parsers, which carry the proper attribute.
+
+### Linux target refinements
+
+- `!wtime` now reports `!wtime is not supported in Linux` instead of an unexpected error — the target has no `KUSER_SHARED_DATA` and ELF core dumps carry no capture timestamp.
+- `!wthreads` shows `NA` in the Locks column when the DAC reports the lock count as unavailable. This applies to all CoreCLR targets (Windows and Linux): CoreCLR's DAC does not track per-thread lock counts and always reports `(DWORD)-1` — previously displayed as a bogus `9+`. .NET Framework targets still show real counts.
+
 ## 3.0.0.5000
 
 ### Linux .NET core dump support (new)

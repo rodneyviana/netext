@@ -2799,7 +2799,9 @@ namespace NetExt.Shim
                     AllocStart, AllocEnd);
                 Exports.Write(" {0}", thread.IsSTA ? "STA " : thread.IsMTA ? "MTA " : "NONE");
                 Exports.Write(" {0,-11}", thread.GcMode.ToString());
-                Exports.Write(" {0,2}", thread.LockCount > 9 ? "9+" : thread.LockCount.ToString());
+                // CoreCLR's DAC does not track per-thread lock counts and always reports (DWORD)-1 on
+                // every platform (SOS prints it raw as -00001); only desktop CLR has a real value here.
+                Exports.Write(" {0,2}", thread.LockCount == uint.MaxValue ? "NA" : thread.LockCount > 9 ? "9+" : thread.LockCount.ToString());
 
                 AddIfTrue(ref sb, thread.IsAbortRequested, "Aborting");
                 AddIfTrue(ref sb, thread.IsBackground, "Background");

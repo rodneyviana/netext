@@ -1420,6 +1420,13 @@ EXT_COMMAND(wtime,
 	)
 {
 		DO_INIT_API;
+		if(isLinuxTarget)
+		{
+			// Time comes from KUSER_SHARED_DATA (with a dbgeng session-time fallback); a Linux
+			// process has neither, and ELF core dumps carry no capture timestamp at all.
+			Out("!wtime is not supported in Linux\n");
+			return;
+		}
 		if(pTarget->DumpTime() != S_OK)
 		{
 			Out("UNEXPECTED: Unable to display time\n");
