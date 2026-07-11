@@ -1,7 +1,7 @@
-﻿# UPDATE
-*This windbg debug extension works as data mining for .NET. THE EXTENSION DOES NOT REQUIRE SOS OR PSSCORX TO WORK. It access .NET debugging API directly without intermediary*
+# UPDATE
+**Now supporting Linux dump files!**
 
-# LATEST VERSION: 2.1.65.5000  [here](https://github.com/rodneyviana/netext/releases)
+# LATEST VERSION: 3.0.1.5000  [here](https://github.com/rodneyviana/netext/releases)
 # Description
 *Getting started*
 - Open WinDBG. Load netext
