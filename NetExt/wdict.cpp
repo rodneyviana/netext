@@ -1089,6 +1089,244 @@ EXT_COMMAND(whttp,
 			}
 }
 
+// Kestrel connection types deriving from HttpProtocol; the generic argument is the hosting TContext.
+// The type-pattern parser (VectorSplit) does not accept '<' '>' so '?' stands in for the bracket
+#define KESTREL_TYPES L"*.Kestrel.Core.Internal.Http.Http1Connection?*,*.Kestrel.Core.Internal.Http2.Http2Stream?*,*.Kestrel.Core.Internal.Http3.Http3Stream?*"
+// Request start time lives in the activity feature (HostingApplicationDiagnostics sets it per request)
+#define KESTREL_START_FIELD "_currentIHttpActivityFeature._Activity_k__BackingField._StartTimeUtc_k__BackingField"
+
+// Kestrel's HttpMethod enum (byte-backed); Custom and above fall back to _methodText
+static const char* KestrelVerb(int Method)
+{
+	static const char* verbs[] = {"GET","PUT","DELETE","POST","HEAD","TRACE","PATCH","CONNECT","OPTIONS"};
+	if(Method >= 0 && Method < (int)(sizeof(verbs)/sizeof(verbs[0])))
+		return verbs[Method];
+	return "";
+}
+
+EXT_COMMAND(whttpcore,
+            "Dump ASP.NET Core (Kestrel) requests. Use '!whelp whttpcore' for detailed help",
+			"{;e,o;;Address,Kestrel connection (Http1Connection/Http2Stream/Http3Stream) Address}"
+			"{status;s,o;;Dump only with this status (e.g 500)}"
+			"{notstatus;s,o;;Dump only if not this status (e.g 200)}"
+			"{verb;s,o;;Dump only with this verb (e.g POST)}"
+			"{running;b,o;;List only requests still in the application pipeline}"
+			"{order;b,o;;Order by request start time}"
+			)
+{
+	INIT_API();
+
+	// AppStarted in Kestrel's RequestProcessingStatus (stable value since ASP.NET Core 3.0)
+	const int appStarted = 3;
+	// $now()/GetCurrentTimeDate has no data source in an ELF core, so elapsed time is Windows-only
+	bool showRunning = !isLinuxTarget && SpecialCases::TicksFromTarget() != 0;
+
+	if(!HasUnnamedArg(0))
+	{
+		HttpFlags flags;
+		if(!indc)
+		{
+			Dml("To list ASP.NET Core requests, run <link cmd=\"!windex;!whttpcore\">!windex</link> first\n");
+			return;
+		}
+		flags.frunning = HasArg("running");
+		flags.forder = HasArg("order");
+		flags.fstatus = HasArg("status");
+		flags.fnotstatus = HasArg("notstatus");
+		flags.fverb = HasArg("verb");
+		if(flags.fverb) flags.verb = GetArgStr("verb");
+		try
+		{
+			flags.status = flags.fstatus ? boost::lexical_cast<int>(GetArgStr("status")) : -1;
+			flags.notstatus = flags.fnotstatus ? boost::lexical_cast<int>(GetArgStr("notstatus")) : -1;
+		} catch(...)
+		{
+			Out("Error: please enter a numeric value for status (e.g 200)\n");
+			return;
+		}
+
+		MatchingAddresses addresses;
+		addresses.clear();
+		indc->GetByType(KESTREL_TYPES, addresses);
+		if(addresses.size()==0)
+		{
+			Out("Found no Kestrel connection object in heap. Is this an ASP.NET Core (Kestrel) dump?\n");
+			return;
+		}
+
+		std::vector<std::string> fields;
+		fields.push_back("_Path_k__BackingField");
+		fields.push_back("_statusCode");
+		fields.push_back("_requestProcessingStatus");
+		fields.push_back("_methodText");
+		fields.push_back("_Method_k__BackingField");
+		fields.push_back(KESTREL_START_FIELD "._dateData");
+
+		AddressEnum adenum;
+		AddressList tempVector;
+		if(flags.forder)
+		{
+			std::multimap<UINT64, CLRDATA_ADDRESS> ordered;
+			adenum.Start(addresses);
+			while(CLRDATA_ADDRESS curr=adenum.GetNext())
+			{
+				if(IsInterrupted())
+					return;
+				varMap fieldV;
+				DumpFields(curr,fields,0,&fieldV);
+				UINT64 key = 0;
+				varMap::iterator f = fieldV.find(KESTREL_START_FIELD "._dateData");
+				if(f != fieldV.end()) key = f->second.Value.u64 & TicksMask;
+				ordered.insert(std::pair<UINT64, CLRDATA_ADDRESS>(key, curr));
+			}
+			addresses.clear();
+			std::multimap<UINT64, CLRDATA_ADDRESS>::iterator it;
+			for (it=ordered.begin(); it!=ordered.end(); ++it)
+				tempVector.push_back(it->second);
+			addresses.push_back(&tempVector);
+		}
+
+		adenum.Start(addresses);
+
+		UINT64 count=0;
+		UINT64 skipped=0;
+		if(showRunning)
+			Out("Address          Thrd Start Time (UTC)       Running   State           Status Verb     Url\n");
+		else
+			Out("Address          Thrd Start Time (UTC)       State           Status Verb     Url\n");
+
+		while(CLRDATA_ADDRESS curr=adenum.GetNext())
+		{
+			count++;
+			if(IsInterrupted())
+				return;
+
+			varMap fieldV;
+			DumpFields(curr,fields,0,&fieldV);
+			varMap::iterator f;
+
+			// A connection between requests resets its path; no path means no current request.
+			// Null strings come back as strValue L"NULL" with Value.ptr == 0, so test the pointer
+			bool printIt = false;
+			f = fieldV.find("_Path_k__BackingField");
+			if(f != fieldV.end()) printIt = (f->second.Value.ptr != 0);
+			if(printIt && flags.frunning)
+			{
+				int procStatus = -1;
+				f = fieldV.find("_requestProcessingStatus");
+				if(f != fieldV.end()) procStatus = f->second.Value.i32;
+				if(procStatus != appStarted) printIt = false;
+			}
+			if(printIt && (flags.fstatus || flags.fnotstatus))
+			{
+				int status = -1;
+				f = fieldV.find("_statusCode");
+				if(f != fieldV.end()) status = f->second.Value.i32;
+				if(flags.fstatus && status != flags.status) printIt = false;
+				if(flags.fnotstatus && status == flags.notstatus) printIt = false;
+			}
+			if(printIt && flags.fverb)
+			{
+				std::string verb;
+				f = fieldV.find("_methodText");
+				if(f != fieldV.end() && f->second.Value.ptr != 0)
+					verb = localCW2A(f->second.strValue.c_str());
+				if(verb.size() == 0)
+				{
+					f = fieldV.find("_Method_k__BackingField");
+					if(f != fieldV.end()) verb = KestrelVerb(f->second.Value.i32);
+				}
+				if(!g_ExtInstancePtr->MatchPattern(flags.verb.c_str(), verb.c_str()))
+					printIt = false;
+			}
+			if(!printIt)
+			{
+				skipped++;
+				continue;
+			}
+			Dml("<link cmd=\"!whttpcore %p\">%p</link> ",curr, curr);
+			if(sizeof(void*) == 4)
+				Out("        ");
+
+			FromFlags flagsQ;
+			ZeroMemory(&flagsQ, sizeof(flagsQ));
+			// $isnull() only understands field arguments (a function result is always taken as
+			// null), so function-produced columns are used bare here
+			std::string cmd =
+				"$if($strsize($stackroot($addr())), $lpad($stackroot($addr()),4), \"  --\"), \" \", "
+				"$rpad($tickstodatetime($maskticks(" KESTREL_START_FIELD "._dateData)),0n22), \" \", ";
+			if(showRunning)
+				cmd += "$rpad($tickstotimespan($maskticks($now())-$maskticks(" KESTREL_START_FIELD "._dateData)),0n9), \" \", ";
+			cmd +=
+				"$rpad($enumname(_requestProcessingStatus),0n15), \" \", "
+				"$replace($lpad(_statusCode,8),\"0n\",\"\"), \" \", "
+				"$rpad($isnull(_methodText, $upper($enumname(_Method_k__BackingField))),8), \" \", "
+				"_Scheme_k__BackingField, \"://\", $isnull(_HttpRequestHeaders_k__BackingField._headers._Host._values,\"\"), _Path_k__BackingField, $isnull(_QueryString_k__BackingField,\"\")";
+			flagsQ.cmd = cmd;
+			flagsQ.fobj = true;
+			flagsQ.nofield = true;
+			flagsQ.nospace = true;
+			flagsQ.obj = curr;
+			wfrom_internal(flagsQ);
+		}
+		Out("\n%S Kestrel request(s) found matching criteria\n", formatnumber(count-skipped).c_str());
+		if(skipped > 0)
+			Out("%S connection(s) skipped (no current request or filtered out)\n", formatnumber(skipped).c_str());
+		if(!showRunning)
+			Out("Note: Running time is not shown because the dump has no capture time (Linux). Start Time is UTC\n");
+		Out("Note: Status is provisional (default 200) until State reaches HeadersCommitted\n");
+		return;
+	}
+
+	CLRDATA_ADDRESS addr = GetUnnamedArgU64(0);
+	ObjDetail obj(addr);
+	bool isKestrel = obj.IsValid() &&
+		(obj.TypeName().find(L"Http1Connection") != std::wstring::npos
+		|| obj.TypeName().find(L"Http2Stream") != std::wstring::npos
+		|| obj.TypeName().find(L"Http3Stream") != std::wstring::npos
+		|| obj.TypeName().find(L"HttpProtocol") != std::wstring::npos);
+	if(!isKestrel)
+	{
+		Out("Object at %p is invalid or not a Kestrel connection (Http1Connection/Http2Stream/Http3Stream)\n", addr);
+		return;
+	}
+
+	Out("\nRequest Info\n"
+		"================================\n");
+	FromFlags flagsQ;
+	ZeroMemory(&flagsQ, sizeof(flagsQ));
+	std::string cmd =
+		"$a(\"Address        \",$addr()),"
+		"$a(\"Type           \",$typename()),"
+		"$a(\"Connection Id  \",$isnull(_ConnectionIdFeature_k__BackingField,\"\")),"
+		"$a(\"Request Id     \",$isnull(_requestId,\"\")),"
+		"$a(\"State          \",$enumname(_requestProcessingStatus)),"
+		"$a(\"Started (UTC)  \",$tickstodatetime($maskticks(" KESTREL_START_FIELD "._dateData))),";
+	if(showRunning)
+		cmd += "$a(\"Running        \",$tickstotimespan($maskticks($now())-$maskticks(" KESTREL_START_FIELD "._dateData))),";
+	cmd +=
+		"$a(\"Verb           \",$isnull(_methodText, $upper($enumname(_Method_k__BackingField)))),"
+		"$a(\"Url            \",_Scheme_k__BackingField+\"://\"+$isnull(_HttpRequestHeaders_k__BackingField._headers._Host._values,\"\")+_Path_k__BackingField+$isnull(_QueryString_k__BackingField,\"\")),"
+		"$a(\"Status         \",$replace($lpad(_statusCode,1),\"0n\",\"\")),"
+		"$a(\"Http Version   \",$enumname(_httpVersion)),"
+		"$a(\"Endpoint       \",$isnull(_endpoint._DisplayName_k__BackingField,\"\")),"
+		"$a(\"Client         \",$ipaddress(_RemoteIpAddress_k__BackingField)+\":\"+$replace($lpad(_RemotePort_k__BackingField,1),\"0n\",\"\")),"
+		"$a(\"Server         \",$ipaddress(_LocalIpAddress_k__BackingField)+\":\"+$replace($lpad(_LocalPort_k__BackingField,1),\"0n\",\"\")),"
+		"$a(\"Host           \",$isnull(_HttpRequestHeaders_k__BackingField._headers._Host._values,\"\")),"
+		"$a(\"User Agent     \",$isnull(_HttpRequestHeaders_k__BackingField._headers._UserAgent._values,\"\")),"
+		"$a(\"Content Type   \",$isnull(_HttpRequestHeaders_k__BackingField._headers._ContentType._values,\"\")),"
+		"$a(\"Thread(s)      \",$if($strsize($stackroot($addr())),$stackroot($addr()),\"--\"))";
+	flagsQ.cmd = cmd;
+	flagsQ.fobj = true;
+	flagsQ.obj = addr;
+	wfrom_internal(flagsQ);
+
+	Out("\nYou may also be interested in\n"
+	      "================================\n");
+	Dml("Dump all fields  : <link cmd=\"!wselect * from %p\">!wselect * from %p</link>\n", addr, addr);
+	Dml("Find stack roots : <link cmd=\"!wfrom -obj %p select $a(&quot;Threads&quot;,$stackroot($addr()))\">!wfrom -obj %p select $a(\"Threads\",$stackroot($addr()))</link>\n", addr, addr);
+}
+
 const char classVisib[][40]={"private", "public", "/*nested*/ public", "/*nested*/ private", "protected", "internal protected", "internal /*protected*/"};
 const char fieldVisib[][40]={"private", "protected", "internal protected", "internal public", "protected", "internal protected", "public"};
 

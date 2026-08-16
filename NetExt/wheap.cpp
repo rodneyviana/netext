@@ -325,6 +325,8 @@ bool Heap::IsInHeap(CLRDATA_ADDRESS Address, int* iHeap, int* iGen)
 void Heap::AddRanges(Thread &thread, CLRDATA_ADDRESS Start, CLRDATA_ADDRESS End,
 					 long heap, int gen, bool isLarge)
 {
+	if(!Start || Start >= End)
+		return;
 	CLRDATA_ADDRESS s=Start;
 	while(s < End)
 	{
@@ -385,7 +387,10 @@ void Heap::EnumRanges()
 				segData.Gen1Start+segData.Gen1Length,segData.ProcessorAffinity, 1, false);
 			if(segData.Gen0Length) AddRanges(td, segData.Gen0Start,
 				segData.Gen0Start+segData.Gen0Length,segData.ProcessorAffinity, 0, false);
-			if(segData.IsLarge) AddRanges(td, segData.FirstObject,
+			// Empty LOH/POH regions (allocated == begin, common with GC regions/DATAS) report
+			// FirstObject == 0, which would create a bogus [0, End) range spanning the address space
+			if(segData.IsLarge && segData.FirstObject && segData.FirstObject < segData.End)
+				AddRanges(td, segData.FirstObject,
 				segData.End,segData.ProcessorAffinity, 3, true);
 
 		} else

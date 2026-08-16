@@ -35,6 +35,7 @@ EXPORTS
 	wdict
 	whash
 	whttp
+	whttpcore
 	wcookie
 	wconfig
 	wkeyvalue

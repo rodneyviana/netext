@@ -349,10 +349,19 @@ std::wstring SpecialCases::IPAddress(CLRDATA_ADDRESS IPAddress)
 	{
 		fields.push_back("m_Address");
 		fields.push_back("m_Port");
+		fields.push_back("_address"); // .NET Core layout
+		fields.push_back("_port");
 
 		DumpFields(address,fields,0,&fieldV);
-		port = fieldV["m_Port"].Value.i32;
-		address = fieldV["m_Address"].Value.ptr;
+		if(fieldV.find("m_Address") != fieldV.end())
+		{
+			port = fieldV["m_Port"].Value.i32;
+			address = fieldV["m_Address"].Value.ptr;
+		} else
+		{
+			port = fieldV["_port"].Value.i32;
+			address = fieldV["_address"].Value.ptr;
+		}
 		if(address == NULL)
 			return L"";
 	}
@@ -362,23 +371,47 @@ std::wstring SpecialCases::IPAddress(CLRDATA_ADDRESS IPAddress)
 	fields.push_back("m_Address");
 	fields.push_back("m_ScopeId");
 	fields.push_back("m_Numbers");
+	fields.push_back("_addressOrScopeId"); // .NET Core layout
+	fields.push_back("_numbers");
 
 
 
 	fieldV.clear();
 	DumpFields(address,fields,0,&fieldV);
-	if(fieldV["m_Family"].Value.i32 == 2)
-		return SpecialCases::IPV4Address(fieldV["m_Address"].Value.i64,port);
+	if(fieldV.find("m_Family") != fieldV.end())
+	{
+		if(fieldV["m_Family"].Value.i32 == 2)
+			return SpecialCases::IPV4Address(fieldV["m_Address"].Value.i64,port);
 
-	ObjDetail numbers(fieldV["m_Numbers"].Value.ptr);
+		ObjDetail numbers(fieldV["m_Numbers"].Value.ptr);
 
-	if(!numbers.IsValid() || numbers.NumComponents() != 8)
+		if(!numbers.IsValid() || numbers.NumComponents() != 8)
+			return L"";
+
+		WORD ipbytes[8] = {0};
+		unsigned long read = 8;
+		ReadMemory(numbers.DataPtr(),&ipbytes,read *sizeof(WORD), &read);
+		return IPV6Address((WORD*)&ipbytes,port,fieldV["m_ScopeId"].Value.i32);
+	}
+
+	// .NET Core layout: _numbers is null for IPv4 (address in _addressOrScopeId,
+	// same byte order as the desktop m_Address); for IPv6 _numbers holds the
+	// eight hextets and _addressOrScopeId the scope id
+	if(fieldV.find("_addressOrScopeId") == fieldV.end())
 		return L"";
 
-	WORD ipbytes[8] = {0};
-	unsigned long read = 8;
-	ReadMemory(numbers.DataPtr(),&ipbytes,read *sizeof(WORD), &read);
-	return IPV6Address((WORD*)&ipbytes,port,fieldV["m_ScopeId"].Value.i32);
+	if(fieldV.find("_numbers") == fieldV.end() || fieldV["_numbers"].Value.ptr == NULL)
+		return SpecialCases::IPV4Address((INT64)(UINT32)fieldV["_addressOrScopeId"].Value.i32,port);
+
+	ObjDetail coreNumbers(fieldV["_numbers"].Value.ptr);
+
+	if(!coreNumbers.IsValid() || coreNumbers.NumComponents() != 8)
+		return L"";
+
+	WORD coreBytes[8] = {0};
+	unsigned long coreRead = 8;
+	ReadMemory(coreNumbers.DataPtr(),&coreBytes,coreRead *sizeof(WORD), &coreRead);
+	return IPV6Address((WORD*)&coreBytes,port,fieldV["_addressOrScopeId"].Value.i32);
 }
 
 std::wstring SpecialCases::HtmlEncode(std::wstring HtmlString, bool EncodeSpaces)
