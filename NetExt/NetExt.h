@@ -645,6 +645,7 @@ public:
 	EXT_COMMAND_METHOD(wdict);
 	EXT_COMMAND_METHOD(whash);
 	EXT_COMMAND_METHOD(whttp);
+	EXT_COMMAND_METHOD(whttpcore);
 	EXT_COMMAND_METHOD(wcookie);
 	EXT_COMMAND_METHOD(wconfig);
 	EXT_COMMAND_METHOD(wkeyvalue);

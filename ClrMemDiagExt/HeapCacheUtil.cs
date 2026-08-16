@@ -194,6 +194,20 @@ namespace NetExt.HeapCacheUtil
             object gvalue = enumValue;
             switch (enumType)
             {
+                // byte/sbyte/bool/char-backed enums (e.g. Kestrel HttpMethod : byte) must be boxed
+                // as their underlying type or the ValueToName dictionary lookup never matches
+                case ClrElementType.Int8:
+                    gvalue = unchecked((sbyte)raw[0]);
+                    break;
+                case ClrElementType.UInt8:
+                    gvalue = raw[0];
+                    break;
+                case ClrElementType.Boolean:
+                    gvalue = raw[0] != 0;
+                    break;
+                case ClrElementType.Char:
+                    gvalue = BitConverter.ToChar(raw, 0);
+                    break;
                 case ClrElementType.Int16:
                     gvalue = BitConverter.ToInt16(raw, 0);
                     break;
@@ -229,6 +243,18 @@ namespace NetExt.HeapCacheUtil
                     byte[] rawValue = null;
                     switch (enumType)
                     {
+                        case ClrElementType.Int8:
+                            rawValue = new byte[] { unchecked((byte)(sbyte)value) };
+                            break;
+                        case ClrElementType.UInt8:
+                            rawValue = new byte[] { (byte)value };
+                            break;
+                        case ClrElementType.Boolean:
+                            rawValue = new byte[] { (bool)value ? (byte)1 : (byte)0 };
+                            break;
+                        case ClrElementType.Char:
+                            rawValue = BitConverter.GetBytes((char)value);
+                            break;
                         case ClrElementType.Int16:
                             rawValue = BitConverter.GetBytes((short)value);
                             break;

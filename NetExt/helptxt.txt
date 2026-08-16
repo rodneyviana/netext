@@ -37,6 +37,7 @@
 !||wdict|| - Display dictionary objects
 !||whash|| - Display HashTable objects
 !||whttp|| - List HttpContext Objects
+<b>*(new)*</b> !||whttpcore|| - List ASP.NET Core (Kestrel) requests
 !||wconfig|| - Show all .config file lines in memory 
 !||wservice|| - List WCF service Objects
 !||weval|| - Evaluate ||expression|| list
@@ -2175,6 +2176,82 @@ It requires !||windex|| to dump all HttContext (but not necessary if an object i
 	Xml Formatted Request  : !wfrom -obj 0000000184d58f48 select $xml($rawfield(_request._rawContent._data))
 	Xml Tree of Request    : !wfrom -obj 0000000184d58f48 select $xmltree($rawfield(_request._rawContent._data))
 
+##whttpcore
+Dump all ASP.NET Core (Kestrel) requests, requests following a criteria or details of a particular request.
+It works like !||whttp|| but for ASP.NET Core applications (Kestrel), including .NET Core dumps captured on Linux.
+It requires !||windex|| to list all requests (but not necessary if an object is specified)
+
+It works by finding the Kestrel connection objects (Http1Connection, Http2Stream and Http3Stream, all deriving
+from HttpProtocol) which carry the request state: verb, path, query string, status code, processing state,
+the Host request header (to reconstruct the Url) and the request start time (from the request Activity).
+Connections with no current request (idle keep-alive connections between requests) are skipped.
+
+Notes:
+- The Thread column comes from the threads where the connection object is rooted in stack. Requests parked
+  on an await (e.g. awaiting a Task) hold no thread; they show '--' which is expected for async requests
+- Running time requires the dump capture time, which does not exist in Linux core dumps. For Linux dumps
+  only the Start Time (UTC) is shown
+- Status is provisional (it defaults to 200) until State reaches HeadersCommitted/HeadersFlushed
+
+<b>Syntax:</b>
+--------
+
+!whttpcore [-order] [-running] [-status &lt;decimal&gt;] [-notstatus &lt;decimal&gt;]
+       [-verb &lt;str-verb&gt;] [&lt;expr&gt;]
+
+<b>Where:</b>
+-------
+	<b>-order</b> - If specified will show requests in chronological order of start time
+	<b>-running</b> - If specified will show only requests still in the application pipeline (State AppStarted)
+	<b>-status</b> - If specified will show only requests with the chosen status (the value is decimal not hex like 500)
+	<b>-notstatus</b> - If specified will show only requests without the chosen status (the value is decimal not hex like 200)
+	<b>-verb</b> - If specified will show only requests with the chosen verb (e.g. POST)
+	<b>&lt;expr&gt;</b> - Kestrel connection Address. Optional. If not specified list all requests
+
+<b>Examples:</b>
+------------
+
+<i>List all requests (Linux dump; no Running column)</i>
+----------------------------
+	0:000&gt; !whttpcore
+	Address          Thrd Start Time (UTC)       State           Status Verb     Url
+	00007865ac479188   -- 8/15/2026 10:08:31 PM  AppStarted         200 GET      http://127.0.0.1:5080/api/slow?delaySeconds=105
+	00007865ac47fb58   -- 8/15/2026 10:08:31 PM  AppStarted         200 GET      http://127.0.0.1:5080/api/slow?delaySeconds=105
+	00007865ac481898   -- 8/15/2026 10:08:31 PM  AppStarted         200 GET      http://127.0.0.1:5080/api/slow?delaySeconds=105
+	00007865ac878a90   -- 8/15/2026 10:08:31 PM  AppStarted         200 POST     http://127.0.0.1:5080/soap/OrderService.svc
+
+	4 Kestrel request(s) found matching criteria
+	10 connection(s) skipped (no current request or filtered out)
+
+<i>List requests still in the application pipeline</i>
+----------------------------
+	0:000&gt; !whttpcore -running
+
+<i>List all failed requests</i>
+----------------------------
+	0:000&gt; !whttpcore -notstatus 200
+
+<i>List details of a request:</i>
+---------------------------------
+	0:000&gt; !whttpcore 00007865ac878a90
+
+	Request Info
+	================================
+	Address        : 00007865ac878a90
+	Type           : Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http.Http1Connection&lt;Microsoft.AspNetCore.Hosting.HostingApplication_Context&gt;
+	Connection Id  : 0HNNR36V31D4U
+	Request Id     : 0HNNR36V31D4U:00000003
+	State          : AppStarted
+	Started (UTC)  : 8/15/2026 10:08:31 PM
+	Verb           : POST
+	Url            : http://127.0.0.1:5080/soap/OrderService.svc
+	(...)
+
+You may also be interested in
+================================
+	!||wruntime|| for classic ASP.NET dumps
+	!||whttp|| for classic ASP.NET (System.Web) dumps
+
 ##wservice
 Dump all WCF Services or details about a specific service (System.ServiceModel.ServiceHost)
 It requires !||windex|| to dump all ServiceHost objects (but not necessary if an object is specified)
@@ -2951,7 +3028,7 @@ DEALINGS IN THE SOFTWARE
 
 <b>The MIT License (MIT)</b>
 
-Copyright (c) 2015 Marek Pokorný
+Copyright (c) 2015 Marek Pokornï¿½
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software 
 and associated documentation files (the "Software"), to deal in the Software without restriction,

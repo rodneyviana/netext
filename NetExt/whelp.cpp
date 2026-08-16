@@ -1,4 +1,4 @@
-// Source Date: Tuesday, February 17, 2026 9:45:42 AM
+// Source Date: Saturday, August 15, 2026 11:35:09 PM
 // Source File: C:\Users\fox_m\OneDrive\NewNetExt\netext\NetExt\helptxt.txt
 // This file was generated. Do not modify. Modify Source File instead
 #include "netext.h"
@@ -55,6 +55,7 @@ EXT_COMMAND(whelp,
 		Dml("!<link cmd=\"!whelp wdict\">wdict</link> - Display dictionary objects\n");
 		Dml("!<link cmd=\"!whelp whash\">whash</link> - Display HashTable objects\n");
 		Dml("!<link cmd=\"!whelp whttp\">whttp</link> - List HttpContext Objects\n");
+		Dml("<b>*(new)*</b> !<link cmd=\"!whelp whttpcore\">whttpcore</link> - List ASP.NET Core (Kestrel) requests\n");
 		Dml("!<link cmd=\"!whelp wconfig\">wconfig</link> - Show all .config file lines in memory \n");
 		Dml("!<link cmd=\"!whelp wservice\">wservice</link> - List WCF service Objects\n");
 		Dml("!<link cmd=\"!whelp weval\">weval</link> - Evaluate <link cmd=\"!whelp expression\">expression</link> list\n");
@@ -2306,6 +2307,85 @@ EXT_COMMAND(whelp,
 		Dml("	Find all stack roots   : !wfrom -obj 0000000184d58f48 select $a(\"Count  \", $if($strsize($stackroot($addr())),$splitsize($stackroot($addr()),\",\"),0)), $a(\"Threads\",$stackroot($addr()))\n");
 		Dml("	Xml Formatted Request  : !wfrom -obj 0000000184d58f48 select $xml($rawfield(_request._rawContent._data))\n");
 		Dml("	Xml Tree of Request    : !wfrom -obj 0000000184d58f48 select $xmltree($rawfield(_request._rawContent._data))\n");
+		Dml("\n");
+	return;
+	}
+	if(keyword=="whttpcore")
+	{
+		Dml("Dump all ASP.NET Core (Kestrel) requests, requests following a criteria or details of a particular request.\n");
+		Dml("It works like !<link cmd=\"!whelp whttp\">whttp</link> but for ASP.NET Core applications (Kestrel), including .NET Core dumps captured on Linux.\n");
+		Dml("It requires !<link cmd=\"!whelp windex\">windex</link> to list all requests (but not necessary if an object is specified)\n");
+		Dml("\n");
+		Dml("It works by finding the Kestrel connection objects (Http1Connection, Http2Stream and Http3Stream, all deriving\n");
+		Dml("from HttpProtocol) which carry the request state: verb, path, query string, status code, processing state,\n");
+		Dml("the Host request header (to reconstruct the Url) and the request start time (from the request Activity).\n");
+		Dml("Connections with no current request (idle keep-alive connections between requests) are skipped.\n");
+		Dml("\n");
+		Dml("Notes:\n");
+		Dml("- The Thread column comes from the threads where the connection object is rooted in stack. Requests parked\n");
+		Dml("  on an await (e.g. awaiting a Task) hold no thread; they show '--' which is expected for async requests\n");
+		Dml("- Running time requires the dump capture time, which does not exist in Linux core dumps. For Linux dumps\n");
+		Dml("  only the Start Time (UTC) is shown\n");
+		Dml("- Status is provisional (it defaults to 200) until State reaches HeadersCommitted/HeadersFlushed\n");
+		Dml("\n");
+		Dml("<b>Syntax:</b>\n");
+		Dml("--------\n");
+		Dml("\n");
+		Dml("!whttpcore [-order] [-running] [-status &lt;decimal&gt;] [-notstatus &lt;decimal&gt;]\n");
+		Dml("       [-verb &lt;str-verb&gt;] [&lt;expr&gt;]\n");
+		Dml("\n");
+		Dml("<b>Where:</b>\n");
+		Dml("-------\n");
+		Dml("	<b>-order</b> - If specified will show requests in chronological order of start time\n");
+		Dml("	<b>-running</b> - If specified will show only requests still in the application pipeline (State AppStarted)\n");
+		Dml("	<b>-status</b> - If specified will show only requests with the chosen status (the value is decimal not hex like 500)\n");
+		Dml("	<b>-notstatus</b> - If specified will show only requests without the chosen status (the value is decimal not hex like 200)\n");
+		Dml("	<b>-verb</b> - If specified will show only requests with the chosen verb (e.g. POST)\n");
+		Dml("	<b>&lt;expr&gt;</b> - Kestrel connection Address. Optional. If not specified list all requests\n");
+		Dml("\n");
+		Dml("<b>Examples:</b>\n");
+		Dml("------------\n");
+		Dml("\n");
+		Dml("<i>List all requests (Linux dump; no Running column)</i>\n");
+		Dml("----------------------------\n");
+		Dml("	0:000&gt; !whttpcore\n");
+		Dml("	Address          Thrd Start Time (UTC)       State           Status Verb     Url\n");
+		Dml("	00007865ac479188   -- 8/15/2026 10:08:31 PM  AppStarted         200 GET      http://127.0.0.1:5080/api/slow?delaySeconds=105\n");
+		Dml("	00007865ac47fb58   -- 8/15/2026 10:08:31 PM  AppStarted         200 GET      http://127.0.0.1:5080/api/slow?delaySeconds=105\n");
+		Dml("	00007865ac481898   -- 8/15/2026 10:08:31 PM  AppStarted         200 GET      http://127.0.0.1:5080/api/slow?delaySeconds=105\n");
+		Dml("	00007865ac878a90   -- 8/15/2026 10:08:31 PM  AppStarted         200 POST     http://127.0.0.1:5080/soap/OrderService.svc\n");
+		Dml("\n");
+		Dml("	4 Kestrel request(s) found matching criteria\n");
+		Dml("	10 connection(s) skipped (no current request or filtered out)\n");
+		Dml("\n");
+		Dml("<i>List requests still in the application pipeline</i>\n");
+		Dml("----------------------------\n");
+		Dml("	0:000&gt; !whttpcore -running\n");
+		Dml("\n");
+		Dml("<i>List all failed requests</i>\n");
+		Dml("----------------------------\n");
+		Dml("	0:000&gt; !whttpcore -notstatus 200\n");
+		Dml("\n");
+		Dml("<i>List details of a request:</i>\n");
+		Dml("---------------------------------\n");
+		Dml("	0:000&gt; !whttpcore 00007865ac878a90\n");
+		Dml("\n");
+		Dml("	Request Info\n");
+		Dml("	================================\n");
+		Dml("	Address        : 00007865ac878a90\n");
+		Dml("	Type           : Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http.Http1Connection&lt;Microsoft.AspNetCore.Hosting.HostingApplication_Context&gt;\n");
+		Dml("	Connection Id  : 0HNNR36V31D4U\n");
+		Dml("	Request Id     : 0HNNR36V31D4U:00000003\n");
+		Dml("	State          : AppStarted\n");
+		Dml("	Started (UTC)  : 8/15/2026 10:08:31 PM\n");
+		Dml("	Verb           : POST\n");
+		Dml("	Url            : http://127.0.0.1:5080/soap/OrderService.svc\n");
+		Dml("	(...)\n");
+		Dml("\n");
+		Dml("You may also be interested in\n");
+		Dml("================================\n");
+		Dml("	!<link cmd=\"!whelp wruntime\">wruntime</link> for classic ASP.NET dumps\n");
+		Dml("	!<link cmd=\"!whelp whttp\">whttp</link> for classic ASP.NET (System.Web) dumps\n");
 		Dml("\n");
 	return;
 	}
