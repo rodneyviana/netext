@@ -2,6 +2,23 @@
 #include "CLRHelper.h"
 #include "Indexer.h"
 #include "SpecialCases.h"
+#include <regex>
+
+// The stored _usersConnectionString keeps the raw password (scrubbing happens in
+// the provider's property getters, not in the field), so mask it for display
+static std::wstring MaskPassword(const std::wstring& ConnStr)
+{
+	try
+	{
+		static const std::wregex re(L"((?:^|;)\\s*(?:password|pwd)\\s*=\\s*)(?:'[^']*'|\"[^\"]*\"|[^;]*)",
+			std::regex_constants::icase);
+		return std::regex_replace(ConnStr, re, L"$1********");
+	}
+	catch(...)
+	{
+		return ConnStr;
+	}
+}
 
 
 struct SqlFlags
@@ -11,6 +28,16 @@ struct SqlFlags
 	bool sproc;
 	bool active;
 };
+
+// Connection state lives in _state on System.Data.SqlClient and in the
+// _State auto-property backing field on Microsoft.Data.SqlClient
+static int SqlConnState(varMap& Fields)
+{
+	varMap::iterator f = Fields.find("_activeConnection._innerConnection._state");
+	if(f == Fields.end())
+		f = Fields.find("_activeConnection._innerConnection._State_k__BackingField");
+	return f == Fields.end() ? 0 : f->second.Value.i32;
+}
 
 EXT_COMMAND(wsql,
 	"Dump all sql commands, a single sql command or commands matching a cookie filter criteria. Use '!whelp wsql' for detailed help",
@@ -31,9 +58,10 @@ EXT_COMMAND(wsql,
 	if(flag.Address != 0)
 	{
 		ObjDetail obj(flag.Address);
-		if(!obj.IsValid() || obj.TypeName() != L"System.Data.SqlClient.SqlCommand")
+		if(!obj.IsValid() || (obj.TypeName() != L"System.Data.SqlClient.SqlCommand"
+			&& obj.TypeName() != L"Microsoft.Data.SqlClient.SqlCommand"))
 		{
-			Out("Could not find a valid System.Data.SqlClient.SqlCommand object at %p", flag.Address);
+			Out("Could not find a valid System.Data.SqlClient.SqlCommand or Microsoft.Data.SqlClient.SqlCommand object at %p", flag.Address);
 			return;
 		}
 	}
@@ -55,7 +83,7 @@ EXT_COMMAND(wsql,
 		addresses.push_back(&al);
 	} else
 	{
-		indc->GetByType(L"System.Data.SqlClient.SqlCommand", addresses);
+		indc->GetByType(L"System.Data.SqlClient.SqlCommand,Microsoft.Data.SqlClient.SqlCommand", addresses);
 	}
 	AddressEnum adenum;
 	if(addresses.size()==0)
@@ -75,6 +103,7 @@ EXT_COMMAND(wsql,
 	fields.push_back("_activeConnection");
 	fields.push_back("_activeConnection._userConnectionOptions._usersConnectionString");
 	fields.push_back("_activeConnection._innerConnection._state");
+	fields.push_back("_activeConnection._innerConnection._State_k__BackingField"); // Microsoft.Data.SqlClient
 
 	int total = 0;
 	int filtered = 0;
@@ -96,12 +125,12 @@ EXT_COMMAND(wsql,
 		//  that we only filter if it is showing all results
 		if(flag.Address == 0 && fieldsV["_commandType"].Value.i32 == 0)
 			include = false;
-		if(flag.active && (NULL == fieldsV["_activeConnection"].Value.ptr || 
-			fieldsV["_activeConnection._innerConnection._state"].Value.i32 == 0))
+		if(flag.active && (NULL == fieldsV["_activeConnection"].Value.ptr ||
+			SqlConnState(fieldsV) == 0))
 			include = false;
 		std::wstring connectionName = L"<NOT SET OR CLOSED>";
 		if(NULL != fieldsV["_activeConnection._userConnectionOptions._usersConnectionString"].IsString())
-			connectionName = fieldsV["_activeConnection._userConnectionOptions._usersConnectionString"].strValue;
+			connectionName = MaskPassword(fieldsV["_activeConnection._userConnectionOptions._usersConnectionString"].strValue);
 		if(include)
 			mapConnection[connectionName].push_back(curr);
 		else
@@ -113,10 +142,12 @@ EXT_COMMAND(wsql,
 	Out("\n");
 	fields.push_back("_parameters._items._size");
 	fields.push_back("_parameters._items._items");
-	fields.push_back("_activeConnection._innerConnection._createTime.dateData");
+	fields.push_back("_activeConnection._innerConnection._createTime.dateData"); // .NET Framework
+	fields.push_back("_activeConnection._innerConnection._createTime._dateData"); // .NET Core System.Data.SqlClient
+	fields.push_back("_activeConnection._innerConnection._CreateTime_k__BackingField._dateData"); // Microsoft.Data.SqlClient
 	fields.push_back("_activeConnection._userConnectionOptions._maxPoolSize");
 	fields.push_back("_activeConnection._userConnectionOptions._pooling");
-	fields.push_back("_activeConnection._poolGroup._poolCount");
+	fields.push_back("_activeConnection._poolGroup._poolCount"); // .NET Framework only (core pool groups keep a dictionary)
 	//fields.push_back("_activeConnection._innerConnection._poolGroup._poolCollection");
 	//fields.push_back("_activeConnection._userConnectionOptions._dataSource");
 	//fields.push_back("_activeConnection._userConnectionOptions._initialCatalog");
@@ -163,7 +194,7 @@ EXT_COMMAND(wsql,
 				break;
 			}
 			std::string stateStr;
-			int state = fieldsV["_activeConnection._innerConnection._state"].Value.i32;
+			int state = SqlConnState(fieldsV);
 			int p = 1;
 			if(0 == state)
 				stateStr = connStateStr[0];
@@ -174,15 +205,40 @@ EXT_COMMAND(wsql,
 				p*=2;
 			}
 			Out(" Type: %s State: %s ", cmdTypeStr.c_str(), stateStr.c_str());
-			if(fieldsV["_activeConnection._innerConnection._createTime.dateData"].Value.i64 != 0)
+			UINT64 created = 0;
+			static const char* createKeys[] = {
+				"_activeConnection._innerConnection._createTime.dateData",
+				"_activeConnection._innerConnection._createTime._dateData",
+				"_activeConnection._innerConnection._CreateTime_k__BackingField._dateData" };
+			for(int k=0;k<3 && created == 0;k++)
 			{
-				auto ticks = SpecialCases::TicksFromTarget() - fieldsV["_activeConnection._innerConnection._createTime.dateData"].Value.i64;
-				Out("Running Time: %s ",tickstotimespan(ticks).c_str());
+				varMap::iterator fc = fieldsV.find(createKeys[k]);
+				if(fc != fieldsV.end()) created = fc->second.Value.u64;
+			}
+			if(created != 0)
+			{
+				// Linux core dumps have no capture time, so elapsed time cannot be computed
+				if(!isLinuxTarget && SpecialCases::TicksFromTarget() != 0)
+				{
+					auto ticks = (SpecialCases::TicksFromTarget() & TicksMask) - (created & TicksMask);
+					Out("Running Time: %s ",tickstotimespan(ticks).c_str());
+				} else
+				{
+					Out("Created (UTC): %S ", tickstodatetime(created & TicksMask).c_str());
+				}
 			}
 
-			if(fieldsV["_activeConnection._userConnectionOptions._pooling"].Value.b)
+			varMap::iterator fpool = fieldsV.find("_activeConnection._userConnectionOptions._pooling");
+			if(fpool != fieldsV.end() && fpool->second.Value.b)
 			{
-				Out("Pool Connection: %i of %i ",fieldsV["_activeConnection._poolGroup._poolCount"].Value.i32, fieldsV["_activeConnection._userConnectionOptions._maxPoolSize"].Value.i32);
+				varMap::iterator fcount = fieldsV.find("_activeConnection._poolGroup._poolCount");
+				varMap::iterator fmax = fieldsV.find("_activeConnection._userConnectionOptions._maxPoolSize");
+				if(fcount != fieldsV.end() && fmax != fieldsV.end())
+					Out("Pool Connection: %i of %i ", fcount->second.Value.i32, fmax->second.Value.i32);
+				else if(fmax != fieldsV.end())
+					Out("Pooled (Max Pool Size: %i) ", fmax->second.Value.i32);
+				else
+					Out("Pooled ");
 			}
 			Out("\n\n");
 			Out("%S\n\n", fieldsV["_commandText"].strValue.c_str());

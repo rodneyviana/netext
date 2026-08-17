@@ -1,7 +1,7 @@
 # UPDATE
 **Now supporting Linux dump files!**
 
-# LATEST VERSION: 3.0.2.5000  [here](https://github.com/rodneyviana/netext/releases)
+# LATEST VERSION: 3.0.3.5000  [here](https://github.com/rodneyviana/netext/releases)
 # Description
 *Getting started*
 - Open WinDBG. Load netext
@@ -160,7 +160,7 @@ Listing objects from: 0000000004208000 to 0000000004210000 from thread: 20 [1780
 - [!whttp](#whttp) - List HttpContext Objects
 - (*new*) [!whttpcore](#whttpcore) - List ASP.NET Core (Kestrel) requests, including Linux .NET Core dumps
 - [!wconfig](#wconfig) - Show all .config file lines in memory 
-- [!wservice](#wservice) - List WCF service Objects
+- [!wservice](#wservice) - List WCF service Objects (System.ServiceModel and CoreWCF)
 - [!weval](#weval) - Evaluate expression list
 - [!wclass](#wclass) - Show "reflected" class definition (fields, properties and methods)\(*new*) 
 - [!wkeyvalue](#wkeyvalue) - Display pair key/value for NameObjectCollection type objects
@@ -172,7 +172,7 @@ Listing objects from: 0000000004208000 to 0000000004210000 from thread: 20 [1780
 - [!wmakesource](#wmakesource) - It tries to reflect the current frame into source code
 - [!wopensource](#wopensource) - Open source file based on the IP provided
 - *(not working in .NETCore)* [!wconcurrentdict](#wconcurrentdict) - Dump a concurrent dictionary
-- [!wsql](#wsql) - Dump a concurrent dictionary
+- [!wsql](#wsql) - List SQL queries (System.Data.SqlClient and Microsoft.Data.SqlClient)
 ----
 
 
@@ -180,7 +180,9 @@ Listing objects from: 0000000004208000 to 0000000004210000 from thread: 20 [1780
 [functions list](#functions) 
 
 <a id='wsql'></a>
-## !wsql - Display all SQL Server Commands (System.Data.SqlClient.SqlCommand) or a specific one. It can be filtered by active or partial command text or display only stored procedure queries
+## !wsql - Display all SQL Server Commands (System.Data.SqlClient.SqlCommand and Microsoft.Data.SqlClient.SqlCommand) or a specific one. It can be filtered by active or partial command text or display only stored procedure queries
+
+Both the legacy provider (System.Data.SqlClient) and the modern provider (Microsoft.Data.SqlClient, used by .NET Core/.NET 5+) are supported, including Linux .NET Core dumps. On Linux dumps the connection creation time (UTC) is shown instead of Running Time (no dump capture time available), and the pool usage count is replaced by the configured Max Pool Size. The Password/Pwd value in the displayed connection string is masked by the command so the output can be shared safely.
 
 ```
 Syntax:
@@ -1462,7 +1464,9 @@ List details of a request
 ```
 
 <a id='wservice'></a>
-## !wservice - Dump all WCF Services or details about a specific service (System.ServiceModel.ServiceHost)
+## !wservice - Dump all WCF Services or details about a specific service (System.ServiceModel.ServiceHost or CoreWCF.ServiceHostBase)
+
+CoreWCF services (ASP.NET Core/.NET 5+, including Linux dumps) are listed in their own section with an ActiveCalls column (busy instance contexts) in place of the desktop throttle columns; the detail view shows configuration name, namespace, state, base addresses, channel dispatchers and endpoints.
 ```
 !wservice [<expr>]
 
