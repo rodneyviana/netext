@@ -1,4 +1,4 @@
-// Source Date: Saturday, August 15, 2026 11:35:09 PM
+// Source Date: Sunday, August 16, 2026 1:04:55 PM
 // Source File: C:\Users\fox_m\OneDrive\NewNetExt\netext\NetExt\helptxt.txt
 // This file was generated. Do not modify. Modify Source File instead
 #include "netext.h"
@@ -183,8 +183,19 @@ EXT_COMMAND(whelp,
 	}
 	if(keyword=="wsql")
 	{
-		Dml("Display all SQL Server Commands (System.Data.SqlClient.SqlCommand) or a specific one.\n");
+		Dml("Display all SQL Server Commands (System.Data.SqlClient.SqlCommand and Microsoft.Data.SqlClient.SqlCommand)\n");
+		Dml("or a specific one.\n");
 		Dml("It can be filtered by active or partial command text or display only stored procedure queries\n");
+		Dml("\n");
+		Dml("Notes:\n");
+		Dml("- Both the .NET Framework/legacy provider (System.Data.SqlClient) and the modern provider\n");
+		Dml("  (Microsoft.Data.SqlClient, used by .NET Core/.NET 5+) are supported, including Linux .NET Core dumps\n");
+		Dml("- The Password/Pwd value in the displayed connection string is masked by the command, so the\n");
+		Dml("  output can be shared safely (the raw string in the dump still contains it)\n");
+		Dml("- Running Time requires the dump capture time, which does not exist in Linux core dumps. For Linux\n");
+		Dml("  dumps the connection creation time (UTC) is shown instead\n");
+		Dml("- The pool usage count (n of max) is only available on .NET Framework dumps; core dumps show the\n");
+		Dml("  configured Max Pool Size\n");
 		Dml("\n");
 		Dml("\n");
 		Dml("<b>Syntax:</b>\n");
@@ -2393,6 +2404,12 @@ EXT_COMMAND(whelp,
 	{
 		Dml("Dump all WCF Services or details about a specific service (System.ServiceModel.ServiceHost)\n");
 		Dml("It requires !<link cmd=\"!whelp windex\">windex</link> to dump all ServiceHost objects (but not necessary if an object is specified)\n");
+		Dml("\n");
+		Dml("CoreWCF services (CoreWCF.ServiceHostBase, used by ASP.NET Core/.NET 5+ including Linux dumps) are\n");
+		Dml("also supported and are listed in their own section. For CoreWCF the throttle columns are replaced by\n");
+		Dml("ActiveCalls (busy instance contexts), and the detail view shows configuration name, namespace, state,\n");
+		Dml("base addresses, channel dispatchers (binding name, state, listener URI) and endpoints (contract,\n");
+		Dml("namespace, session mode, URI, binding)\n");
 		Dml("\n");
 		Dml("<b>Syntax:</b>\n");
 		Dml("-------------\n");

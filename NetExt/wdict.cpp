@@ -1425,10 +1425,11 @@ EXT_COMMAND(wservice,
 		addresses.clear();
 		indc->GetByDerive("System.ServiceModel.ServiceHostBase", addresses);
 		AddressEnum adenum;
-		if(addresses.size()==0) return;
+		UINT64 count=0;
+		if(addresses.size())
+		{
 		adenum.Start(addresses);
 
-		UINT64 count=0;
 		if(sizeof(void*)==8)
 			Out("Address\t\tState        EndPoints BaseAddresses  Behaviors Throttled   Calls/Max   Sessions/Max    ConfigName,.NET Type\n");
 		else
@@ -1446,14 +1447,123 @@ EXT_COMMAND(wservice,
 			flags.obj = curr;
 			wfrom_internal(flags);
 		}
+		}
+
+		// CoreWCF hosts (ASP.NET Core / self-hosted, including Linux dumps). The object model
+		// mirrors System.ServiceModel with modernized (_ prefixed / backing) field names
+		MatchingAddresses coreAddresses;
+		indc->GetByDerive("CoreWCF.ServiceHostBase", coreAddresses);
+		if(coreAddresses.size())
+		{
+			adenum.Start(coreAddresses);
+			Out("\nCoreWCF Services\n");
+			if(sizeof(void*)==8)
+				Out("Address\t\tState        EndPoints BaseAddresses  ActiveCalls    ConfigName,.NET Type\n");
+			else
+				Out("Address\tState        EndPoints BaseAddresses  ActiveCalls    ConfigName,.NET Type\n");
+			while(CLRDATA_ADDRESS curr=adenum.GetNext())
+			{
+				count++;
+				Dml("<link cmd=\"!wservice %p\">%p</link>\t",curr, curr);
+				FromFlags flags;
+				ZeroMemory(&flags, sizeof(flags));
+				flags.cmd = "$enumname(_State_k__BackingField), \"\\t\\t\", _Description_k__BackingField._Endpoints_k__BackingField.items._size, \"\\t\\t\", _InternalBaseAddresses_k__BackingField._Items_k__BackingField._size, \"\\t\\t\", _instances._BusyCount_k__BackingField, \"\\t\\\"\", _Description_k__BackingField._configurationName, \"\\\",\", $typename()";
+				flags.fobj = true;
+				flags.nofield = true;
+				flags.nospace = true;
+				flags.obj = curr;
+				wfrom_internal(flags);
+			}
+		}
 		Out("\n%S ServiceHost object(s) found\n", formatnumber(count).c_str());
 		return;
 	}
 	CLRDATA_ADDRESS addr = GetUnnamedArgU64(0);
 	ObjDetail obj(addr);
-	if(!obj.IsValid() || !obj.classObj.Implement(L"System.ServiceModel.ServiceHostBase"))
+	bool isCoreWcf = obj.IsValid() && obj.classObj.Implement(L"CoreWCF.ServiceHostBase");
+	if(!obj.IsValid() || (!isCoreWcf && !obj.classObj.Implement(L"System.ServiceModel.ServiceHostBase")))
 	{
-		Out("Object at %p is invalid or not of type [System.ServiceModel.ServiceHostBase]\n", addr);
+		Out("Object at %p is invalid or not of type [System.ServiceModel.ServiceHostBase] or [CoreWCF.ServiceHostBase]\n", addr);
+		return;
+	}
+	if(isCoreWcf)
+	{
+		std::vector<std::string> coreFields;
+		coreFields.push_back("_InternalBaseAddresses_k__BackingField._Items_k__BackingField._items");
+		coreFields.push_back("_ChannelDispatchers_k__BackingField._Items_k__BackingField._items");
+		coreFields.push_back("_Description_k__BackingField._Endpoints_k__BackingField.items._items");
+		varMap fieldV;
+		DumpFields(addr,coreFields,0,&fieldV);
+		SVAL v;
+
+		v.SetPtr(addr);
+		GetObjSel("Service Info",
+			"select \"Address            : \",$addr(),"
+			"\"\\nRuntime Type       : \",$typename(),"
+			"\"\\nConfiguration Name : \",_Description_k__BackingField._configurationName,"
+			"\"\\nNamespace          : \",_Description_k__BackingField._Namespace_k__BackingField,"
+			"\"\\nState              : \",$enumname(_State_k__BackingField),"
+			"\"\\nEndPoints          : \",_Description_k__BackingField._Endpoints_k__BackingField.items._size,"
+			"\"\\nBase Addresses     : \",_InternalBaseAddresses_k__BackingField._Items_k__BackingField._size,"
+			"\"\\nActive Calls       : \",_instances._BusyCount_k__BackingField,"
+			"\"\\nOpen Timeout       : \",$tickstotimespan(_openTimeout._ticks),"
+			"\"\\nClose Timeout      : \",$tickstotimespan(_closeTimeout._ticks),"
+			"\"\\nEvents Raised      : \",$if(_raisedClosed + _raisedClosing + _raisedFaulted, $if(_raisedClosed,\"ClosedEvent \",\"\")+$if(_raisedClosing,\"ClosingEvent \",\"\")+$if(_raisedFaulted,\"FaultedEvent \",\"\"),\"No Event raised\")");
+
+		// "select _string" alone trips the expression parser (works fine as a nested
+		// path segment), so read the field indirectly
+		v=fieldV["_InternalBaseAddresses_k__BackingField._Items_k__BackingField._items"];
+		GetArraySel("Service Base Addresses", "select $fieldfromobj($addr(),\"_string\")");
+
+		v=fieldV["_ChannelDispatchers_k__BackingField._Items_k__BackingField._items"];
+		GetArraySel("Channels",
+			"select \"Address            : \",$addr(),\"\\nBinding Name       : \",$isnull(_BindingName_k__BackingField,\"\"),\"\\nState              : \",$enumname(_State_k__BackingField),\"\\nAborted            : \",$if(_Aborted_k__BackingField==0,\"No\",\"Yes\"),$if(_ListenUri_k__BackingField,\"\\nListener URI       : \"+_ListenUri_k__BackingField._string,\"\"),\"\\n\"");
+
+		v=fieldV["_Description_k__BackingField._Endpoints_k__BackingField.items._items"];
+		if(v.IsValid && v.Value.ptr != NULL)
+		{
+			vector<CLRDATA_ADDRESS> epList;
+			SpecialCases::EnumArray(v.Value.ptr, 0, NULL, &epList);
+			Out("\nEndpoints\n");
+			Out("\n================================\n");
+			for(int i=0;i<epList.size(); i++)
+			{
+				v.SetPtr(epList[i]);
+				GetObjSel("",
+					"select \"Address            : \",$addr(),\"\\nConfiguration Name : \",_contract._ConfigurationName_k__BackingField,\"\\nContract Namespace : \",_contract._ns,\"\\nSession Mode       : \",$enumname(_contract._sessionMode),\"\\nListening Mode     : \",$enumname(_listenUriMode),$if(_id,\"\\nEndpoint Id        : \"+_id,\"\"),$if(_Address_k__BackingField._Uri_k__BackingField,\"\\nURI                : \"+_Address_k__BackingField._Uri_k__BackingField._string,\"\")");
+				std::vector<std::string> epFields;
+				varMap epV;
+				epFields.push_back("_Binding_k__BackingField");
+				epFields.push_back("_contract");
+				DumpFields(epList[i],epFields,0,&epV);
+				SVAL b = epV["_Binding_k__BackingField"];
+				if(b.IsValid && b.Value.ptr)
+				{
+					// Field set varies per concrete Binding type (BasicHttpBinding, NetTcpBinding,
+					// custom bindings, ...); $containfieldoftype guards each optional field so this
+					// stays generic instead of erroring on bindings that lack a given field
+					v.SetPtr(b.Value.ptr);
+					GetObjSel("Binding",
+						"select \"Address            : \",$addr(),"
+						"\"\\nType               : \",$typename(),"
+						"$if($containfieldoftype(\"_name\"),\"\\nName               : \"+_name,\"\"),"
+						"$if($containfieldoftype(\"_namespaceIdentifier\"),\"\\nNamespace          : \"+_namespaceIdentifier,\"\"),"
+						"$if($containfieldoftype(\"_openTimeout\"),\"\\nOpen Timeout       : \"+$tickstotimespan(_openTimeout._ticks),\"\"),"
+						"$if($containfieldoftype(\"_closeTimeout\"),\"\\nClose Timeout      : \"+$tickstotimespan(_closeTimeout._ticks),\"\"),"
+						"$if($containfieldoftype(\"_receiveTimeout\"),\"\\nReceive Timeout    : \"+$tickstotimespan(_receiveTimeout._ticks),\"\"),"
+						"$if($containfieldoftype(\"_sendTimeout\"),\"\\nSend Timeout       : \"+$tickstotimespan(_sendTimeout._ticks),\"\"),"
+						"$if($containfieldoftype(\"_MessageEncoding_k__BackingField\"),\"\\nMessage Encoding   : \"+$enumname(_MessageEncoding_k__BackingField),\"\")");
+					Out("Full Binding Detail: ");
+					Dml("<link cmd=\"!wselect * from %p\">%p</link>\n",b.Value.ptr, b.Value.ptr);
+				}
+				b = epV["_contract"];
+				if(b.IsValid && b.Value.ptr)
+				{
+					Out("Contract           : ");
+					Dml("<link cmd=\"!wselect * from %p\">%p</link>\n",b.Value.ptr, b.Value.ptr);
+				}
+			}
+		}
 		return;
 	}
 	std::vector<std::string> fields;

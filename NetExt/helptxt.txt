@@ -153,8 +153,19 @@ will not understand managed code.
 0:016&gt; !wt
 
 ##wsql
-Display all SQL Server Commands (System.Data.SqlClient.SqlCommand) or a specific one.
+Display all SQL Server Commands (System.Data.SqlClient.SqlCommand and Microsoft.Data.SqlClient.SqlCommand)
+or a specific one.
 It can be filtered by active or partial command text or display only stored procedure queries
+
+Notes:
+- Both the .NET Framework/legacy provider (System.Data.SqlClient) and the modern provider
+  (Microsoft.Data.SqlClient, used by .NET Core/.NET 5+) are supported, including Linux .NET Core dumps
+- The Password/Pwd value in the displayed connection string is masked by the command, so the
+  output can be shared safely (the raw string in the dump still contains it)
+- Running Time requires the dump capture time, which does not exist in Linux core dumps. For Linux
+  dumps the connection creation time (UTC) is shown instead
+- The pool usage count (n of max) is only available on .NET Framework dumps; core dumps show the
+  configured Max Pool Size
 
 
 <b>Syntax:</b>
@@ -2255,6 +2266,12 @@ You may also be interested in
 ##wservice
 Dump all WCF Services or details about a specific service (System.ServiceModel.ServiceHost)
 It requires !||windex|| to dump all ServiceHost objects (but not necessary if an object is specified)
+
+CoreWCF services (CoreWCF.ServiceHostBase, used by ASP.NET Core/.NET 5+ including Linux dumps) are
+also supported and are listed in their own section. For CoreWCF the throttle columns are replaced by
+ActiveCalls (busy instance contexts), and the detail view shows configuration name, namespace, state,
+base addresses, channel dispatchers (binding name, state, listener URI) and endpoints (contract,
+namespace, session mode, URI, binding)
 
 <b>Syntax:</b>
 -------------

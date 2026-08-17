@@ -1,7 +1,7 @@
 # UPDATE
 **Now supporting Linux dump files!**
 
-# LATEST VERSION: 3.0.1.5000  [here](https://github.com/rodneyviana/netext/releases)
+# LATEST VERSION: 3.0.3.5000  [here](https://github.com/rodneyviana/netext/releases)
 # Description
 *Getting started*
 - Open WinDBG. Load netext
@@ -158,8 +158,9 @@ Listing objects from: 0000000004208000 to 0000000004210000 from thread: 20 [1780
 - [!wdict](#wdict) - Display dictionary objects
 - [!whash](#whash) - Display HashTable objects
 - [!whttp](#whttp) - List HttpContext Objects
+- (*new*) [!whttpcore](#whttpcore) - List ASP.NET Core (Kestrel) requests, including Linux .NET Core dumps
 - [!wconfig](#wconfig) - Show all .config file lines in memory 
-- [!wservice](#wservice) - List WCF service Objects
+- [!wservice](#wservice) - List WCF service Objects (System.ServiceModel and CoreWCF)
 - [!weval](#weval) - Evaluate expression list
 - [!wclass](#wclass) - Show "reflected" class definition (fields, properties and methods)\(*new*) 
 - [!wkeyvalue](#wkeyvalue) - Display pair key/value for NameObjectCollection type objects
@@ -171,7 +172,7 @@ Listing objects from: 0000000004208000 to 0000000004210000 from thread: 20 [1780
 - [!wmakesource](#wmakesource) - It tries to reflect the current frame into source code
 - [!wopensource](#wopensource) - Open source file based on the IP provided
 - *(not working in .NETCore)* [!wconcurrentdict](#wconcurrentdict) - Dump a concurrent dictionary
-- [!wsql](#wsql) - Dump a concurrent dictionary
+- [!wsql](#wsql) - List SQL queries (System.Data.SqlClient and Microsoft.Data.SqlClient)
 ----
 
 
@@ -179,7 +180,9 @@ Listing objects from: 0000000004208000 to 0000000004210000 from thread: 20 [1780
 [functions list](#functions) 
 
 <a id='wsql'></a>
-## !wsql - Display all SQL Server Commands (System.Data.SqlClient.SqlCommand) or a specific one. It can be filtered by active or partial command text or display only stored procedure queries
+## !wsql - Display all SQL Server Commands (System.Data.SqlClient.SqlCommand and Microsoft.Data.SqlClient.SqlCommand) or a specific one. It can be filtered by active or partial command text or display only stored procedure queries
+
+Both the legacy provider (System.Data.SqlClient) and the modern provider (Microsoft.Data.SqlClient, used by .NET Core/.NET 5+) are supported, including Linux .NET Core dumps. On Linux dumps the connection creation time (UTC) is shown instead of Running Time (no dump capture time available), and the pool usage count is replaced by the configured Max Pool Size. The Password/Pwd value in the displayed connection string is masked by the command so the output can be shared safely.
 
 ```
 Syntax:
@@ -1397,8 +1400,73 @@ Xml Tree of Request    : !wfrom -obj 00000001c30d2878 select $xmltree($rawfield(
 
 ```
 
+<a id='whttpcore'></a>
+## !whttpcore - Dump ASP.NET Core (Kestrel) requests
+```
+Like !whttp, but for ASP.NET Core applications hosted in Kestrel, including .NET Core dumps captured on Linux.
+It requires !windex to list all requests (but not necessary if an object is specified).
+
+It works by finding the Kestrel connection objects (Http1Connection, Http2Stream and Http3Stream, all deriving
+from HttpProtocol) which carry the request state: verb, path, query string, status code, processing state,
+the Host request header (to reconstruct the Url) and the request start time (from the request Activity).
+Connections with no current request (idle keep-alive connections between requests) are skipped.
+
+Notes:
+- The Thread column comes from the threads where the connection object is rooted in stack. Requests parked
+  on an await (e.g. awaiting a Task) hold no thread; they show '--' which is expected for async requests
+- Running time requires the dump capture time, which does not exist in Linux core dumps. For Linux dumps
+  only the Start Time (UTC) is shown
+- Status is provisional (it defaults to 200) until State reaches HeadersCommitted/HeadersFlushed
+
+Syntax:
+--------
+
+!whttpcore [-order] [-running] [-status <decimal>] [-notstatus <decimal>]
+       [-verb <str-verb>] [<expr>]
+
+Where:
+-------
+ -order - If specified will show requests in chronological order of start time
+ -running - If specified will show only requests still in the application pipeline (State AppStarted)
+ -status - If specified will show only requests with the chosen status (the value is decimal not hex like 500)
+ -notstatus - If specified will show only requests without the chosen status (the value is decimal not hex like 200)
+ -verb - If specified will show only requests with the chosen verb (e.g. POST)
+ <expr> - Kestrel connection Address. Optional. If not specified list all requests
+
+Examples:
+
+List all requests (Linux dump; no Running column)
+-------------------------------------------------
+
+0:000> !whttpcore
+Address          Thrd Start Time (UTC)       State           Status Verb     Url
+00007865ac479188   -- 8/15/2026 10:08:31 PM  AppStarted         200 GET      http://127.0.0.1:5080/api/slow?delaySeconds=105
+00007865ac47fb58   -- 8/15/2026 10:08:31 PM  AppStarted         200 GET      http://127.0.0.1:5080/api/slow?delaySeconds=105
+00007865ac481898   -- 8/15/2026 10:08:31 PM  AppStarted         200 GET      http://127.0.0.1:5080/api/slow?delaySeconds=105
+00007865ac878a90   -- 8/15/2026 10:08:31 PM  AppStarted         200 POST     http://127.0.0.1:5080/soap/OrderService.svc
+
+4 Kestrel request(s) found matching criteria
+10 connection(s) skipped (no current request or filtered out)
+Note: Running time is not shown because the dump has no capture time (Linux). Start Time is UTC
+Note: Status is provisional (default 200) until State reaches HeadersCommitted
+
+List requests still in the application pipeline
+-----------------------------------------------
+    0:000> !whttpcore -running
+
+List all failed requests
+------------------------
+    0:000> !whttpcore -notstatus 200
+
+List details of a request
+-------------------------
+    0:000> !whttpcore 00007865ac878a90
+```
+
 <a id='wservice'></a>
-## !wservice - Dump all WCF Services or details about a specific service (System.ServiceModel.ServiceHost)
+## !wservice - Dump all WCF Services or details about a specific service (System.ServiceModel.ServiceHost or CoreWCF.ServiceHostBase)
+
+CoreWCF services (ASP.NET Core/.NET 5+, including Linux dumps) are listed in their own section with an ActiveCalls column (busy instance contexts) in place of the desktop throttle columns; the detail view shows configuration name, namespace, state, base addresses, channel dispatchers and endpoints.
 ```
 !wservice [<expr>]
 
