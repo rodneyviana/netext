@@ -585,6 +585,8 @@ Saved 'c:\modules here\HttpListenerBehavior.dll' successfully
 
 ##wxml
 Dump the text representation of an XML document
+Supports both the .NET Framework System.Xml.dll and the .NET Core/.NET 5+ System.Private.Xml.dll
+implementation of System.Xml.XmlDocument, including Linux dumps, detected automatically per object
 <b>Syntax:</b>
 -------
  
@@ -2581,7 +2583,8 @@ calculated: SPSvc
 <b>$xml(&lt;expr&gt;)</b> - Return the XML-indented version of the Xml string (pretty print)
 <b>$xmltree(&lt;expr&gt;)</b> - Return the XML tree version of the Xml string
 <b>$html(&lt;expr&gt;)</b> - Html encode a string
-<b>$xmldoc(&lt;expr&gt;)</b> - Convert a System.Xml.XmlDocument object to string
+<b>$xmldoc(&lt;expr&gt;)</b> - Convert a System.Xml.XmlDocument object to string. Supports both the
+.NET Framework and .NET Core/.NET 5+ (including Linux) System.Xml implementations, same as !||wxml||
 
 <i>Example</i>
 ------------

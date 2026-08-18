@@ -2193,6 +2193,271 @@ namespace NetExt.Shim
         {
             cache = new HeapCache(m_heap.Runtime);
         }
+        #region .NET Core XML support (System.Private.Xml.dll)
+        // Added alongside the desktop implementation below rather than merged into it, mirroring the
+        // dual-provider approach used in !wsql (System.Data.SqlClient / Microsoft.Data.SqlClient) and
+        // !wservice (System.ServiceModel / CoreWCF). The desktop methods further down are untouched;
+        // DumpXmlDoc picks one implementation or the other based on which assembly the XmlDocument
+        // instance actually belongs to.
+        //
+        // Field renames vs desktop: lastChild -> _lastChild, name -> _name, attributes -> _attributes,
+        // data -> _data (Text/Comment/CDATA), version/encoding -> _version/_encoding. parentNode and
+        // next are unchanged (declared on the shared XmlNode/XmlLinkedNode base in both frameworks).
+        // Multi-attribute storage also changed: desktop's XmlAttributeCollection.nodes was an ArrayList
+        // or (for a single attribute) a bare node reference behind a "field" member; Core always wraps
+        // it in a XmlNamedNodeMap.SmallXmlNodeList value type whose single member "_field" holds either
+        // the node directly (one attribute) or a List<object> (multiple attributes).
+
+        private static bool IsCoreXml(ClrType type)
+        {
+            if (type == null)
+                return false;
+            ClrModule module = type.Module;
+            string file = module != null ? module.FileName : null;
+            return !String.IsNullOrEmpty(file) && file.IndexOf("System.Private.Xml", StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
+        private ulong GetXmlRefCore(ulong addr, ClrType type, bool interior, string name)
+        {
+            ClrInstanceField f = type == null ? null : type.GetFieldByName(name);
+            if (f == null)
+                return 0;
+            object v = f.GetValue(addr, interior);
+            return v is ulong u ? u : 0;
+        }
+
+        private string GetXmlStrCore(ulong addr, ClrType type, bool interior, string name)
+        {
+            ClrInstanceField f = type == null ? null : type.GetFieldByName(name);
+            if (f == null)
+                return null;
+            return f.GetValue(addr, interior) as string;
+        }
+
+        private int GetXmlIntCore(ulong addr, ClrType type, string name)
+        {
+            ClrInstanceField f = type == null ? null : type.GetFieldByName(name);
+            if (f == null)
+                return 0;
+            object v = f.GetValue(addr, false);
+            return v is int i ? i : 0;
+        }
+
+        // Resolves an XmlName field (_name) to its prefix + localName, formatted as prefix:local
+        private string GetXmlNodeNameCore(ulong addr, ClrType type)
+        {
+            ulong nameAddr = GetXmlRefCore(addr, type, false, "_name");
+            if (nameAddr == 0)
+                return String.Empty;
+            ClrType nameType = m_heap.GetObjectType(nameAddr);
+            string prefix = GetXmlStrCore(nameAddr, nameType, false, "_prefix");
+            string localName = GetXmlStrCore(nameAddr, nameType, false, "_localName");
+            return String.IsNullOrEmpty(prefix) ? localName : prefix + ":" + localName;
+        }
+
+        private void AddXmlListItemsCore(ulong listAddr, ClrType listType, List<ulong> result)
+        {
+            ulong itemsAddr = GetXmlRefCore(listAddr, listType, false, "_items");
+            int size = GetXmlIntCore(listAddr, listType, "_size");
+            if (itemsAddr == 0)
+                return;
+            ClrType arr = m_heap.GetObjectType(itemsAddr);
+            if (arr == null)
+                return;
+            for (int i = 0; i < size; i++)
+                result.Add((ulong)arr.GetArrayElementValue(itemsAddr, i));
+        }
+
+        // Returns the addresses of every XmlAttribute in an XmlAttributeCollection: "nodes" is a
+        // SmallXmlNodeList value type embedded in the collection, whose single "_field" member holds
+        // either the attribute node directly (one attribute) or a List<object> (multiple attributes)
+        private List<ulong> GetXmlAttributeAddressesCore(ulong attributesAddr)
+        {
+            var result = new List<ulong>();
+            if (attributesAddr == 0)
+                return result;
+            ClrType attrCollType = m_heap.GetObjectType(attributesAddr);
+            ClrInstanceField nodesField = attrCollType == null ? null : attrCollType.GetFieldByName("nodes");
+            if (nodesField == null)
+                return result;
+
+            ulong structAddr = nodesField.GetAddress(attributesAddr, false);
+            ClrType structType = nodesField.Type;
+            ulong innerAddr = GetXmlRefCore(structAddr, structType, true, "_field");
+            if (innerAddr == 0)
+                return result;
+
+            ClrType innerType = m_heap.GetObjectType(innerAddr);
+            if (innerType != null && innerType.Name.StartsWith("System.Collections.Generic.List<"))
+                AddXmlListItemsCore(innerAddr, innerType, result);
+            else
+                result.Add(innerAddr);
+            return result;
+        }
+
+        private StringBuilder PrintAttributeCore(ulong Address)
+        {
+            StringBuilder sb = new StringBuilder(100);
+            if (Address == 0)
+                return sb;
+            sb.Append(" ");
+            ClrType attrType = m_heap.GetObjectType(Address);
+            sb.Append(GetXmlNodeNameCore(Address, attrType));
+            ulong valueAddr = GetXmlRefCore(Address, attrType, false, "_lastChild");
+            string value = valueAddr == 0 ? null : GetXmlStrCore(valueAddr, m_heap.GetObjectType(valueAddr), false, "_data");
+            sb.Append(String.IsNullOrEmpty(value) ? "=\"\"" : "=\"" + System.Security.SecurityElement.Escape(value) + "\"");
+            return sb;
+        }
+
+        private StringBuilder PrintXmlNodeCore(ulong Address, int Level)
+        {
+            StringBuilder sb = new StringBuilder(100);
+            if (Address == 0)
+                return sb;
+            ClrType node = m_heap.GetObjectType(Address);
+            if (node == null)
+                return sb;
+            sb.Append(' ', Level);
+            if (node.Name == "System.Xml.XmlDeclaration")
+            {
+                string version = GetXmlStrCore(Address, node, false, "_version");
+                string encoding = GetXmlStrCore(Address, node, false, "_encoding");
+                sb.Append("<?xml version=\"");
+                sb.Append(String.IsNullOrEmpty(version) ? "1.0" : version);
+                sb.Append("\" encoding=\"");
+                sb.Append(String.IsNullOrEmpty(encoding) ? "utf-8" : encoding);
+                sb.Append("\" ?>");
+                return sb;
+            }
+            if (node.Name == "System.Xml.XmlComment")
+            {
+                sb.Append("<!-- ");
+                sb.Append(GetXmlStrCore(Address, node, false, "_data"));
+                sb.Append(" -->");
+                return sb;
+            }
+            if (node.Name == "System.Xml.XmlCDataSection")
+            {
+                sb.Append("<![CData[");
+                sb.Append(GetXmlStrCore(Address, node, false, "_data"));
+                sb.Append("]]>");
+                return sb;
+            }
+            if (node.Name == "System.Xml.XmlText")
+            {
+                sb.Append(GetXmlStrCore(Address, node, false, "_data"));
+                return sb;
+            }
+
+            sb.Append("<");
+            sb.Append(GetXmlNodeNameCore(Address, node));
+
+            ulong attributes = GetXmlRefCore(Address, node, false, "_attributes");
+            if (attributes != 0)
+            {
+                foreach (ulong attrAddr in GetXmlAttributeAddressesCore(attributes))
+                    sb.Append(PrintAttributeCore(attrAddr));
+            }
+            ulong lastChild = GetXmlRefCore(Address, node, false, "_lastChild");
+            if (lastChild == 0 || lastChild == Address)
+                sb.Append(" />");
+            else
+                sb.Append(">");
+            return sb;
+        }
+
+        private StringBuilder DumpXmlNodesCore(ulong Address, int Indentention = 0, StringBuilder sb = null)
+        {
+            if (sb == null)
+                sb = new StringBuilder(100);
+            if (Address == 0)
+                return sb;
+            List<ulong> nodes = new List<ulong>();
+            ulong next = Address;
+            while (next != 0)
+            {
+                if (next != Address) nodes.Add(next); // Add Last child last
+                ClrType node = m_heap.GetObjectType(next);
+                if (node == null)
+                {
+                    sb.AppendLine("Something bad happened");
+                    break;
+                }
+                if (node.Name == "System.Xml.XmlDeclaration")
+                {
+                    sb.AppendFormat("{0}\n", PrintXmlNodeCore(next, Indentention));
+                }
+                if (cache.IsDerivedOf(next, "System.Xml.XmlNode"))
+                {
+                    next = GetXmlRefCore(next, node, false, "next");
+                    ulong i = nodes.FirstOrDefault(m => m == next);
+                    if (i != 0 || next == Address)  // Let's avoid infinite loop
+                    {
+                        next = 0; // We went here
+                    }
+                }
+                else
+                {
+                    sb.AppendLine("Something bad happened");
+                    next = 0;
+                }
+            }
+            // Now let's navigate in the right order
+            nodes.Add(Address); // Last Child Node
+            foreach (ulong node in nodes)
+            {
+                ClrType nodeObj = m_heap.GetObjectType(node);
+                if (nodeObj == null)
+                    continue;
+                if (nodeObj.Name != "System.Xml.XmlDeclaration")
+                {
+                    sb.AppendFormat("{0}\n", PrintXmlNodeCore(node, Indentention));
+                    ulong child = GetXmlRefCore(node, nodeObj, false, "_lastChild");
+                    if (child != 0 && child != node)
+                    {
+                        DumpXmlNodesCore(child, Indentention + 2, sb);
+                        string str = new string(' ', Indentention);
+                        if (nodeObj.Name != "System.Xml.XmlText")
+                            sb.AppendFormat("{0}</{1}>\n", str, GetXmlNodeNameCore(node, nodeObj));
+                    }
+                }
+
+            }
+
+            return sb;
+        }
+
+        private StringBuilder DumpXmlDocCore(ulong Address, ClrType xmlDoc, bool PrintOnly)
+        {
+            ulong next = GetXmlRefCore(Address, xmlDoc, false, "_lastChild");
+            if (xmlDoc.Name != "System.Xml.XmlDocument" && (xmlDoc.BaseType != null && xmlDoc.BaseType.Name != "System.Xml.XmlDocument"))
+            {
+                next = Address;
+                ulong parent = next;
+                while (parent != 0)
+                {
+                    next = parent;
+                    ClrType curType = m_heap.GetObjectType(next);
+                    parent = GetXmlRefCore(next, curType, false, "parentNode");
+                }
+                xmlDoc = m_heap.GetObjectType(next);
+                if (xmlDoc.Name == "System.Xml.XmlDocument" || (xmlDoc.BaseType != null && xmlDoc.BaseType.Name == "System.Xml.XmlDocument"))
+                {
+                    next = GetXmlRefCore(next, xmlDoc, false, "_lastChild");
+                }
+            }
+
+            var sb = DumpXmlNodesCore(next);
+
+            if (PrintOnly)
+            {
+                Exports.WriteLine("{0}", sb.ToString());
+                return null;
+            }
+            return sb;
+        }
+        #endregion
+
         public StringBuilder PrintAttribute(ulong Address)
         {
             StringBuilder sb = new StringBuilder(100);
@@ -2397,6 +2662,11 @@ namespace NetExt.Shim
                 return null;
             }
 
+            // .NET Core (System.Private.Xml.dll): different field names/attribute storage layout,
+            // handled by the parallel implementation added above rather than in this method
+            if (IsCoreXml(xmlDoc))
+                return DumpXmlDocCore(Address, xmlDoc, PrintOnly);
+
             ClrInstanceField fLastChild = xmlDoc.GetFieldByName("lastChild");
             ulong next = (ulong)fLastChild.GetValue(Address);
             if (xmlDoc.Name != "System.Xml.XmlDocument" && (xmlDoc.BaseType != null && xmlDoc.BaseType.Name != "System.Xml.XmlDocument"))
@@ -2424,7 +2694,7 @@ namespace NetExt.Shim
             {
                 Exports.WriteLine("{0}", sb.ToString());
                 return null;
-               
+
             }
             return sb;
         }
