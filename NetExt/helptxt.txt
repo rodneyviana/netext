@@ -62,7 +62,7 @@
 ||functions|| list *new functions*
 ||license|| see all licenses applied to this product
 
-#wsetruntime
+##wsetruntime
 When more than one runtime is available it lets you switch runtimes
 
 !wsetruntime [&lt;index&gt;]

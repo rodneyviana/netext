@@ -1,4 +1,4 @@
-// Source Date: Tuesday, August 18, 2026 2:37:20 PM
+// Source Date: Tuesday, August 18, 2026 3:08:45 PM
 // Source File: C:\Users\fox_m\OneDrive\NewNetExt\netext\NetExt\helptxt.txt
 // This file was generated. Do not modify. Modify Source File instead
 #include "netext.h"
@@ -80,7 +80,10 @@ EXT_COMMAND(whelp,
 		Dml("<link cmd=\"!whelp functions\">functions</link> list *new functions*\n");
 		Dml("<link cmd=\"!whelp license\">license</link> see all licenses applied to this product\n");
 		Dml("\n");
-		Dml("#wsetruntime\n");
+	return;
+	}
+	if(keyword=="wsetruntime")
+	{
 		Dml("When more than one runtime is available it lets you switch runtimes\n");
 		Dml("\n");
 		Dml("!wsetruntime [&lt;index&gt;]\n");
