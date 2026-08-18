@@ -169,7 +169,7 @@ Listing objects from: 0000000004208000 to 0000000004210000 from thread: 20 [1780
 - [!wruntime](#wruntime) - Display HTTP Runtime Info including Active Requests count
 - [!wtoken](#wtoken) - Display WIF tokens and claims
 - [!wsocket](#wsocket) - Dump socket information
-- [!wxml](#wxml) - Dump a XML document
+- [!wxml](#wxml) - Dump a XML document (.NET Framework and .NET Core/.NET 5+, including Linux)
 - [!wmakesource](#wmakesource) - It tries to reflect the current frame into source code
 - [!wopensource](#wopensource) - Open source file based on the IP provided
 - *(not working in .NETCore)* [!wconcurrentdict](#wconcurrentdict) - Dump a concurrent dictionary
@@ -2121,6 +2121,8 @@ Target Time: 07/24/2017 09:42:03.81
 ## !wxml - Dump a XmlDocument object
 ```
 Dump the text representation of an XML document
+Supports both the .NET Framework System.Xml.dll and the .NET Core/.NET 5+ System.Private.Xml.dll
+implementation of System.Xml.XmlDocument, including Linux dumps, detected automatically per object
 
 
 Syntax:
@@ -2366,7 +2368,7 @@ Xml
 $xml(<expr>) - Return the XML-indented version of the Xml string (pretty print)
 $xmltree(<expr>) - Return the XML tree version of the Xml string
 $html(<expr>) - Html encode a string
-*new* $xmldoc(<expr>) - Convert a System.Xml.XmlDocument object to string
+*new* $xmldoc(<expr>) - Convert a System.Xml.XmlDocument object to string. Supports both the .NET Framework and .NET Core/.NET 5+ (including Linux) System.Xml implementations, same as !wxml
 
 Example
 ------------
