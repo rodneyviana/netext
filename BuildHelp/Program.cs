@@ -120,6 +120,20 @@ EXT_COMMAND(whelp,
                             curState = State.None;
                             goto case State.None;
                         }
+                        // A line starting with a single '#' immediately followed by a
+                        // non-space character (e.g. "#wsetruntime") almost always means a
+                        // section header lost its second '#'. Left undetected, this line
+                        // silently becomes ordinary text glued onto the END of whatever
+                        // section is still open (usually the "no keyword" default menu),
+                        // and every following line - the entire rest of that section's
+                        // content - vanishes into it too, with no build error at all.
+                        if (str.Length > 1 && str[0] == '#' && str[1] != '#' && str[1] != ' ')
+                        {
+                            Console.WriteLine(
+                                "WARNING at line {0}: \"{1}\" looks like a section header missing its second '#'. " +
+                                "It will be emitted as plain text inside the CURRENTLY OPEN section instead of starting a new one.",
+                                i, str);
+                        }
                         genFile.Add(
                             String.Format("\t\tDml(\"{0}\\n\");", Transform(str))
                             );
