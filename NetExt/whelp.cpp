@@ -1,4 +1,4 @@
-// Source Date: Sunday, August 16, 2026 1:04:55 PM
+// Source Date: Monday, August 17, 2026 6:52:56 PM
 // Source File: C:\Users\fox_m\OneDrive\NewNetExt\netext\NetExt\helptxt.txt
 // This file was generated. Do not modify. Modify Source File instead
 #include "netext.h"
@@ -642,6 +642,8 @@ EXT_COMMAND(whelp,
 	if(keyword=="wxml")
 	{
 		Dml("Dump the text representation of an XML document\n");
+		Dml("Supports both the .NET Framework System.Xml.dll and the .NET Core/.NET 5+ System.Private.Xml.dll\n");
+		Dml("implementation of System.Xml.XmlDocument, including Linux dumps, detected automatically per object\n");
 		Dml("<b>Syntax:</b>\n");
 		Dml("-------\n");
 		Dml(" \n");
@@ -2725,7 +2727,8 @@ EXT_COMMAND(whelp,
 		Dml("<b>$xml(&lt;expr&gt;)</b> - Return the XML-indented version of the Xml string (pretty print)\n");
 		Dml("<b>$xmltree(&lt;expr&gt;)</b> - Return the XML tree version of the Xml string\n");
 		Dml("<b>$html(&lt;expr&gt;)</b> - Html encode a string\n");
-		Dml("<b>$xmldoc(&lt;expr&gt;)</b> - Convert a System.Xml.XmlDocument object to string\n");
+		Dml("<b>$xmldoc(&lt;expr&gt;)</b> - Convert a System.Xml.XmlDocument object to string. Supports both the\n");
+		Dml(".NET Framework and .NET Core/.NET 5+ (including Linux) System.Xml implementations, same as !<link cmd=\"!whelp wxml\">wxml</link>\n");
 		Dml("\n");
 		Dml("<i>Example</i>\n");
 		Dml("------------\n");
