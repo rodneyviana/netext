@@ -609,16 +609,47 @@ EXT_COMMAND(wdict,
 		return;
 	}
 	std::vector<std::string> fields;
+	// .NET Core renamed Dictionary<K,V>'s top-level fields with an underscore prefix
+	// (entries -> _entries, buckets -> _buckets, count -> _count); the per-entry
+	// fields read further down (key/value/next) are unchanged in both frameworks
+	fields.push_back("_entries");
 	fields.push_back("entries");
+	fields.push_back("_buckets");
 	fields.push_back("buckets");
+	fields.push_back("_count");
 	fields.push_back("count");
+	// .NET Core 3.0 also rewrote the _buckets encoding itself: a bucket value of 0
+	// means empty (desktop used -1 as the empty sentinel and stored the real,
+	// 0-based entry index directly), and a non-zero value stores (realIndex + 1).
+	// _fastModMultiplier was added in that same rewrite (for the Lemire fast-modulo
+	// bucket hash), so its presence reliably tells us which encoding is in play.
+	// The per-entry "next" chain field is unaffected by either scheme.
+	fields.push_back("_fastModMultiplier");
 	varMap fieldV;
 	DumpFields(addr,fields,0,&fieldV);
-	int n=fieldV["count"].Value.i32;
-	CLRDATA_ADDRESS entries = fieldV["entries"].Value.ptr;
-	CLRDATA_ADDRESS buckets = fieldV["buckets"].Value.ptr;
+	bool modernBuckets = fieldV.find("_fastModMultiplier") != fieldV.end();
 
-	CLRDATA_ADDRESS mt = fieldV["entries"].MT;
+	varMap::iterator f;
+	f = fieldV.find("_entries"); if(f == fieldV.end()) f = fieldV.find("entries");
+	if(f == fieldV.end())
+	{
+		Out("Could not locate the Dictionary's internal fields\n");
+		return;
+	}
+	CLRDATA_ADDRESS entries = f->second.Value.ptr;
+
+	f = fieldV.find("_buckets"); if(f == fieldV.end()) f = fieldV.find("buckets");
+	if(f == fieldV.end())
+	{
+		Out("Could not locate the Dictionary's internal fields\n");
+		return;
+	}
+	CLRDATA_ADDRESS buckets = f->second.Value.ptr;
+
+	f = fieldV.find("_count"); if(f == fieldV.end()) f = fieldV.find("count");
+	int n = (f == fieldV.end()) ? 0 : f->second.Value.i32;
+
+	CLRDATA_ADDRESS mt = 0;
 	if(n==0 || entries == NULL)
 	{
 		Out("Empty Dictionary\n");
@@ -644,9 +675,24 @@ EXT_COMMAND(wdict,
 	for(int i=0;i<objBuckets.NumComponents();i++)
 	{
 		ExtRemoteData rm(objBuckets.DataPtr()+i*objBuckets.InnerComponentSize(),sizeof(int));
-		INT32 s=rm.GetLong();
+		INT32 raw=rm.GetLong();
+		INT32 s;
+		if(modernBuckets)
+		{
+			if(raw == 0) continue; // empty bucket, nothing chained here
+			s = raw - 1;
+		}
+		else
+		{
+			s = raw; // desktop: 0-based index directly, -1 means empty
+		}
 		while(s!=-1 && c<=n)
 		{
+			if(s < 0 || (size_t)s >= addresses.size())
+			{
+				Out("\nWARNING: Bucket points outside the entries array (index %i). Dictionary consistency compromised.\n", s);
+				return;
+			}
 			fieldV.clear();
 			fields.clear();
 			fields.push_back("key");

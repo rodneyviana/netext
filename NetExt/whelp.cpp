@@ -1,4 +1,4 @@
-// Source Date: Monday, August 17, 2026 6:52:56 PM
+// Source Date: Tuesday, August 18, 2026 12:30:20 PM
 // Source File: C:\Users\fox_m\OneDrive\NewNetExt\netext\NetExt\helptxt.txt
 // This file was generated. Do not modify. Modify Source File instead
 #include "netext.h"
@@ -2092,6 +2092,9 @@ EXT_COMMAND(whelp,
 	if(keyword=="wdict")
 	{
 		Dml("Dump items in a dictionary type\n");
+		Dml("Supports both the .NET Framework and .NET Core/.NET 5+ Dictionary&lt;K,V&gt; implementation\n");
+		Dml("(including Linux dumps), which renamed several internal fields and changed how empty\n");
+		Dml("buckets are encoded\n");
 		Dml("\n");
 		Dml("<b>Syntax:</b>\n");
 		Dml("-----------\n");
