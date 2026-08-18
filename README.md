@@ -1176,6 +1176,8 @@ Listing objects from: 0000000001069000 to 0000000001070000 from thread: 3 [22f4]
 ```
 <a id='wdict'></a>
 ## !wdict - Dump items in a dictionary type
+
+Supports both the .NET Framework and .NET Core/.NET 5+ Dictionary<K,V> implementation (including Linux dumps), which renamed several internal fields and changed how empty buckets are encoded.
 ```
 !wdict <address>
 <address> - Address of the dictionary.

@@ -1966,6 +1966,9 @@ Dump items from a concurrent dictionary type
 
 ##wdict
 Dump items in a dictionary type
+Supports both the .NET Framework and .NET Core/.NET 5+ Dictionary&lt;K,V&gt; implementation
+(including Linux dumps), which renamed several internal fields and changed how empty
+buckets are encoded
 
 <b>Syntax:</b>
 -----------
