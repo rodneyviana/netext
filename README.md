@@ -1,7 +1,7 @@
 # UPDATE
 **Now supporting Linux dump files!**
 
-# LATEST VERSION: 3.0.4.5000  [here](https://github.com/rodneyviana/netext/releases)
+# LATEST VERSION: 3.0.8.5000  [here](https://github.com/rodneyviana/netext/releases)
 # Description
 *Getting started*
 - Open WinDBG. Load netext
