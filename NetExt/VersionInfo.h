@@ -8,7 +8,7 @@
 #ifndef ver_major
 #define ver_major 3
 #define ver_minor 0
-#define ver_release 6
+#define ver_release 7
 #define ver_build 5000
 #define ver_all(a,b,c,d) a,b,c,d
 #define ver_expand(s) #s

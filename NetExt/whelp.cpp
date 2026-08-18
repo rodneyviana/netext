@@ -1,4 +1,4 @@
-// Source Date: Tuesday, August 18, 2026 1:08:52 PM
+// Source Date: Tuesday, August 18, 2026 2:37:20 PM
 // Source File: C:\Users\fox_m\OneDrive\NewNetExt\netext\NetExt\helptxt.txt
 // This file was generated. Do not modify. Modify Source File instead
 #include "netext.h"
@@ -2036,6 +2036,8 @@ EXT_COMMAND(whelp,
 	if(keyword=="whash")
 	{
 		Dml("Dump items in a hash table\n");
+		Dml("Supports both the .NET Framework and .NET Core/.NET 5+ Hashtable implementation\n");
+		Dml("(including Linux dumps), which renamed some internal fields\n");
 		Dml("\n");
 		Dml("<b>Syntax:</b>\n");
 		Dml("-------- \n");

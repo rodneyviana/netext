@@ -1237,6 +1237,8 @@ System.__Canon value = 00000001557d2aa8 v2.0
 
 <a id='whash'></a>
 ## !whash - Dump items in a hash table
+
+Supports both the .NET Framework and .NET Core/.NET 5+ Hashtable implementation (including Linux dumps), which renamed some internal fields.
 ```
 !whash <address>
 <address> - Address of the hash table.

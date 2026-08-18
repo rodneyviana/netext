@@ -61,13 +61,30 @@ void EXT_CLASS::HashInternal(CLRDATA_ADDRESS Addr)
 		Out("Object at %p is invalid or not of type [System.Collections.Hashtable]\n", Addr);
 	}
 	std::vector<std::string> fields;
+	// .NET Core renamed Hashtable's top-level fields with an underscore prefix
+	// (buckets -> _buckets, count -> _count); the per-bucket fields read further
+	// down (key/val/hash_coll) are unchanged in both frameworks, and unlike
+	// Dictionary<K,V>/HashSet<T> the bucket array itself was not rewritten (it's
+	// still a flat array of key/val/hash_coll slots, not a chained-entries index)
+	fields.push_back("_buckets");
 	fields.push_back("buckets");
+	fields.push_back("_count");
 	fields.push_back("count");
 	varMap fieldV;
 	DumpFields(Addr,fields,0,&fieldV);
-	int n=fieldV["count"].Value.i32;
-	CLRDATA_ADDRESS bucket = fieldV["buckets"].Value.ptr;
-	CLRDATA_ADDRESS mt = fieldV["buckets"].MT;
+
+	varMap::iterator f;
+	f = fieldV.find("_buckets"); if(f == fieldV.end()) f = fieldV.find("buckets");
+	if(f == fieldV.end())
+	{
+		Out("Could not locate the Hashtable's internal fields\n");
+		return;
+	}
+	CLRDATA_ADDRESS bucket = f->second.Value.ptr;
+	CLRDATA_ADDRESS mt = f->second.MT;
+
+	f = fieldV.find("_count"); if(f == fieldV.end()) f = fieldV.find("count");
+	int n = (f == fieldV.end()) ? 0 : f->second.Value.i32;
 	//Out("Items   : %i\n", n);
 	Out("Buckets : %p\n\n", bucket);
 	if(n==0 || bucket == NULL)
