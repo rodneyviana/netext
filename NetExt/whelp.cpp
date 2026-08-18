@@ -1,4 +1,4 @@
-// Source Date: Tuesday, August 18, 2026 12:30:20 PM
+// Source Date: Tuesday, August 18, 2026 1:08:52 PM
 // Source File: C:\Users\fox_m\OneDrive\NewNetExt\netext\NetExt\helptxt.txt
 // This file was generated. Do not modify. Modify Source File instead
 #include "netext.h"
@@ -53,6 +53,7 @@ EXT_COMMAND(whelp,
 		Dml("<b>-------</b>\n");
 		Dml("\n");
 		Dml("!<link cmd=\"!whelp wdict\">wdict</link> - Display dictionary objects\n");
+		Dml("<b>*(new)*</b> !<link cmd=\"!whelp whashset\">whashset</link> - Display HashSet&lt;T&gt; objects (.NET Core/.NET 5+ only)\n");
 		Dml("!<link cmd=\"!whelp whash\">whash</link> - Display HashTable objects\n");
 		Dml("!<link cmd=\"!whelp whttp\">whttp</link> - List HttpContext Objects\n");
 		Dml("<b>*(new)*</b> !<link cmd=\"!whelp whttpcore\">whttpcore</link> - List ASP.NET Core (Kestrel) requests\n");
@@ -2116,6 +2117,39 @@ EXT_COMMAND(whelp,
 		Dml("	[0]:==============================================\n");
 		Dml("	System.__Canon key = 00000001557d2a70 CompilerVersion\n");
 		Dml("	System.__Canon value = 00000001557d2aa8 v2.0\n");
+		Dml("	(...)\n");
+		Dml("\n");
+	return;
+	}
+	if(keyword=="whashset")
+	{
+		Dml("Dump items in a HashSet&lt;T&gt;\n");
+		Dml("<b>*(new)*</b> Only the .NET Core/.NET 5+ implementation is supported (including Linux dumps).\n");
+		Dml("Classic .NET Framework HashSet&lt;T&gt; used a different internal layout (m_buckets/m_slots)\n");
+		Dml("that is not implemented; the command will report that it cannot find the expected fields\n");
+		Dml("rather than misinterpret a desktop dump\n");
+		Dml("\n");
+		Dml("<b>Syntax:</b>\n");
+		Dml("-----------\n");
+		Dml("\n");
+		Dml("!whashset &lt;address&gt;\n");
+		Dml("\n");
+		Dml("<b>Where:</b>\n");
+		Dml("---------\n");
+		Dml("\n");
+		Dml("	<b>&lt;address&gt;</b> - Address of the HashSet&lt;T&gt;.\n");
+		Dml("\n");
+		Dml("<b>Example:</b>\n");
+		Dml("--------\n");
+		Dml("\n");
+		Dml("<i>Dumps a HashSet&lt;string&gt;</i>\n");
+		Dml("------------------------\n");
+		Dml("	0:000&gt; !whashset 000001e0cf90cd80\n");
+		Dml("	Items   : 90\n");
+		Dml("	[0]:==============================================(Physical Index: 46)\n");
+		Dml("	System.__Canon Value = 000001e080646f30 If-Modified-Since\n");
+		Dml("	[1]:==============================================(Physical Index: 81)\n");
+		Dml("	System.__Canon Value = 000001e080647618 Via\n");
 		Dml("	(...)\n");
 		Dml("\n");
 	return;

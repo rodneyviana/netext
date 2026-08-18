@@ -33,6 +33,7 @@ EXPORTS
 	weval
 	wfrom
 	wdict
+	whashset
 	whash
 	whttp
 	whttpcore

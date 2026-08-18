@@ -712,6 +712,113 @@ EXT_COMMAND(wdict,
 	}
 }
 
+EXT_COMMAND(whashset,
+            "Dump HashSet<T>. Use '!whelp whashset' for detailed help",
+			"{;e,r;;Address,HashSet Address}"
+			)
+{
+	// .NET Core/.NET 5+ HashSet<T> only, verified live against a .NET 10 dump.
+	// Classic .NET Framework HashSet<T> used a different internal layout entirely
+	// (m_buckets/m_slots, Slot { hashCode, value, next }) that has not been
+	// implemented here - this command will simply fail to locate fields on a
+	// desktop dump rather than misinterpret it.
+	INIT_API();
+	CLRDATA_ADDRESS addr = GetUnnamedArgU64(0);
+	ObjDetail obj(addr);
+	if(!obj.IsValid() || !obj.classObj.Implement(L"System.Collections.Generic.HashSet*"))
+	{
+		Out("Object at %p is invalid or not of type [System.Object System.Collections.Generic.HashSet]\n", addr);
+		return;
+	}
+	std::vector<std::string> fields;
+	fields.push_back("_entries");
+	fields.push_back("_buckets");
+	fields.push_back("_count");
+	// Same modern bucket-encoding rewrite as Dictionary<K,V> (see !wdict): a bucket
+	// value of 0 means empty, and a non-zero value stores (realIndex + 1). Presence
+	// of _fastModMultiplier confirms this is the modern (Core) layout.
+	fields.push_back("_fastModMultiplier");
+	varMap fieldV;
+	DumpFields(addr,fields,0,&fieldV);
+
+	if(fieldV.find("_fastModMultiplier") == fieldV.end())
+	{
+		Out("Object at %p does not have the expected .NET Core HashSet<T> layout (classic .NET Framework HashSet<T> is not supported)\n", addr);
+		return;
+	}
+
+	varMap::iterator f;
+	f = fieldV.find("_entries");
+	if(f == fieldV.end())
+	{
+		Out("Could not locate the HashSet's internal fields\n");
+		return;
+	}
+	CLRDATA_ADDRESS entries = f->second.Value.ptr;
+
+	f = fieldV.find("_buckets");
+	if(f == fieldV.end())
+	{
+		Out("Could not locate the HashSet's internal fields\n");
+		return;
+	}
+	CLRDATA_ADDRESS buckets = f->second.Value.ptr;
+
+	f = fieldV.find("_count");
+	int n = (f == fieldV.end()) ? 0 : f->second.Value.i32;
+
+	if(n==0 || entries == NULL)
+	{
+		Out("Empty HashSet\n");
+		return;
+	}
+	ObjDetail objBuckets(buckets);
+	if(!objBuckets.IsValid())
+	{
+		Out("HashSet consistency compromised\n");
+		return;
+	}
+
+	Out("Items   : %i\n", n);
+	std::vector<CLRDATA_ADDRESS> addresses;
+
+	obj.Request(entries);
+	CLRDATA_ADDRESS mt=obj.InnerMT();
+
+	SpecialCases::EnumArray(entries,0,NULL,&addresses);
+	int c=0;
+
+	for(int i=0;i<objBuckets.NumComponents();i++)
+	{
+		ExtRemoteData rm(objBuckets.DataPtr()+i*objBuckets.InnerComponentSize(),sizeof(int));
+		INT32 raw=rm.GetLong();
+		if(raw == 0) continue; // empty bucket, nothing chained here
+		INT32 s = raw - 1;
+		while(s!=-1 && c<=n)
+		{
+			if(s < 0 || (size_t)s >= addresses.size())
+			{
+				Out("\nWARNING: Bucket points outside the entries array (index %i). HashSet consistency compromised.\n", s);
+				return;
+			}
+			fieldV.clear();
+			fields.clear();
+			fields.push_back("Value");
+			fields.push_back("Next");
+			DumpFields(addresses[s],fields,mt,&fieldV);
+			Out("[%i]:==============================================(Physical Index: %i)\n",c++, s);
+			fields.pop_back();
+			DumpFields(addresses[s],fields,mt);
+			s=fieldV["Next"].Value.i32;
+		}
+		if(s!=-1)
+		{
+			Out("\nWARNING: Circular reference was detected. In runtime, a walk through this set will hang the thread with high CPU.\n");
+			return;
+		}
+	}
+}
+
 EXT_COMMAND(whash,
             "Dump Hash Table. Use '!whelp whash' for detailed help",
 			"{;e,r;;Address,Hash Table Address}"
