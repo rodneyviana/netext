@@ -145,7 +145,10 @@ if($badversion)
   {
     Copy-Item .\README.md .\README.md.bak -Force -Verbose
 
-    $help -replace $oldVersion,$version | Out-File .\README.md -Force
+    # Out-File defaults to UTF-16LE with a BOM in Windows PowerShell, which silently
+    # corrupts README.md's encoding (it must stay UTF-8, no BOM). Write it manually instead.
+    $updated = ($help -replace $oldVersion,$version) -join "`r`n"
+    [System.IO.File]::WriteAllText((Resolve-Path .\README.md), "$updated`r`n", (New-Object System.Text.UTF8Encoding($false)))
     Copy-Item .\README.md .\Binaries\README.md -Force -Verbose
 
   }
