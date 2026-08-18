@@ -1916,6 +1916,8 @@ Dump the class defintion (still in initial beta stage)
 
 ##whash
 Dump items in a hash table
+Supports both the .NET Framework and .NET Core/.NET 5+ Hashtable implementation
+(including Linux dumps), which renamed some internal fields
 
 <b>Syntax:</b>
 -------- 
