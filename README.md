@@ -156,6 +156,7 @@ Listing objects from: 0000000004208000 to 0000000004210000 from thread: 20 [1780
 *Special Purpose*
 *------------------*
 - [!wdict](#wdict) - Display dictionary objects
+- (*new*) [!whashset](#whashset) - Display HashSet<T> objects (.NET Core/.NET 5+ only)
 - [!whash](#whash) - Display HashTable objects
 - [!whttp](#whttp) - List HttpContext Objects
 - (*new*) [!whttpcore](#whttpcore) - List ASP.NET Core (Kestrel) requests, including Linux .NET Core dumps
@@ -1191,6 +1192,28 @@ Items   : 1
 [0]:==============================================
 System.__Canon key = 00000001557d2a70 CompilerVersion
 System.__Canon value = 00000001557d2aa8 v2.0
+
+```
+
+<a id='whashset'></a>
+## !whashset - Dump items in a HashSet<T>
+
+Only the .NET Core/.NET 5+ implementation is supported (including Linux dumps). Classic .NET Framework HashSet<T> used a different internal layout (m_buckets/m_slots) that is not implemented; the command will report that it cannot find the expected fields rather than misinterpret a desktop dump.
+```
+!whashset <address>
+<address> - Address of the HashSet<T>.
+
+Examples:
+
+Dumps a HashSet<string>
+------------------------
+0:000> !whashset 000001e0cf90cd80
+Items   : 90
+[0]:==============================================(Physical Index: 46)
+System.__Canon Value = 000001e080646f30 If-Modified-Since
+[1]:==============================================(Physical Index: 81)
+System.__Canon Value = 000001e080647618 Via
+(...)
 
 ```
 

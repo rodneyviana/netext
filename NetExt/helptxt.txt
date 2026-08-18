@@ -35,6 +35,7 @@
 <b>-------</b>
 
 !||wdict|| - Display dictionary objects
+<b>*(new)*</b> !||whashset|| - Display HashSet&lt;T&gt; objects (.NET Core/.NET 5+ only)
 !||whash|| - Display HashTable objects
 !||whttp|| - List HttpContext Objects
 <b>*(new)*</b> !||whttpcore|| - List ASP.NET Core (Kestrel) requests
@@ -1990,6 +1991,36 @@ buckets are encoded
 	[0]:==============================================
 	System.__Canon key = 00000001557d2a70 CompilerVersion
 	System.__Canon value = 00000001557d2aa8 v2.0
+	(...)
+
+##whashset
+Dump items in a HashSet&lt;T&gt;
+<b>*(new)*</b> Only the .NET Core/.NET 5+ implementation is supported (including Linux dumps).
+Classic .NET Framework HashSet&lt;T&gt; used a different internal layout (m_buckets/m_slots)
+that is not implemented; the command will report that it cannot find the expected fields
+rather than misinterpret a desktop dump
+
+<b>Syntax:</b>
+-----------
+
+!whashset &lt;address&gt;
+
+<b>Where:</b>
+---------
+
+	<b>&lt;address&gt;</b> - Address of the HashSet&lt;T&gt;.
+
+<b>Example:</b>
+--------
+
+<i>Dumps a HashSet&lt;string&gt;</i>
+------------------------
+	0:000&gt; !whashset 000001e0cf90cd80
+	Items   : 90
+	[0]:==============================================(Physical Index: 46)
+	System.__Canon Value = 000001e080646f30 If-Modified-Since
+	[1]:==============================================(Physical Index: 81)
+	System.__Canon Value = 000001e080647618 Via
 	(...)
 
 ##wstack
