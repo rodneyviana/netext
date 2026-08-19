@@ -1,7 +1,7 @@
 # UPDATE
 **Now supporting Linux dump files!**
 
-# LATEST VERSION: 3.0.8.5000  [here](https://github.com/rodneyviana/netext/releases)
+# LATEST VERSION: 3.0.9.5000  [here](https://github.com/rodneyviana/netext/releases)
 # Description
 *Getting started*
 - Open WinDBG. Load netext
@@ -2208,6 +2208,8 @@ Where:
 	-saveto <folder> When present it will save the selected module to an existing folder (e.g. -saveto "c:\mymods\"). Optional. 
  
 Examples:
+
+For little-endian x86-64 ELF modules from Linux dumps, `-saveto` restores file layout from the `PT_LOAD` segments, reverses supported dynamic relocations, and rebuilds a section header table from `PT_DYNAMIC` and the program headers. Sections the loader never maps (`.comment`, `.symtab`, `.debug_*`) cannot be recovered, and inferred section sizes may include trailing padding.
 
 Dumps all modules containing 'mscor'
 ------------------------------------

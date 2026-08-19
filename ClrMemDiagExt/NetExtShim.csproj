@@ -175,6 +175,7 @@
     <Compile Include="COMInterfaces.cs" />
     <Compile Include="COMInterop.cs" />
     <Compile Include="DebugApi.cs" />
+    <Compile Include="ELFModule.cs" />
     <Compile Include="EventsCallback.cs" />
     <Compile Include="HeapCacheUtil.cs" />
     <Compile Include="Microsoft.Diagnostics.Runtime\ClrAppDomain.cs">

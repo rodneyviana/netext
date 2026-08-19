@@ -226,3 +226,10 @@ pip-log.txt
 /ClrMemDiagExt/.vs
 /BuildHelp/.vs
 /ProofOfConcept/.vs
+
+# MSVC intermediate build outputs
+*.tlog/
+*.iobj
+*.ipdb
+*.recipe
+*.FileListAbsolute.txt

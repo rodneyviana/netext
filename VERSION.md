@@ -1,5 +1,9 @@
 # NetExt Version History
 
+## 3.0.9.5000
+
+- `!wmodule -saveto` now saves Linux ELF modules: adjusted the segment code to rebuild the file layout, reverse the dynamic relocations, and emit a section header table.
+
 ## 3.0.1.5000
 
 ### Parser fixes (Boost.Spirit upgrade regression)

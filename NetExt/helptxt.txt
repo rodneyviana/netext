@@ -559,6 +559,7 @@ The types are:
 	<b>-saveto &lt;folder&gt;</b>When present it will save the selected module to an existing folder (e.g. -saveto c:\my mods\). Optional. Must be at the end.
 
 <b>Note:</b> -saveto &lt;folder&gt; must be the last parameter. Do not use quotes.
+<b>ELF:</b> -saveto reconstructs little-endian x86-64 ELF modules from Linux dumps, restores file layout from PT_LOAD segments, reverses supported dynamic relocations, and rebuilds a section header table from PT_DYNAMIC and the program headers. Sections the loader never maps (.comment, .symtab, .debug_*) cannot be recovered, and inferred section sizes may include trailing padding.
 <b>Examples:</b>
 ----------
 
