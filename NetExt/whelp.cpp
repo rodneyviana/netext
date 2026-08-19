@@ -1,4 +1,4 @@
-// Source Date: Tuesday, August 18, 2026 3:08:45 PM
+// Source Date: Wednesday, August 19, 2026 10:39:22 AM
 // Source File: C:\Users\fox_m\OneDrive\NewNetExt\netext\NetExt\helptxt.txt
 // This file was generated. Do not modify. Modify Source File instead
 #include "netext.h"
@@ -616,6 +616,7 @@ EXT_COMMAND(whelp,
 		Dml("	<b>-saveto &lt;folder&gt;</b>When present it will save the selected module to an existing folder (e.g. -saveto c:\\my mods\\). Optional. Must be at the end.\n");
 		Dml("\n");
 		Dml("<b>Note:</b> -saveto &lt;folder&gt; must be the last parameter. Do not use quotes.\n");
+		Dml("<b>ELF:</b> -saveto reconstructs little-endian x86-64 ELF modules from Linux dumps, restores file layout from PT_LOAD segments, reverses supported dynamic relocations, and rebuilds a section header table from PT_DYNAMIC and the program headers. Sections the loader never maps (.comment, .symtab, .debug_*) cannot be recovered, and inferred section sizes may include trailing padding.\n");
 		Dml("<b>Examples:</b>\n");
 		Dml("----------\n");
 		Dml("\n");

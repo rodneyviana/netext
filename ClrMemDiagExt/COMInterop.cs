@@ -3800,27 +3800,28 @@ namespace NetExt.Shim
         {
             List<NetExt.Shim.Module> modules = new List<NetExt.Shim.Module>();
             var loopModules = NetExt.Shim.Module.Modules;
-            var domain = DebugApi.Runtime.AppDomains.Where(d => d.Address == DomainAddress).FirstOrDefault();
-            if (domain == null && DomainAddress == DebugApi.Runtime.SharedDomain.Address)
+            if (DomainAddress != 0)
             {
-                domain = DebugApi.Runtime.SharedDomain;
-            }
-            if (domain != null)
-            {
-                loopModules = new List<Module>();
-                foreach(var d in domain.Modules)
+                var domain = DebugApi.Runtime.AppDomains.Where(d => d.Address == DomainAddress).FirstOrDefault();
+                if (domain == null && DomainAddress == DebugApi.Runtime.SharedDomain.Address)
                 {
-                    if(d.AppDomains.Where<ClrAppDomain>(ad => ad.Address == DomainAddress).FirstOrDefault() != null)
-                    {
-                        loopModules.Add(new Module(d.ImageBase));
-                    }
+                    domain = DebugApi.Runtime.SharedDomain;
                 }
-            }
+                if (domain != null)
+                {
+                    loopModules = new List<Module>();
+                    foreach (var d in domain.Modules)
+                    {
+                        if (d.AppDomains.Where<ClrAppDomain>(ad => ad.Address == DomainAddress).FirstOrDefault() != null)
+                        {
+                            loopModules.Add(new Module(d.ImageBase));
+                        }
+                    }
+                } else
+                {
+                    return new List<Module>();
 
-            if (domain == null && DomainAddress != 0)
-            {
-                return new List<Module>();
-                 
+                }
             }
 
             foreach (var mod in loopModules)
@@ -3851,6 +3852,23 @@ namespace NetExt.Shim
 
             return modules;
         }
+        private static bool StreamMatchesFile(Stream stream, string fileName)
+        {
+            stream.Position = 0;
+            using (FileStream file = File.OpenRead(fileName))
+            {
+                if (stream.Length != file.Length)
+                    return false;
+
+                int streamByte;
+                while ((streamByte = stream.ReadByte()) != -1)
+                {
+                    if (streamByte != file.ReadByte())
+                        return false;
+                }
+            }
+            return true;
+        }
 
         public int DumpModules(string Pattern, string Company, string folderToSave, bool DebugMode,
             bool ManagedOnly, bool ExcludeMicrosoft, bool Ordered, bool IncludePath, ulong DomainAddress)
@@ -3870,6 +3888,7 @@ namespace NetExt.Shim
                         return HRESULTS.E_FAIL;
                     }
                     string fileName = Path.Combine(folderToSave, mod.Name);
+                    bool sameContent = false;
 
                     if (File.Exists(fileName))
                     {
@@ -3877,12 +3896,32 @@ namespace NetExt.Shim
                         {
                             using (MemoryStream ms = new MemoryStream())
                             {
-                                mod.SaveToStream(ms);
-                                PEFile pe = new PEFile(ms);
-                                if (!pe.CompareToFile(fileName))
+                                if (!mod.SaveToStream(ms))
+                                    throw new InvalidDataException("Unable to reconstruct the module image");
+
+                                if (mod.IsELF)
                                 {
-                                    fileName = Path.Combine(folderToSave, Path.GetFileNameWithoutExtension(mod.Name) + "_" + pe.UniqueString + Path.GetExtension(mod.Name));
-                                    Exports.Write("File with same name and different content found. Renaming to {0}. ", Path.GetFileName(fileName));
+                                    sameContent = StreamMatchesFile(ms, fileName);
+                                    if (!sameContent)
+                                    {
+                                        fileName = Path.Combine(folderToSave, Path.GetFileNameWithoutExtension(mod.Name) + "_" +
+                                            mod.BaseAddress.ToString("x") + Path.GetExtension(mod.Name));
+                                        Exports.Write("File with same name and different content found. Renaming to {0}. ", Path.GetFileName(fileName));
+                                        if (File.Exists(fileName))
+                                            sameContent = StreamMatchesFile(ms, fileName);
+                                    }
+                                }
+                                else
+                                {
+                                    PEFile pe = new PEFile(ms);
+                                    sameContent = pe.CompareToFile(fileName);
+                                    if (!sameContent)
+                                    {
+                                        fileName = Path.Combine(folderToSave, Path.GetFileNameWithoutExtension(mod.Name) + "_" + pe.UniqueString + Path.GetExtension(mod.Name));
+                                        Exports.Write("File with same name and different content found. Renaming to {0}. ", Path.GetFileName(fileName));
+                                        if (File.Exists(fileName))
+                                            sameContent = pe.CompareToFile(fileName);
+                                    }
                                 }
                             }
                         }
@@ -3894,18 +3933,31 @@ namespace NetExt.Shim
 
                     if (File.Exists(fileName))
                     {
-                        Exports.WriteLine("** File '{0}' with same content already exists. Skipping this file", fileName);
+                        if (sameContent)
+                            Exports.WriteLine("** File '{0}' with same content already exists. Skipping this file", fileName);
+                        else
+                            Exports.WriteLine("** File '{0}' already exists and its content could not be confirmed. Skipping this file", fileName);
                         f++;
                     }
                     else
                     {
                         try
                         {
+                            bool saved;
                             using (FileStream fs = new FileStream(fileName, FileMode.CreateNew))
                             {
-                                mod.SaveToStream(fs);
+                                saved = mod.SaveToStream(fs);
+                            }
+                            if (saved)
+                            {
                                 m++;
                                 Exports.WriteLine("Saved '{0}' successfully", fileName);
+                            }
+                            else
+                            {
+                                File.Delete(fileName);
+                                f++;
+                                Exports.WriteLine("Failed to save '{0}'", fileName);
                             }
                         }
                         catch (Exception ex)
@@ -4490,8 +4542,11 @@ namespace NetExt.Shim
                 using (Stream fs = File.OpenWrite(curPath))
                 {
                     success = module.SaveToStream(fs);
-                    Exports.WriteLine("Saved '{0}'", curPath);
                 }
+                if (success)
+                    Exports.WriteLine("Saved '{0}'", curPath);
+                else
+                    File.Delete(curPath);
             }
             catch (Exception ex)
             {
